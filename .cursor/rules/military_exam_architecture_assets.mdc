@@ -1,0 +1,33 @@
+---
+description: Military exam Flutter architecture, colors, and asset loading conventions
+alwaysApply: true
+---
+
+# Military Exam Architecture And Assets
+
+- Use feature-first clean architecture: `presentation -> domain -> data`. Presentation calls usecases, usecases depend on domain repository contracts, and data implements those contracts.
+- Keep features isolated. No feature may import another feature's `data/` or `presentation/` implementation.
+- Use GetX for routing, dependency injection, and controllers. Controllers hold UI state and call usecases; business rules belong in usecases, never widgets.
+- Keep screens under 200 lines by extracting widgets, shared components, and helper methods.
+
+## Colors
+
+- Maintain one color source of truth in `lib/core/theme/app_colors.dart`.
+- Define color constants using `c` + hex value names, for example `c987656` for `#987656` with value `Color(0xFF987656)`.
+- Do not use raw `Color(...)`, `Colors.*`, or hex literals directly in feature pages/widgets.
+- Semantic aliases are allowed only inside `AppColors`, and should point to canonical `c` + hex constants, for example `primary = c987656`.
+
+## Assets
+
+- Maintain PNG paths only in `lib/core/constants/png_asset.dart`.
+- Maintain SVG paths only in `lib/core/constants/svg_asset.dart`.
+- Do not hardcode asset path strings inside pages, controllers, or feature widgets.
+- The provided military logo must be used for app logo, splash screen, and login view through these asset constants.
+- Use `flutter_svg: ^2.3.0` for SVG rendering.
+
+## Reusable Image Loading
+
+- Use reusable widgets for assets: `lib/core/widgets/app_png_asset.dart` and `lib/core/widgets/app_svg_asset.dart`.
+- `AppPngAsset` should wrap `Image.asset` and accept dynamic values such as `width`, `height`, `fit`, `alignment`, `color`, `opacity`, `semanticLabel`, `cacheWidth`, and `cacheHeight`.
+- `AppSvgAsset` should wrap `SvgPicture.asset` and accept dynamic values such as `width`, `height`, `fit`, `alignment`, `colorFilter` or theme color, `semanticsLabel`, and optional placeholder/error builders.
+- Feature UIs should compose these reusable loaders instead of calling `Image.asset` or `SvgPicture.asset` directly.
