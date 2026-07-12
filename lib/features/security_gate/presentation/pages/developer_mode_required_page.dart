@@ -6,7 +6,9 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/developer_options_icon.dart';
+import '../../../../core/widgets/violation_icon.dart';
 import '../controllers/developer_mode_controller.dart';
+import '../widgets/security_instruction_box.dart';
 import '../widgets/security_status_body.dart';
 
 class DeveloperModeRequiredPage extends GetView<DeveloperModeController> {
@@ -23,38 +25,55 @@ class DeveloperModeRequiredPage extends GetView<DeveloperModeController> {
             final gateStatus = controller.status.value;
             final isChecking = gateStatus == DeveloperModeGateStatus.checking;
             final isCleared = gateStatus == DeveloperModeGateStatus.cleared;
+            final isDeveloperModeEnabled =
+                gateStatus == DeveloperModeGateStatus.developerModeEnabled;
             final isCompromised =
                 gateStatus == DeveloperModeGateStatus.deviceCompromised;
 
             return SecurityStatusBody(
               contentKey: gateStatus,
-              title: AppStrings.disableDeveloperMode,
+              title: _titleFor(gateStatus),
               message: _messageFor(gateStatus),
               isLoading: isChecking,
-              icon: const DeveloperOptionsIcon(),
-              iconColor: isCleared
-                  ? AppColors.success
-                  : isCompromised
-                      ? AppColors.error
-                      : AppColors.warning,
+              icon: isCompromised
+                  ? const ViolationIcon()
+                  : const DeveloperOptionsIcon(),
+              iconColor: _primaryButtonColorFor(gateStatus),
+              footer: isDeveloperModeEnabled
+                  ? const SecurityInstructionBox(
+                      instruction: AppStrings.developerModeInstruction,
+                    )
+                  : null,
               actionLabel: isCleared
                   ? AppStrings.continueAction
                   : isCompromised
                       ? null
-                      : AppStrings.openSettings,
+                      : isDeveloperModeEnabled
+                          ? AppStrings.openSettings
+                          : null,
               onAction: isCleared
                   ? controller.continueWhenReady
                   : isCompromised
                       ? null
-                      : controller.openSettings,
-              secondaryActionLabel: AppStrings.refresh,
-              onSecondaryAction: controller.refreshStatus,
+                      : isDeveloperModeEnabled
+                          ? controller.openSettings
+                          : null,
+              secondaryActionLabel:
+                  isCompromised ? null : AppStrings.refresh,
+              onSecondaryAction:
+                  isCompromised ? null : controller.refreshStatus,
             );
           }),
         ),
       ),
     );
   }
+
+  String _titleFor(DeveloperModeGateStatus status) => switch (status) {
+        DeveloperModeGateStatus.deviceCompromised =>
+          AppStrings.rootedDeviceTitle,
+        _ => AppStrings.disableDeveloperMode,
+      };
 
   String _messageFor(DeveloperModeGateStatus status) => switch (status) {
         DeveloperModeGateStatus.checking =>
@@ -64,8 +83,15 @@ class DeveloperModeRequiredPage extends GetView<DeveloperModeController> {
         DeveloperModeGateStatus.developerModeEnabled =>
           AppStrings.developerModeMustBeDisabled,
         DeveloperModeGateStatus.deviceCompromised =>
-          AppStrings.deviceNotPermitted,
+          AppStrings.rootedDeviceMessage,
         DeveloperModeGateStatus.error =>
           AppStrings.unableToVerifyDeveloperMode,
+      };
+
+  Color? _primaryButtonColorFor(DeveloperModeGateStatus status) =>
+      switch (status) {
+        DeveloperModeGateStatus.cleared => AppColors.primary,
+        DeveloperModeGateStatus.developerModeEnabled => AppColors.c000000,
+        _ => null,
       };
 }

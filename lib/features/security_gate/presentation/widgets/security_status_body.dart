@@ -3,11 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_png_asset.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/staggered_entrance.dart';
 import '../../../../core/widgets/typewriter_text.dart';
+import 'security_gate_icon_card.dart';
 
 class SecurityStatusBody extends StatelessWidget {
   const SecurityStatusBody({
@@ -21,9 +21,11 @@ class SecurityStatusBody extends StatelessWidget {
     this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
+    this.secondaryActionColor,
     this.footer,
     this.contentKey,
     this.typewriterMessage = false,
+    this.wrapIconInCard = true,
   });
 
   final String title;
@@ -35,14 +37,30 @@ class SecurityStatusBody extends StatelessWidget {
   final VoidCallback? onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
+  final Color? secondaryActionColor;
   final Widget? footer;
 
   /// When this value changes, icon/title/message replay their entrance animation.
   final Object? contentKey;
   final bool typewriterMessage;
+  final bool wrapIconInCard;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final titleStyle = textTheme.titleMedium?.copyWith(
+      fontSize: 20.sp,
+      fontWeight: FontWeight.w700,
+      color: AppColors.c094C3C,
+      height: 28 / 20,
+    );
+    final messageStyle = textTheme.bodyMedium?.copyWith(
+      color: AppColors.c474E5A,
+      height: 22 / 14,
+    );
+    final resolvedSecondaryColor = secondaryActionColor ?? AppColors.cBDBDBD;
+    final resolvedPrimaryColor = iconColor ?? AppColors.primary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -50,34 +68,28 @@ class SecurityStatusBody extends StatelessWidget {
         StaggeredEntrance(
           contentKey: contentKey,
           children: [
-            Center(
-              child: icon ??
-                  AppLogoView(
-                    width: 200.w,
-                    height: 200.h,
-                  ),
-            ),
-            SizedBox(height: AppSpacing.lg.h),
+            Center(child: _buildIcon()),
+            SizedBox(height: 44.h),
             Text(
               title,
-              style: AppTypography.headlineMedium,
+              style: titleStyle,
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppSpacing.sm.h),
+            SizedBox(height: 16.h),
             typewriterMessage
                 ? TypewriterText(
                     text: message,
-                    style: AppTypography.bodyMedium,
+                    style: messageStyle,
                     textAlign: TextAlign.center,
                     repeat: true,
                   )
                 : Text(
                     message,
-                    style: AppTypography.bodyMedium,
+                    style: messageStyle,
                     textAlign: TextAlign.center,
                   ),
             if (footer != null) ...[
-              SizedBox(height: AppSpacing.md.h),
+              SizedBox(height: 24.h),
               footer!,
             ],
           ],
@@ -92,17 +104,29 @@ class SecurityStatusBody extends StatelessWidget {
                 AppPrimaryButton(
                   label: actionLabel!,
                   isLoading: isLoading,
-                  backgroundColor: iconColor ?? AppColors.primary,
+                  backgroundColor: resolvedPrimaryColor,
                   onPressed: onAction,
                 ),
               if (secondaryActionLabel != null && onSecondaryAction != null) ...[
-                SizedBox(height: AppSpacing.sm.h),
+                SizedBox(height: 13.h),
                 OutlinedButton(
                   onPressed: isLoading ? null : onSecondaryAction,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: resolvedSecondaryColor == AppColors.cBDBDBD
+                        ? AppColors.c000000
+                        : resolvedSecondaryColor,
+                    side: BorderSide(color: resolvedSecondaryColor),
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
+                    ),
+                    textStyle: textTheme.labelLarge?.copyWith(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w400,
+                      color: resolvedSecondaryColor == AppColors.cBDBDBD
+                          ? AppColors.c000000
+                          : resolvedSecondaryColor,
+                    ),
                   ),
                   child: Text(secondaryActionLabel!),
                 ),
@@ -110,6 +134,24 @@ class SecurityStatusBody extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+
+  Widget _buildIcon() {
+    final iconWidget = icon ??
+        AppLogoView(
+          width: 76.w,
+          height: 76.h,
+        );
+
+    if (!wrapIconInCard) return iconWidget;
+
+    return SecurityGateIconCard(
+      child: SizedBox(
+        width: 76.w,
+        height: 76.w,
+        child: FittedBox(fit: BoxFit.contain, child: iconWidget),
+      ),
     );
   }
 }

@@ -29,6 +29,7 @@ dependencies:
   image: ^4.5.4
   screen_security: ^1.1.0
   app_settings: ^7.0.0
+  overlay_support: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -40,4 +41,18 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/icons/
+    - assets/svg/
+    - assets/fonts/
+  fonts:
+    - family: HindSiliguri
+      fonts:
+        - asset: assets/fonts/HindSiliguri-Light.ttf
+          weight: 300
+        - asset: assets/fonts/HindSiliguri-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/HindSiliguri-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/HindSiliguri-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/HindSiliguri-Bold.ttf
+          weight: 700

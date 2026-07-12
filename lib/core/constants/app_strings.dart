@@ -6,8 +6,12 @@ abstract final class AppStrings {
   static const appNameDemo = 'সামরিক পরীক্ষা (ডেমো)';
 
   // Splash & login
+  static const appSubtitle = 'Bangladesh Armed Forces Examination System';
   static const signInSubtitle = 'পরীক্ষার্থীর তথ্য দিয়ে সাইন ইন করুন';
+  static const loginDescription =
+      'পরীক্ষায় প্রবেশ করতে আপনার পরীক্ষার্থী আইডি এবং পাসওয়ার্ড প্রদান করুন';
   static const examineeId = 'পরীক্ষার্থী আইডি';
+  static const examineeIdHint = 'আপনার আইডি লিখুন';
   static const password = 'পাসওয়ার্ড';
   static const signIn = 'সাইন ইন';
   static const notEligible =
@@ -44,6 +48,22 @@ abstract final class AppStrings {
   static const cameraPermissionPermanentlyDenied =
       'ক্যামেরার অনুমতি বন্ধ আছে। সেটিংস থেকে অনুমতি চালু করুন।';
   static const grantCameraPermission = 'অনুমতি দিন';
+  static const cameraPermissionGrantedTitle = 'ক্যামেরার অনুমতি দেওয়া হয়েছে';
+  static const importantInstruction = 'গুরুত্বপূর্ণ নির্দেশনা';
+  static const developerModeInstruction =
+      'Settings → About Phone → Developer Options → Turn Off.';
+  static const airplaneModeInstruction =
+      'Settings → Network / Connections → Airplane Mode → Turn On.';
+  static const wifiInstruction =
+      'Settings → Wi-Fi / Connections → Wi-Fi → Turn On';
+  static const cameraInstruction =
+      'Settings → Apps → Exam App → Permissions → Camera → Allow';
+  static const airplaneModeActive = 'বিমান মোড সক্রিয়';
+  static const developerModeInactive = 'ডেভেলপার মোড নিষ্ক্রিয়';
+  static const wifiConnected = 'ওয়াই-ফাই সংযুক্ত';
+  static const rootedDeviceTitle = 'ডিভাইস ব্যবহার করা যাবে না';
+  static const rootedDeviceMessage =
+      'আপনার ডিভাইসটি রুট করা বা জেলব্রেক করা হয়েছে। নিরাপত্তার কারণে এই ডিভাইস দিয়ে পরীক্ষায় অংশগ্রহণ করা সম্ভব নয়।';
 
   // Security gate
   static const verifyingDeviceSecurity = 'ডিভাইসের নিরাপত্তা যাচাই হচ্ছে';
@@ -100,6 +120,8 @@ abstract final class AppStrings {
 
   // Violations
   static const examPenalized = 'আপনাকে শাস্তি দেওয়া হয়েছে';
+  static const examCancelledAndRecorded =
+      'আপনার পরীক্ষা বাতিল করা হয়েছে এবং এই লঙ্ঘন রেকর্ড করা হয়েছে।';
   static const examAnswersPublished =
       'আপনার উত্তরসমূহ প্রকাশিত হয়েছে এবং পরীক্ষা স্বয়ংক্রিয়ভাবে জমা দেওয়া হয়েছে।';
   static const securityViolation = 'নিরাপত্তা লঙ্ঘন';
@@ -111,7 +133,8 @@ abstract final class AppStrings {
       'পরীক্ষার সময় এয়ারপ্লেন মোড বন্ধ করা হয়েছিল।';
   static const wifiDisabledDuringExam =
       'পরীক্ষার সময় ওয়াইফাই বা ইন্টারনেট সংযোগ বন্ধ করা হয়েছিল।';
-  static const appBackgrounded = 'অ্যাপটি ব্যাকগ্রাউন্ডে পাঠানো হয়েছিল।';
+  static const appBackgrounded =
+      'পরীক্ষা চলাকালীন আপনি অ্যাপ্লিকেশন ব্যাকগ্রাউন্ডে পাঠিয়েছেন। এটি পরীক্ষার নিয়মের সুস্পষ্ট লঙ্ঘন।';
   static const appMinimized =
       'অ্যাপটি ছোট করা হয়েছিল বা পরীক্ষার স্ক্রিন থেকে বের হয়ে গেছে।';
   static const screenshotAttemptDetected = 'স্ক্রিনশটের চেষ্টা শনাক্ত হয়েছে।';
@@ -120,6 +143,12 @@ abstract final class AppStrings {
   static const jailbrokenDeviceDetected = 'জেলব্রোক করা ডিভাইস শনাক্ত হয়েছে।';
   static const developerModeEnabled =
       'এই ডিভাইসে ডেভেলপার মোড চালু আছে।';
+  static const violationRuleBackgroundForbidden =
+      'পরীক্ষার নিয়ম ৩ অনুযায়ী অ্যাপ ব্যাকগ্রাউন্ডে নেওয়া নিষিদ্ধ';
+  static const violationRuleGeneric =
+      'পরীক্ষার নিয়ম অনুযায়ী এই আচরণ নিষিদ্ধ';
+  static const violationReportedToAuthority =
+      'এই ঘটনা স্বয়ংক্রিয়ভাবে কর্তৃপক্ষকে জানানো হয়েছে';
 
   // MCQ exam
   static const multipleChoice = 'বহুনির্বাচনী';
@@ -129,18 +158,28 @@ abstract final class AppStrings {
       'ইন্টারনেট সংযোগ অস্থির। উত্তর স্থানীয়ভাবে সংরক্ষিত থাকবে।';
   static const noQuestionsAvailable = 'কোনো প্রশ্ন পাওয়া যায়নি।';
   static const finishMcq = 'বহুনির্বাচনী শেষ করুন';
+  static const nextQuestion = 'পরবর্তী প্রশ্ন';
   static const questionOf = 'প্রশ্ন'; // used as: প্রশ্ন ১ / ৫
   static const of = '/';
 
   // Written exam
   static const writtenAnswers = 'লিখিত উত্তর';
-  static const captureAnswerPageTooltip = 'উত্তরের পৃষ্ঠা তুলুন';
-  static const captureWrittenAnswersHint =
-      'হাতে লেখা উত্তরের পৃষ্ঠা তুলতে ক্যামেরা আইকনে ট্যাপ করুন। গ্যালারি অ্যাক্সেস নিষ্ক্রিয়।';
+  static const writtenExamInfo =
+      'আপনার লিখিত উত্তরের পৃষ্ঠার ছবি তুলে জমা দিন। গ্যালারি থেকে ছবি নির্বাচন করা নিষিদ্ধ।';
+  static const writtenExamImageAddedSuccess =
+      'উত্তর পত্রের ছবি সফলভাবে যুক্ত হয়েছে';
+  static const writtenExamCaptureTitle = 'ক্যামেরা দিয়ে ছবি তুলুন';
+  static const writtenExamCaptureSubtitle =
+      'উত্তর পত্রের ছবি তুলতে এখানে ট্যাপ করুন';
+  static const writtenExamGalleryBannedTitle = 'গ্যালারি নিষিদ্ধ';
+  static const writtenExamGalleryBannedSubtitle =
+      'শুধুমাত্র সরাসরি ক্যামেরা ব্যবহার করুন';
+  static const writtenExamPagePrefix = 'পৃষ্ঠা';
   static const answerPage = 'উত্তরের পৃষ্ঠা';
   static const replace = 'প্রতিস্থাপন';
   static const delete = 'মুছুন';
-  static const submitWrittenExam = 'লিখিত পরীক্ষা জমা দিন';
+  static const submitWrittenExamDisabled = 'জমা দিন (ছবি প্রয়োজন)';
+  static const submitWrittenExam = 'উত্তর জমা দিন';
   static const cameraPermissionRequired = 'ক্যামেরার অনুমতি প্রয়োজন।';
   static const cameraPermissionRequiredBeforeExam =
       'পরীক্ষা শুরু করতে ক্যামেরার অনুমতি প্রয়োজন।';
@@ -154,8 +193,17 @@ abstract final class AppStrings {
 
   // Finish exam
   static const submissionSuccessful = 'জমা সফল';
+  static const submissionSuccessfulMessage =
+      'আপনার পরীক্ষার উত্তর সফলভাবে জমা হয়েছে। পরীক্ষা কেন্দ্র থেকে নির্দেশনার জন্য অপেক্ষা করুন।';
   static const thankYouCloseApp =
       'পরীক্ষা সম্পন্ন করার জন্য ধন্যবাদ। এখন অ্যাপ বন্ধ করতে পারেন।';
+  static const finishExamNameLabel = 'পরীক্ষার নাম';
+  static const finishExamTimeLabel = 'জমার সময়';
+  static const finishExamStatusLabel = 'অবস্থা';
+  static const finishExamStatusCompleted = '✓ সম্পন্ন';
+  static const finishExamResultsLaterNote =
+      'ফলাফল পরবর্তীতে আনুষ্ঠানিকভাবে জানানো হবে';
+  static const finishExamDefaultName = 'সামরিক পরীক্ষা ২০২৫';
 
   // Network & errors
   static const networkRequestFailed = 'নেটওয়ার্ক অনুরোধ ব্যর্থ';

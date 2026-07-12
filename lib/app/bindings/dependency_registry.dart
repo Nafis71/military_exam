@@ -359,6 +359,7 @@ class FinishExamBinding extends Bindings {
       () => FinishExamController(
         Get.find<StopSecurityWatchdogUseCase>(),
         Get.find<ClearSessionUseCase>(),
+        Get.find<AppLogger>(),
       ),
     );
   }

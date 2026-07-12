@@ -19,9 +19,9 @@ class NoWifiIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppPngAsset(
-      assetPath: PngAsset.noWifi,
-      width: width ?? 200.w,
-      height: height ?? 200.h,
+      assetPath: PngAsset.wifiOff,
+      width: width ?? 76.w,
+      height: height ?? 76.h,
       semanticLabel: AppStrings.enableWifi,
     );
   }

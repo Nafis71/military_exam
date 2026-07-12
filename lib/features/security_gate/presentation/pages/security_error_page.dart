@@ -39,10 +39,7 @@ class SecurityErrorPage extends StatelessWidget {
                 ? null
                 : Text(
                     'সেশন ${violation.sessionId ?? AppStrings.sessionUnknown}',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
           ),

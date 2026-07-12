@@ -19,9 +19,9 @@ class AirplaneIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppPngAsset(
-      assetPath: PngAsset.airplane,
-      width: width ?? 200.w,
-      height: height ?? 200.h,
+      assetPath: PngAsset.airplaneMode,
+      width: width ?? 76.w,
+      height: height ?? 76.h,
       semanticLabel: AppStrings.enableAirplaneMode,
     );
   }

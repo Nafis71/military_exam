@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'app_radius.dart';
+import 'app_typography.dart';
 
 abstract final class AppTheme {
   static ThemeData get light {
@@ -17,6 +18,16 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
+      fontFamily: 'HindSiliguri',
+      textTheme: TextTheme(
+        displayLarge: AppTypography.displayLarge,
+        headlineMedium: AppTypography.headlineMedium,
+        titleMedium: AppTypography.titleMedium,
+        bodyLarge: AppTypography.bodyLarge,
+        bodyMedium: AppTypography.bodyMedium,
+        bodySmall: AppTypography.bodySmall,
+        labelLarge: AppTypography.labelLarge,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.cFFFFFF,

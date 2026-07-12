@@ -1,0 +1,77 @@
+---
+description: Core Flutter project coding standards — architecture, colors, assets, DRY, error handling, logging, typography, naming
+alwaysApply: true
+---
+
+# Project Rules
+
+## Architecture
+
+- Feature-first clean architecture: `presentation -> domain -> data`. Presentation calls usecases, usecases depend on domain repository contracts, data implements those contracts.
+- Features isolated. No feature imports another feature's `data/` or `presentation/`.
+- Use GetX for routing, DI, and controllers. Controllers hold UI state and call usecases; business rules belong in usecases, never widgets.
+- Screens ≤ 200 lines; extract widgets, shared components, and helper methods.
+- Never use widget methods (e.g. `Widget _buildFoo()`). Always extract reusable UI into a dedicated `StatelessWidget` or `StatefulWidget` class in its own file under the feature's `presentation/widgets/` folder.
+
+## Colors
+
+- Single color source of truth: `lib/core/theme/app_colors.dart`.
+- Color constants named `c` + hex (e.g. `c987656` → `Color(0xFF987656)`).
+- No raw `Color(...)`, `Colors.*`, or hex literals in feature pages/widgets.
+- Semantic aliases allowed only inside `AppColors`, pointing to canonical `c` + hex constants.
+
+## Assets
+
+- PNG paths only in `lib/core/constants/png_asset.dart`.
+- SVG paths only in `lib/core/constants/svg_asset.dart`.
+- No hardcoded asset path strings in pages, controllers, or feature widgets.
+- Military logo used for app logo, splash, and login via asset constants.
+- Use `flutter_svg: ^2.3.0` for SVG rendering.
+
+## Reusable Image Loading
+
+- Use `lib/core/widgets/app_png_asset.dart` and `lib/core/widgets/app_svg_asset.dart`.
+- `AppPngAsset` wraps `Image.asset`; accepts `width`, `height`, `fit`, `alignment`, `color`, `opacity`, `semanticLabel`, `cacheWidth`, `cacheHeight`.
+- `AppSvgAsset` wraps `SvgPicture.asset`; accepts `width`, `height`, `fit`, `alignment`, `colorFilter`, `semanticsLabel`, and optional placeholder/error builders.
+- Feature UIs use these wrappers — never call `Image.asset` or `SvgPicture.asset` directly.
+
+## Typography
+
+- Always use `Theme.of(context).textTheme` — never hardcode `TextStyle` inline.
+- Font: Hind Siliguri. Declared once in `ThemeData`; all text inherits it.
+
+## DRY
+
+- No repeated logic. Extract shared code to utils, usecases, or base classes.
+- Logic stays out of UI. Controllers and usecases own business rules; widgets only render and dispatch.
+
+## Error Handling
+
+- Wrap all business logic and controller calls in `try/catch`.
+- UI shows only generic, user-friendly messages (e.g. `'Something went wrong. Please try again.'`).
+- Detailed errors and stack traces go to the logger, never to the UI.
+
+## Logging
+
+- Use `logger` package (`^2.7.0`) for all console output.
+- Log only in debug mode (`kDebugMode`).
+- Never use `print`, `debugPrint`, or expose raw exceptions to users.
+
+```dart
+// ✅ GOOD
+if (kDebugMode) logger.e('fetchExams failed', error: e, stackTrace: st);
+showError('Something went wrong. Please try again.');
+
+// ❌ BAD
+print(e);
+Text(e.toString());
+```
+
+## Naming
+
+- Variables and functions: readable, descriptive, camelCase. No abbreviations unless universal (`id`, `url`).
+- Booleans: prefix with `is`, `has`, `can` (e.g. `isLoading`, `hasError`).
+
+## General
+
+- Think before coding. Don't touch irrelevant files. Ask when intent is ambiguous.

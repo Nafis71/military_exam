@@ -76,7 +76,7 @@ class AppLogoView extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      semanticLabel: 'Military Examination App Logo',
+      semanticLabel: 'MODC Exam App Logo',
     );
   }
 }

@@ -13,6 +13,9 @@ class AppPrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.expanded = true,
     this.backgroundColor,
+    this.trailingIcon,
+    this.borderRadius,
+    this.boxShadow,
   });
 
   final String label;
@@ -20,6 +23,9 @@ class AppPrimaryButton extends StatelessWidget {
   final bool isLoading;
   final bool expanded;
   final Color? backgroundColor;
+  final IconData? trailingIcon;
+  final double? borderRadius;
+  final List<BoxShadow>? boxShadow;
 
   static final _labelStyle =
       AppTypography.labelLarge.copyWith(color: AppColors.cFFFFFF);
@@ -31,10 +37,13 @@ class AppPrimaryButton extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: backgroundColor ?? AppColors.primary,
         foregroundColor: AppColors.cFFFFFF,
-        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-        disabledForegroundColor: AppColors.cFFFFFF.withValues(alpha: 0.7),
+        disabledBackgroundColor: AppColors.cE5EBE7,
+        disabledForegroundColor: AppColors.c98A39D,
         padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
         textStyle: _labelStyle,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius ?? 30.r),
+        ),
       ),
       child: isLoading
           ? SizedBox(
@@ -45,10 +54,37 @@ class AppPrimaryButton extends StatelessWidget {
                 color: AppColors.cFFFFFF,
               ),
             )
-          : Text(label, style: _labelStyle),
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    style: _labelStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                if (trailingIcon != null) ...[
+                  SizedBox(width: 8.w),
+                  Icon(trailingIcon, color: AppColors.cFFFFFF, size: 24.sp),
+                ],
+              ],
+            ),
     );
 
-    if (!expanded) return button;
-    return SizedBox(width: double.infinity, child: button);
+    Widget result = expanded ? SizedBox(width: double.infinity, child: button) : button;
+    if (boxShadow != null && onPressed != null) {
+      result = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius ?? 30.r),
+          boxShadow: boxShadow,
+        ),
+        child: result,
+      );
+    }
+    return result;
   }
 }

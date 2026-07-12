@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/no_wifi_icon.dart';
 import '../../../../core/widgets/wifi_on_icon.dart';
 import '../controllers/wifi_mode_controller.dart';
+import '../widgets/security_instruction_box.dart';
 import '../widgets/security_status_body.dart';
 
 class WifiModeRequiredPage extends GetView<WifiModeController> {
@@ -24,8 +25,7 @@ class WifiModeRequiredPage extends GetView<WifiModeController> {
             final gateStatus = controller.status.value;
             final isChecking = gateStatus == WifiModeGateStatus.checking;
             final isEnabled = gateStatus == WifiModeGateStatus.enabled;
-
-            final iconColor = isEnabled ? AppColors.success : AppColors.warning;
+            final isDisabled = gateStatus == WifiModeGateStatus.disabled;
 
             return SecurityStatusBody(
               contentKey: gateStatus,
@@ -33,7 +33,12 @@ class WifiModeRequiredPage extends GetView<WifiModeController> {
               message: _messageFor(gateStatus),
               isLoading: isChecking,
               icon: isEnabled ? const WifiOnIcon() : const NoWifiIcon(),
-              iconColor: iconColor,
+              iconColor: isEnabled ? AppColors.primary : AppColors.c000000,
+              footer: isDisabled
+                  ? const SecurityInstructionBox(
+                      instruction: AppStrings.wifiInstruction,
+                    )
+                  : null,
               actionLabel:
                   isEnabled ? AppStrings.continueAction : AppStrings.openSettings,
               onAction: isEnabled
@@ -41,6 +46,8 @@ class WifiModeRequiredPage extends GetView<WifiModeController> {
                   : controller.openSettings,
               secondaryActionLabel: AppStrings.refresh,
               onSecondaryAction: controller.refreshStatus,
+              secondaryActionColor:
+                  isEnabled ? AppColors.primary : AppColors.cBDBDBD,
             );
           }),
         ),

@@ -22,7 +22,14 @@ class ViolationController extends GetxController {
       violation.value?.type.displayMessage ??
       AppStrings.securityViolationLocked;
 
-  String get publishedMessage => AppStrings.examAnswersPublished;
+  String get alertMessage => AppStrings.examCancelledAndRecorded;
+
+  List<String> get bullets => [
+        isBackgroundViolation
+            ? AppStrings.violationRuleBackgroundForbidden
+            : AppStrings.violationRuleGeneric,
+        AppStrings.violationReportedToAuthority,
+      ];
 
   bool get isBackgroundViolation {
     final type = violation.value?.type;

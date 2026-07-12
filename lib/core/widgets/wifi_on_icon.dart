@@ -20,8 +20,8 @@ class WifiOnIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppPngAsset(
       assetPath: PngAsset.wifiOn,
-      width: width ?? 200.w,
-      height: height ?? 200.h,
+      width: width ?? 76.w,
+      height: height ?? 76.h,
       semanticLabel: AppStrings.networkConnectedContinue,
     );
   }

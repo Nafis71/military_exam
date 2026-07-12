@@ -5,7 +5,7 @@ import '../constants/app_strings.dart';
 import '../constants/png_asset.dart';
 import 'app_png_asset.dart';
 
-/// Security shield icon shown on violation and lock screens.
+/// Security shield icon shown on lock / gate screens.
 class ViolationIcon extends StatelessWidget {
   const ViolationIcon({
     super.key,
@@ -19,7 +19,7 @@ class ViolationIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppPngAsset(
-      assetPath: PngAsset.securityShield,
+      assetPath: PngAsset.verifiedUser,
       width: width ?? 200.w,
       height: height ?? 200.h,
       semanticLabel: AppStrings.securityViolation,
