@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_strings.dart';
-import '../constants/png_asset.dart';
-import 'app_png_asset.dart';
+import '../constants/svg_asset.dart';
+import 'app_svg_asset.dart';
 
 /// No-WiFi icon shown on the WiFi mode security gate screen.
 class NoWifiIcon extends StatelessWidget {
@@ -18,11 +18,11 @@ class NoWifiIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPngAsset(
-      assetPath: PngAsset.wifiOff,
+    return AppSvgAsset(
+      assetPath: SvgAsset.securityGateWifiOff,
       width: width ?? 76.w,
-      height: height ?? 76.h,
-      semanticLabel: AppStrings.enableWifi,
+      height: height ?? 76.w,
+      semanticsLabel: AppStrings.enableWifi,
     );
   }
 }

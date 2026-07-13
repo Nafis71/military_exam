@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_strings.dart';
-import '../constants/png_asset.dart';
-import 'app_png_asset.dart';
+import '../constants/svg_asset.dart';
+import 'app_svg_asset.dart';
 
 /// WiFi-on icon shown when connectivity is enabled on the WiFi security gate.
 class WifiOnIcon extends StatelessWidget {
@@ -18,11 +18,11 @@ class WifiOnIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPngAsset(
-      assetPath: PngAsset.wifiOn,
+    return AppSvgAsset(
+      assetPath: SvgAsset.securityGateWifiOn,
       width: width ?? 76.w,
-      height: height ?? 76.h,
-      semanticLabel: AppStrings.networkConnectedContinue,
+      height: height ?? 76.w,
+      semanticsLabel: AppStrings.networkConnectedContinue,
     );
   }
 }

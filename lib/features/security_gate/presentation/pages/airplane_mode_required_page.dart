@@ -31,7 +31,7 @@ class AirplaneModeRequiredPage extends GetView<AirplaneModeController> {
               title: _titleFor(gateStatus),
               message: _messageFor(gateStatus),
               isLoading: isChecking,
-              icon: const AirplaneIcon(),
+              icon: AirplaneIcon(isEnabled: isEnabled),
               iconColor: isEnabled ? AppColors.primary : AppColors.c000000,
               footer: isDisabled
                   ? const SecurityInstructionBox(

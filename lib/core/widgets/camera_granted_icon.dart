@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_strings.dart';
-import '../constants/png_asset.dart';
-import 'app_png_asset.dart';
+import '../constants/svg_asset.dart';
+import 'app_svg_asset.dart';
 
 /// Camera granted icon shown when camera permission is approved.
 class CameraGrantedIcon extends StatelessWidget {
@@ -18,11 +18,11 @@ class CameraGrantedIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPngAsset(
-      assetPath: PngAsset.cameraGranted,
+    return AppSvgAsset(
+      assetPath: SvgAsset.securityGateCameraGranted,
       width: width ?? 76.w,
-      height: height ?? 76.h,
-      semanticLabel: AppStrings.cameraPermissionGrantedTitle,
+      height: height ?? 76.w,
+      semanticsLabel: AppStrings.cameraPermissionGrantedTitle,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/svg_asset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_primary_button.dart';
@@ -24,19 +25,19 @@ class InstructionsPage extends GetView<InstructionsController> {
               controller: controller.pageController,
               onPageChanged: controller.onPageChanged,
               physics: const BouncingScrollPhysics(),
-              children: const [
+              children: [
                 InstructionCard(
                   icon: Icons.flight,
                   title: AppStrings.rule1Title,
                   description: AppStrings.rule1Description,
                 ),
                 InstructionCard(
-                  icon: Icons.screenshot_monitor_outlined,
+                  svgAssetPath: SvgAsset.instructionScreenshotProhibited,
                   title: AppStrings.rule2Title,
                   description: AppStrings.rule2Description,
                 ),
                 InstructionCard(
-                  icon: Icons.lock_outline,
+                  svgAssetPath: SvgAsset.instructionStayInApp,
                   title: AppStrings.rule3Title,
                   description: AppStrings.rule3Description,
                 ),

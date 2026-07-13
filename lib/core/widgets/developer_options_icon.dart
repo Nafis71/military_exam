@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_strings.dart';
-import '../constants/png_asset.dart';
-import 'app_png_asset.dart';
+import '../constants/svg_asset.dart';
+import 'app_svg_asset.dart';
 
 /// Developer options icon shown on the developer mode security gate screen.
 class DeveloperOptionsIcon extends StatelessWidget {
@@ -18,11 +18,11 @@ class DeveloperOptionsIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppPngAsset(
-      assetPath: PngAsset.developerMode,
+    return AppSvgAsset(
+      assetPath: SvgAsset.securityGateDeveloperMode,
       width: width ?? 76.w,
-      height: height ?? 76.h,
-      semanticLabel: AppStrings.disableDeveloperMode,
+      height: height ?? 76.w,
+      semanticsLabel: AppStrings.disableDeveloperMode,
     );
   }
 }

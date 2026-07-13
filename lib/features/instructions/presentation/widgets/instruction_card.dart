@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_svg_asset.dart';
 
 class InstructionCard extends StatelessWidget {
   const InstructionCard({
     super.key,
-    required this.icon,
+    this.icon,
+    this.svgAssetPath,
     required this.title,
     required this.description,
-  });
+  }) : assert(icon != null || svgAssetPath != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAssetPath;
   final String title;
   final String description;
 
@@ -44,7 +47,13 @@ class InstructionCard extends StatelessWidget {
                   color: AppColors.c89D5B2.withValues(alpha: 0.25),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 52.sp, color: AppColors.c0A5943),
+                child: svgAssetPath != null
+                    ? AppSvgAsset(
+                        assetPath: svgAssetPath!,
+                        width: 52.w,
+                        height: 52.w,
+                      )
+                    : Icon(icon!, size: 52.sp, color: AppColors.c0A5943),
               ),
             ),
           ),
