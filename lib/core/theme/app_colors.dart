@@ -44,6 +44,7 @@ abstract final class AppColors {
   static const Color cF5C6CC = Color(0xFFF5C6CC); // Delete button border
   static const Color cC43D4D = Color(0xFFC43D4D); // Delete button text / violation
   static const Color cCE5D6A = Color(0xFFCE5D6A); // Violation shield icon
+  static const Color c9A9A9A = Color(0xFF9A9A9A); // Action bar border
 
   // Semantic aliases
   static const Color primary = c0A5943;

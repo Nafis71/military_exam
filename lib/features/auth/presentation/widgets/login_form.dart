@@ -34,6 +34,7 @@ class LoginForm extends StatelessWidget {
             hint: '••••••••',
             controller: controller.passwordController,
             obscureText: true,
+            showVisibilityToggle: true,
             validator: controller.validatePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => controller.login(),

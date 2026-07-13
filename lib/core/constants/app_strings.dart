@@ -58,7 +58,7 @@ abstract final class AppStrings {
       'Settings → Wi-Fi / Connections → Wi-Fi → Turn On';
   static const cameraInstruction =
       'Settings → Apps → Exam App → Permissions → Camera → Allow';
-  static const airplaneModeActive = 'বিমান মোড সক্রিয়';
+  static const airplaneModeActive = 'এয়ারপ্লেন মোড সক্রিয়';
   static const developerModeInactive = 'ডেভেলপার মোড নিষ্ক্রিয়';
   static const wifiConnected = 'ওয়াই-ফাই সংযুক্ত';
   static const rootedDeviceTitle = 'ডিভাইস ব্যবহার করা যাবে না';
@@ -175,6 +175,7 @@ abstract final class AppStrings {
   static const writtenExamGalleryBannedSubtitle =
       'শুধুমাত্র সরাসরি ক্যামেরা ব্যবহার করুন';
   static const writtenExamPagePrefix = 'পৃষ্ঠা';
+  static const writtenExamAnswerLabel = 'উত্তর:';
   static const answerPage = 'উত্তরের পৃষ্ঠা';
   static const replace = 'প্রতিস্থাপন';
   static const delete = 'মুছুন';
@@ -184,6 +185,10 @@ abstract final class AppStrings {
   static const cameraPermissionRequiredBeforeExam =
       'পরীক্ষা শুরু করতে ক্যামেরার অনুমতি প্রয়োজন।';
   static const noCameraAvailable = 'এই ডিভাইসে কোনো ক্যামেরা নেই।';
+  static const edgeDetectionScanTitle = 'স্ক্যান করুন';
+  static const edgeDetectionCropTitle = 'কাটুন';
+  static const edgeDetectionCropBlackWhiteTitle = 'সাদা-কালো';
+  static const edgeDetectionCropReset = 'রিসেট';
 
   // Image upload status
   static const uploadStatusLocalOnly = 'শুধু ডিভাইসে';
@@ -194,9 +199,10 @@ abstract final class AppStrings {
   // Finish exam
   static const submissionSuccessful = 'জমা সফল';
   static const submissionSuccessfulMessage =
-      'আপনার পরীক্ষার উত্তর সফলভাবে জমা হয়েছে। পরীক্ষা কেন্দ্র থেকে নির্দেশনার জন্য অপেক্ষা করুন।';
+      'আপনার পরীক্ষার উত্তর সফলভাবে জমা হয়েছে। পরীক্ষা কেন্দ্র থেকে নির্দেশনার জন্য অপেক্ষা করুন। এখন আপনি এয়ারপ্লেন মোড বন্ধ করতে পারেন।';
   static const thankYouCloseApp =
       'পরীক্ষা সম্পন্ন করার জন্য ধন্যবাদ। এখন অ্যাপ বন্ধ করতে পারেন।';
+  static const exitApp = 'প্রস্থান';
   static const finishExamNameLabel = 'পরীক্ষার নাম';
   static const finishExamTimeLabel = 'জমার সময়';
   static const finishExamStatusLabel = 'অবস্থা';

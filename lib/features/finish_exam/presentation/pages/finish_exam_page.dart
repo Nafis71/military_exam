@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_primary_button.dart';
 import '../controllers/finish_exam_controller.dart';
 import '../widgets/finish_exam_success_icon.dart';
 import '../widgets/finish_exam_summary_card.dart';
@@ -52,6 +53,11 @@ class FinishExamPage extends GetView<FinishExamController> {
                 FinishExamSummaryCard(
                   examName: controller.examName,
                   submittedAtLabel: controller.submittedAtLabel,
+                ),
+                SizedBox(height: 40.h),
+                AppPrimaryButton(
+                  label: AppStrings.exitApp,
+                  onPressed: controller.exitApp,
                 ),
               ],
             ),

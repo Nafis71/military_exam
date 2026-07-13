@@ -15,12 +15,14 @@ class WrittenExamImageCard extends StatelessWidget {
     required this.pageNumber,
     required this.onReplace,
     required this.onDelete,
+    this.nested = false,
   });
 
   final WrittenAnswerImage image;
   final int pageNumber;
   final VoidCallback onReplace;
   final VoidCallback onDelete;
+  final bool nested;
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +30,15 @@ class WrittenExamImageCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.c0F3D2E.withValues(alpha: 0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: nested
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.c0F3D2E.withValues(alpha: 0.1),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -83,8 +87,12 @@ class WrittenExamImageCard extends StatelessWidget {
           ),
           Container(
             padding: EdgeInsets.fromLTRB(16.w, 13.h, 16.w, 12.h),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.cD9E5DE)),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.c9A9A9A.withValues(alpha: 0.2),
+                ),
+              ),
             ),
             child: Row(
               children: [

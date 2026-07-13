@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -9,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/camera_permission_service.dart';
+import '../../../../core/services/document_edge_detection_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -16,14 +16,11 @@ import '../../../../core/widgets/exam_connectivity_snackbar_listener.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../controllers/written_exam_controller.dart';
-import '../widgets/written_exam_capture_card.dart';
-import '../widgets/written_exam_gallery_banned.dart';
 import '../widgets/written_exam_header.dart';
 import '../widgets/written_exam_image_added_toast.dart';
-import '../widgets/written_exam_image_card.dart';
 import '../widgets/written_exam_info_banner.dart';
+import '../widgets/written_exam_question_card.dart';
 import '../widgets/written_exam_submit_bar.dart';
-import 'camera_capture_page.dart';
 
 class WrittenExamPage extends StatefulWidget {
   const WrittenExamPage({super.key});
@@ -43,8 +40,12 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
     sessionController = Get.find<ExamSessionController>();
   }
 
-  Future<void> _captureImage({String? replaceLocalId}) async {
+  Future<void> _captureImage({
+    required String questionId,
+    String? replaceLocalId,
+  }) async {
     final cameraPermission = Get.find<CameraPermissionService>();
+    final documentScan = Get.find<DocumentEdgeDetectionService>();
     final watchdog = Get.find<SecurityWatchdogService>();
 
     if (!await cameraPermission.isGranted) {
@@ -52,38 +53,20 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
       return;
     }
 
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) {
-      controller.errorMessage.value = AppStrings.noCameraAvailable;
-      return;
-    }
-
-    final camera = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
-    );
-
     watchdog.setCameraCaptureActive(true);
     try {
-      if (!mounted) return;
+      final scannedPath = await documentScan.scanDocument();
 
-      final captured = await Navigator.of(context).push<XFile?>(
-        MaterialPageRoute(
-          builder: (_) => CameraCapturePage(camera: camera),
-          fullscreenDialog: true,
-        ),
-      );
-
-      if (captured != null) {
+      if (scannedPath != null) {
         final dir = await getTemporaryDirectory();
         final filePath =
             '${dir.path}/written_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        await File(captured.path).copy(filePath);
+        await File(scannedPath).copy(filePath);
         final previousCount = controller.images.length;
         if (replaceLocalId != null) {
           await controller.replaceImage(replaceLocalId, filePath);
         } else {
-          await controller.addImage(filePath);
+          await controller.addImage(questionId, filePath);
         }
         if (mounted &&
             controller.errorMessage.value == null &&
@@ -126,7 +109,7 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
         child: Scaffold(
           backgroundColor: AppColors.background,
           body: Obx(() {
-            final hasImages = controller.images.isNotEmpty;
+            final hasAnyImages = controller.hasAnyImages;
 
             return Column(
               children: [
@@ -141,31 +124,32 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                     ),
                     child: Column(
                       children: [
-                        if (!hasImages) ...[
+                        if (!hasAnyImages) ...[
                           const WrittenExamInfoBanner(),
                           SizedBox(height: 16.h),
                         ],
-                        if (hasImages) ...[
-                          ...controller.images.asMap().entries.map(
-                            (entry) => Padding(
-                              padding: EdgeInsets.only(bottom: 16.h),
-                              child: WrittenExamImageCard(
-                                image: entry.value,
-                                pageNumber: entry.key + 1,
-                                onReplace: () => _captureImage(
-                                  replaceLocalId: entry.value.localId,
+                        ...controller.questions.map(
+                          (question) {
+                            final questionImages =
+                                controller.imagesForQuestion(question.id);
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 20.h),
+                              child: WrittenExamQuestionCard(
+                                question: question,
+                                images: questionImages,
+                                onAddImage: () => _captureImage(
+                                  questionId: question.id,
                                 ),
-                                onDelete: () =>
-                                    controller.deleteImage(entry.value.localId),
+                                onReplace: (localId) => _captureImage(
+                                  questionId: question.id,
+                                  replaceLocalId: localId,
+                                ),
+                                onDelete: (localId) =>
+                                    controller.deleteImage(localId),
                               ),
-                            ),
-                          ),
-                        ],
-                        WrittenExamCaptureCard(onTap: _captureImage),
-                        if (!hasImages) ...[
-                          SizedBox(height: 16.h),
-                          const WrittenExamGalleryBanned(),
-                        ],
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -174,7 +158,7 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                   onSubmit: _submitWritten,
                   isLoading: controller.submissionStatus.value ==
                       SubmissionStatus.saving,
-                  canSubmit: hasImages,
+                  canSubmit: controller.canSubmit,
                   errorMessage: controller.errorMessage.value,
                 ),
               ],

@@ -3,13 +3,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-class LoginTextField extends StatelessWidget {
+class LoginTextField extends StatefulWidget {
   const LoginTextField({
     super.key,
     required this.label,
     required this.hint,
     required this.controller,
     this.obscureText = false,
+    this.showVisibilityToggle = false,
     this.validator,
     this.textInputAction,
     this.onFieldSubmitted,
@@ -19,9 +20,23 @@ class LoginTextField extends StatelessWidget {
   final String hint;
   final TextEditingController controller;
   final bool obscureText;
+  final bool showVisibilityToggle;
   final FormFieldValidator<String>? validator;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
+
+  @override
+  State<LoginTextField> createState() => _LoginTextFieldState();
+}
+
+class _LoginTextFieldState extends State<LoginTextField> {
+  late bool _isObscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _isObscured = widget.obscureText;
+  }
 
   static const _inputBorderRadius = BorderRadius.all(Radius.circular(5));
 
@@ -45,13 +60,17 @@ class LoginTextField extends StatelessWidget {
     borderSide: BorderSide(color: AppColors.error, width: 1.5),
   );
 
+  void _toggleVisibility() {
+    setState(() => _isObscured = !_isObscured);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: TextStyle(
             fontFamily: 'HindSiliguri',
             fontSize: 14.sp,
@@ -62,11 +81,11 @@ class LoginTextField extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          validator: validator,
-          textInputAction: textInputAction,
-          onFieldSubmitted: onFieldSubmitted,
+          controller: widget.controller,
+          obscureText: widget.showVisibilityToggle ? _isObscured : widget.obscureText,
+          validator: widget.validator,
+          textInputAction: widget.textInputAction,
+          onFieldSubmitted: widget.onFieldSubmitted,
           style: TextStyle(
             fontFamily: 'HindSiliguri',
             fontSize: 16.sp,
@@ -74,7 +93,7 @@ class LoginTextField extends StatelessWidget {
             color: AppColors.c17231D,
           ),
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: widget.hint,
             hintStyle: TextStyle(
               fontFamily: 'HindSiliguri',
               fontSize: 16.sp,
@@ -92,6 +111,16 @@ class LoginTextField extends StatelessWidget {
               horizontal: 17.w,
               vertical: 15.h,
             ),
+            suffixIcon: widget.showVisibilityToggle
+                ? IconButton(
+                    onPressed: _toggleVisibility,
+                    icon: Icon(
+                      _isObscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.c66736C,
+                      size: 22.sp,
+                    ),
+                  )
+                : null,
           ),
         ),
       ],

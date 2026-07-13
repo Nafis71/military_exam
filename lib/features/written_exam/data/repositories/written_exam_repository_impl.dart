@@ -13,6 +13,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
+import '../../domain/constants/written_exam_demo_questions.dart';
 import '../../domain/repositories/written_exam_repository.dart';
 
 class WrittenExamRepositoryImpl implements WrittenExamRepository {
@@ -25,7 +26,10 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
   static const _imagesKey = 'written_exam_images';
 
   @override
-  Future<Result<WrittenAnswerImage>> addImage(String localPath) async {
+  Future<Result<WrittenAnswerImage>> addImage(
+    String localPath,
+    String questionId,
+  ) async {
     final imagesResult = await getImages();
     if (imagesResult is ErrorResult<List<WrittenAnswerImage>>) {
       return ErrorResult(imagesResult.failure);
@@ -34,6 +38,7 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     final image = WrittenAnswerImage(
       localId: _uuid.v4(),
       localPath: localPath,
+      questionId: questionId,
     );
     final updated = <WrittenAnswerImage>[...(imagesResult.dataOrNull ?? []), image];
     await _persistImages(updated);
@@ -59,6 +64,7 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     images[index] = WrittenAnswerImage(
       localId: localId,
       localPath: newLocalPath,
+      questionId: images[index].questionId,
       remoteId: null,
       uploadStatus: ImageUploadStatus.localOnly,
       uploadProgress: 0,
@@ -222,6 +228,8 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
               (e) => WrittenAnswerImage(
                 localId: e['local_id'] as String,
                 localPath: e['local_path'] as String,
+                questionId: e['question_id'] as String? ??
+                    WrittenExamDemoQuestions.question1Id,
                 remoteId: e['remote_id'] as String?,
                 uploadStatus: ImageUploadStatus.values.byName(
                   e['upload_status'] as String? ?? 'localOnly',
@@ -246,6 +254,7 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
             (e) => {
               'local_id': e.localId,
               'local_path': e.localPath,
+              'question_id': e.questionId,
               'remote_id': e.remoteId,
               'upload_status': e.uploadStatus.name,
               'upload_progress': e.uploadProgress,

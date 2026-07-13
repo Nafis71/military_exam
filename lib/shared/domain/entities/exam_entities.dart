@@ -146,10 +146,26 @@ class McqAnswer extends Equatable {
   List<Object?> get props => [questionId, selectedOptionId, isFinal];
 }
 
+class WrittenQuestion extends Equatable {
+  const WrittenQuestion({
+    required this.id,
+    required this.index,
+    required this.text,
+  });
+
+  final String id;
+  final int index;
+  final String text;
+
+  @override
+  List<Object?> get props => [id, index, text];
+}
+
 class WrittenAnswerImage extends Equatable {
   const WrittenAnswerImage({
     required this.localId,
     required this.localPath,
+    required this.questionId,
     this.remoteId,
     this.uploadStatus = ImageUploadStatus.localOnly,
     this.uploadProgress = 0,
@@ -157,11 +173,13 @@ class WrittenAnswerImage extends Equatable {
 
   final String localId;
   final String localPath;
+  final String questionId;
   final String? remoteId;
   final ImageUploadStatus uploadStatus;
   final double uploadProgress;
 
   WrittenAnswerImage copyWith({
+    String? questionId,
     String? remoteId,
     ImageUploadStatus? uploadStatus,
     double? uploadProgress,
@@ -169,6 +187,7 @@ class WrittenAnswerImage extends Equatable {
     return WrittenAnswerImage(
       localId: localId,
       localPath: localPath,
+      questionId: questionId ?? this.questionId,
       remoteId: remoteId ?? this.remoteId,
       uploadStatus: uploadStatus ?? this.uploadStatus,
       uploadProgress: uploadProgress ?? this.uploadProgress,
@@ -177,7 +196,7 @@ class WrittenAnswerImage extends Equatable {
 
   @override
   List<Object?> get props =>
-      [localId, localPath, remoteId, uploadStatus, uploadProgress];
+      [localId, localPath, questionId, remoteId, uploadStatus, uploadProgress];
 }
 
 class UploadProgress extends Equatable {

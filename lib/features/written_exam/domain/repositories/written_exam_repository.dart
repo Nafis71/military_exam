@@ -2,7 +2,10 @@ import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 
 abstract class WrittenExamRepository {
-  Future<Result<WrittenAnswerImage>> addImage(String localPath);
+  Future<Result<WrittenAnswerImage>> addImage(
+    String localPath,
+    String questionId,
+  );
 
   Future<Result<WrittenAnswerImage>> replaceImage(
     String localId,

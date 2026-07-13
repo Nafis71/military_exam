@@ -8,6 +8,7 @@ import '../../core/logging/app_logger.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/dio_factory.dart';
 import '../../core/services/camera_permission_service.dart';
+import '../../core/services/document_edge_detection_service.dart';
 import '../../core/services/exam_connectivity_alert_service.dart';
 import '../../core/services/platform_settings_service.dart';
 import '../../core/services/screen_security_service.dart';
@@ -123,6 +124,12 @@ class DependencyRegistry {
 
     final cameraPermissionService = CameraPermissionService();
     Get.put<CameraPermissionService>(cameraPermissionService, permanent: true);
+
+    final documentEdgeDetectionService = DocumentEdgeDetectionService();
+    Get.put<DocumentEdgeDetectionService>(
+      documentEdgeDetectionService,
+      permanent: true,
+    );
 
     final securityLocal = SecurityLocalDataSource(platformSettings);
     final securityRepo = SecurityRepositoryImpl(securityLocal);

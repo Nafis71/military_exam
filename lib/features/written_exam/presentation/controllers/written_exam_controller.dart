@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
+import '../../domain/constants/written_exam_demo_questions.dart';
 import '../../domain/usecases/add_written_image_usecase.dart';
 import '../../domain/usecases/delete_written_image_usecase.dart';
 import '../../domain/usecases/replace_written_image_usecase.dart';
@@ -33,8 +34,18 @@ class WrittenExamController extends GetxController {
   final submissionReceipt = Rxn<SubmissionReceipt>();
   final errorMessage = RxnString();
 
-  Future<void> addImage(String localPath) async {
-    final result = await _addWrittenImageUseCase(localPath);
+  List<WrittenQuestion> get questions => WrittenExamDemoQuestions.all;
+
+  bool get hasAnyImages => images.isNotEmpty;
+
+  bool get canSubmit =>
+      questions.every((q) => imagesForQuestion(q.id).isNotEmpty);
+
+  List<WrittenAnswerImage> imagesForQuestion(String questionId) =>
+      images.where((img) => img.questionId == questionId).toList();
+
+  Future<void> addImage(String questionId, String localPath) async {
+    final result = await _addWrittenImageUseCase(localPath, questionId);
     _handleImageResult(result);
   }
 

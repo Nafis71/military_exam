@@ -19,7 +19,6 @@ dependencies:
   connectivity_plus: ^7.2.0
   root_checker_plus: 1.0.0
   pretty_dio_logger: ^1.4.0
-  camera: ^0.11.1
   permission_handler: ^12.0.0+1
   flutter_secure_storage: ^9.2.4
   path_provider: ^2.1.5
@@ -30,6 +29,9 @@ dependencies:
   screen_security: ^1.1.0
   app_settings: ^7.0.0
   overlay_support: ^2.1.0
+  flutter_edge_detection:
+    path: packages/flutter_edge_detection
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

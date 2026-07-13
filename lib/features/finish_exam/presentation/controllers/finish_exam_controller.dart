@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
@@ -71,5 +72,9 @@ class FinishExamController extends GetxController {
     } catch (e, st) {
       _logger.error('finish exam cleanup failed', error: e, stackTrace: st);
     }
+  }
+
+  void exitApp() {
+    SystemNavigator.pop();
   }
 }

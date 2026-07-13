@@ -7,6 +7,9 @@ class AddWrittenImageUseCase {
 
   final WrittenExamRepository _repository;
 
-  Future<Result<WrittenAnswerImage>> call(String localPath) =>
-      _repository.addImage(localPath);
+  Future<Result<WrittenAnswerImage>> call(
+    String localPath,
+    String questionId,
+  ) =>
+      _repository.addImage(localPath, questionId);
 }
