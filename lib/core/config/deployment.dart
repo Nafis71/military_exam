@@ -33,4 +33,10 @@ class Deployment {
 
   bool get isProduction => mode == BuildMode.production;
   bool get isDevelopment => mode == BuildMode.development;
+
+  /// When true, sideloaded / unknown install sources are allowed for RASP.
+  bool get allowSideload => environment.allowSideload;
+
+  /// When true, strict exam integrity checks (bootloader, custom ROM, spoofing).
+  bool get strictExamIntegrity => environment.strictExamIntegrity;
 }

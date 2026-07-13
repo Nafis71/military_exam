@@ -312,6 +312,7 @@ class LoginBinding extends Bindings {
         Get.find<CameraPermissionService>(),
         Get.find<CheckAirplaneModeUseCase>(),
         Get.find<CheckConnectivityUseCase>(),
+        Get.find<CheckDeviceIntegrityUseCase>(),
         Get.find<AppLifecycleService>(),
       ),
     );

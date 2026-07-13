@@ -4,11 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/routing/exam_route_utils.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/camera_permission_service.dart';
+import '../../../../core/services/security_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/validators.dart';
@@ -17,6 +19,7 @@ import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/domain/usecases/start_exam_session_usecase.dart';
 import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
+import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
 import '../../../security_gate/presentation/routes/security_routes.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -31,6 +34,7 @@ class LoginController extends GetxController {
     this._cameraPermissionService,
     this._checkAirplaneMode,
     this._checkConnectivity,
+    this._checkDeviceIntegrity,
     this._lifecycleService,
   );
 
@@ -41,6 +45,7 @@ class LoginController extends GetxController {
   final CameraPermissionService _cameraPermissionService;
   final CheckAirplaneModeUseCase _checkAirplaneMode;
   final CheckConnectivityUseCase _checkConnectivity;
+  final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
   final AppLifecycleService _lifecycleService;
 
   final examineeIdController = TextEditingController();
@@ -107,6 +112,14 @@ class LoginController extends GetxController {
   Future<void> _verifySecurityRequirements() async {
     if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
 
+    final integrityResult = await _checkDeviceIntegrity();
+    final deviceIntegrity = integrityResult.dataOrNull;
+    if (deviceIntegrity != null &&
+        _isDeveloperModeOnlyIssue(deviceIntegrity)) {
+      _redirectToDeveloperMode();
+      return;
+    }
+
     final airplaneResult = await _checkAirplaneMode();
     final airplane = airplaneResult.dataOrNull;
     if (airplane != null && !airplane.isEnabled) {
@@ -125,6 +138,21 @@ class LoginController extends GetxController {
     if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
     _redirecting = true;
     Get.offNamed(SecurityRoutes.airplaneModeRequired);
+  }
+
+  void _redirectToDeveloperMode() {
+    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
+    _redirecting = true;
+    Get.offNamed(SecurityRoutes.developerModeRequired);
+  }
+
+  bool _isDeveloperModeOnlyIssue(DeviceIntegrityStatus deviceIntegrity) {
+    final rasp = SecurityService.instance.lastStatus;
+    if (rasp == null) return deviceIntegrity.isDeveloperModeEnabled;
+    return isDeveloperModeOnlyIssue(
+      status: rasp,
+      blockEmulator: Deployment.instance.isProduction,
+    );
   }
 
   Future<void> _redirectToWifiModeIfAirplaneEnabled() async {

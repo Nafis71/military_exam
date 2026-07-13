@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import 'app/app.dart';
 import 'app/bindings/dependency_registry.dart';
+import 'app/device_compromised_app.dart';
+import 'core/config/deployment.dart';
+import 'core/services/security_service.dart';
 import 'core/services/system_ui_service.dart';
 
 Future<void> main() async {
@@ -12,6 +15,19 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  Deployment.init(demo: true);
+
+  final securityStatus = await SecurityService.instance.initialize();
+  if (securityStatus.hasCriticalThreat) {
+    runApp(
+      DeviceCompromisedApp(
+        reason: securityStatus.primaryBlockReason ??
+            securityStatus.failureReason,
+      ),
+    );
+    return;
+  }
 
   await DependencyRegistry.init(demo: true);
   // Offline demo (no API calls): await DependencyRegistry.init(demo: true);

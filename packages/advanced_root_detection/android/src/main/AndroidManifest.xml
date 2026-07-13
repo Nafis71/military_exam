@@ -1,0 +1,41 @@
+<manifest package="com.advanced_root_detection"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Android 11 (API 30+) Package Visibility: enumerate every package name that
+        RootDetector.isPackageInstalled() queries so PackageManager returns correct
+        results without the broad QUERY_ALL_PACKAGES permission.
+    -->
+    <queries>
+        <package android:name="com.noshufou.android.su" />
+        <package android:name="com.noshufou.android.su.elite" />
+        <package android:name="eu.chainfire.supersu" />
+        <package android:name="com.koushikdutta.superuser" />
+        <package android:name="com.thirdparty.superuser" />
+        <package android:name="com.yellowes.su" />
+        <package android:name="com.topjohnwu.magisk" />
+        <package android:name="com.kingroot.kinguser" />
+        <package android:name="com.kingo.root" />
+        <package android:name="com.smedialink.oneclickroot" />
+        <package android:name="com.zhiqupk.root.global" />
+        <package android:name="com.alephzain.framaroot" />
+        <package android:name="com.koushikdutta.rommanager" />
+        <package android:name="com.dimonvideo.luckypatcher" />
+        <package android:name="com.chelpus.lackypatch" />
+        <package android:name="com.ramdroid.appquarantine" />
+        <package android:name="com.ramdroid.appquarantinepro" />
+
+        <!-- Xposed / LSPosed framework managers (queried by HookDetector) -->
+        <package android:name="de.robv.android.xposed.installer" />
+        <package android:name="org.meowcat.edxposed.manager" />
+        <package android:name="com.android.xposed" />
+        <package android:name="org.lsposed.manager" />
+    </queries>
+
+    <application>
+        <service
+            android:name=".IsolatedRootService"
+            android:exported="false"
+            android:isolatedProcess="true" />
+    </application>
+</manifest>

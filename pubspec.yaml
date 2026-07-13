@@ -17,7 +17,6 @@ dependencies:
   flutter_svg: ^2.3.0
   airplane_mode_checker: ^3.0.0
   connectivity_plus: ^7.2.0
-  root_checker_plus: 1.0.0
   pretty_dio_logger: ^1.4.0
   permission_handler: ^12.0.0+1
   flutter_secure_storage: ^9.2.4
@@ -32,6 +31,8 @@ dependencies:
   flutter_edge_detection:
     path: packages/flutter_edge_detection
   path: ^1.9.1
+  advanced_root_detection:
+    path: packages/advanced_root_detection
 
 dev_dependencies:
   flutter_test:

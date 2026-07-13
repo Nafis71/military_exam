@@ -4,8 +4,10 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/services/security_service.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
@@ -74,12 +76,26 @@ class DeveloperModeController extends GetxController {
   }
 
   void _updateStatus(DeviceIntegrityStatus integrity) {
-    if (integrity.isRooted || integrity.isJailbroken) {
+    if (integrity.checkFailed ||
+        integrity.isRooted ||
+        integrity.isJailbroken ||
+        integrity.isHooked ||
+        (integrity.isDebuggerAttached && !integrity.isDeveloperModeEnabled) ||
+        integrity.hasTestKeys ||
+        (integrity.isIntegrityViolated && !integrity.isDeveloperModeEnabled) ||
+        (integrity.isEmulator && Deployment.instance.isProduction) ||
+        integrity.isEnvironmentSpoofed ||
+        integrity.isCustomRom) {
       status.value = DeveloperModeGateStatus.deviceCompromised;
       _logger.error(
-        integrity.isRooted
-            ? ViolationType.rootedDevice.displayMessage
-            : ViolationType.jailbreakDetected.displayMessage,
+        integrity.isEnvironmentSpoofed || integrity.isCustomRom
+            ? SecurityService.instance.lastStatus?.primaryBlockReason ??
+                AppStrings.deviceCompromisedGeneric
+            : integrity.isRooted
+                ? ViolationType.rootedDevice.displayMessage
+                : integrity.isJailbroken
+                    ? ViolationType.jailbreakDetected.displayMessage
+                    : AppStrings.deviceCompromisedGeneric,
       );
       return;
     }

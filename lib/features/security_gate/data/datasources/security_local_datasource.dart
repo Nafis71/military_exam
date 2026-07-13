@@ -1,10 +1,9 @@
-import 'dart:io' show Platform;
-
 import 'package:airplane_mode_checker/airplane_mode_checker.dart' as amc;
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:root_checker_plus/root_checker_plus.dart';
 
 import '../../../../core/services/platform_settings_service.dart';
+import '../../../../core/services/security_service.dart';
+import '../../../../core/config/deployment.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 
 class SecurityLocalDataSource {
@@ -17,21 +16,32 @@ class SecurityLocalDataSource {
       amc.AirplaneModeChecker.instance;
 
   Future<DeviceIntegrityStatus> checkDeviceIntegrity() async {
-    final isRooted = Platform.isAndroid
-        ? (await RootCheckerPlus.isRootChecker()) ?? false
-        : false;
-    final isJailbroken = Platform.isIOS
-        ? (await RootCheckerPlus.isJailbreak()) ?? false
-        : false;
-    final isDeveloperMode = Platform.isAndroid
-        ? (await RootCheckerPlus.isDeveloperMode()) ?? false
-        : false;
+    final rasp = await SecurityService.instance.recheck();
+    final isDeveloperMode = detectDeveloperMode(rasp.detectedThreats);
+    final blockEmulator = Deployment.instance.isProduction;
+    final isDeveloperModeOnly = isDeveloperModeOnlyIssue(
+      status: rasp,
+      blockEmulator: blockEmulator,
+    );
+    final isCompromised = !isDeveloperModeOnly &&
+        (rasp.hasCriticalThreat ||
+            rasp.posture == SecurityPosture.checkFailed ||
+            rasp.isEnvironmentSpoofed ||
+            (Deployment.instance.strictExamIntegrity && rasp.isCustomRom));
 
     return DeviceIntegrityStatus(
-      isRooted: isRooted,
-      isJailbroken: isJailbroken,
+      isRooted: rasp.isRooted,
+      isJailbroken: rasp.isJailbroken,
       isDeveloperModeEnabled: isDeveloperMode,
-      isCompromised: isRooted || isJailbroken || isDeveloperMode,
+      isHooked: rasp.isHooked,
+      isDebuggerAttached: rasp.isDebuggerAttached,
+      isEmulator: rasp.isEmulator,
+      hasTestKeys: rasp.hasTestKeys,
+      isIntegrityViolated: rasp.isIntegrityViolated,
+      isEnvironmentSpoofed: rasp.isEnvironmentSpoofed,
+      isCustomRom: rasp.isCustomRom,
+      checkFailed: rasp.posture == SecurityPosture.checkFailed,
+      isCompromised: isCompromised,
     );
   }
 

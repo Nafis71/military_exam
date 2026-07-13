@@ -11,6 +11,8 @@ class Environment {
     required this.enableNetworkLogs,
     required this.enableMockExamData,
     required this.isDemo,
+    required this.allowSideload,
+    required this.strictExamIntegrity,
     required this.securityPollingIntervalSeconds,
     required this.examAutoSubmitTimeoutSeconds,
   });
@@ -25,6 +27,13 @@ class Environment {
 
   /// When true, no API calls are made; all data is served from on-device storage.
   final bool isDemo;
+
+  /// When true, APK sideload / unknown install sources are allowed for RASP.
+  final bool allowSideload;
+
+  /// When true, block unlocked bootloader, custom ROM, and spoofing signals.
+  /// Enabled for all build modes; sideload policy is separate via [allowSideload].
+  final bool strictExamIntegrity;
 
   final int securityPollingIntervalSeconds;
   final int examAutoSubmitTimeoutSeconds;
@@ -41,6 +50,8 @@ class Environment {
           enableNetworkLogs: true,
           enableMockExamData: true,
           isDemo: false,
+          allowSideload: true,
+          strictExamIntegrity: true,
           securityPollingIntervalSeconds: 3,
           examAutoSubmitTimeoutSeconds: 30,
         );
@@ -54,6 +65,8 @@ class Environment {
           enableNetworkLogs: true,
           enableMockExamData: false,
           isDemo: false,
+          allowSideload: true,
+          strictExamIntegrity: true,
           securityPollingIntervalSeconds: 3,
           examAutoSubmitTimeoutSeconds: 30,
         );
@@ -67,6 +80,8 @@ class Environment {
           enableNetworkLogs: false,
           enableMockExamData: false,
           isDemo: false,
+          allowSideload: false,
+          strictExamIntegrity: true,
           securityPollingIntervalSeconds: 3,
           examAutoSubmitTimeoutSeconds: 15,
         );
@@ -80,6 +95,8 @@ class Environment {
           enableNetworkLogs: false,
           enableMockExamData: true,
           isDemo: true,
+          allowSideload: true,
+          strictExamIntegrity: true,
           securityPollingIntervalSeconds: 3,
           examAutoSubmitTimeoutSeconds: 30,
         );

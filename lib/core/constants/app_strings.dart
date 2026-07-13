@@ -64,6 +64,19 @@ abstract final class AppStrings {
   static const rootedDeviceTitle = 'ডিভাইস ব্যবহার করা যাবে না';
   static const rootedDeviceMessage =
       'আপনার ডিভাইসটি রুট করা বা জেলব্রেক করা হয়েছে। নিরাপত্তার কারণে এই ডিভাইস দিয়ে পরীক্ষায় অংশগ্রহণ করা সম্ভব নয়।';
+  static const deviceCompromisedGeneric =
+      'ডিভাইসের নিরাপত্তা লঙ্ঘন শনাক্ত হয়েছে। নিরাপত্তার কারণে এই ডিভাইস দিয়ে পরীক্ষায় অংশগ্রহণ করা সম্ভব নয়।';
+  static const raspRootClean = 'ডিভাইস রুট/জেলব্রেক মুক্ত';
+  static const raspNoHooks = 'রানটাইম ম্যানিপুলেশন নেই';
+  static const raspNoDebugger = 'ডিবাগার সংযুক্ত নেই';
+  static const raspNotEmulator = 'এমুলেটর নয়';
+  static const raspNoTestKeys = 'সিস্টেম সিগনেচার বৈধ';
+  static const runtimeManipulationDetected =
+      'রানটাইম ম্যানিপুলেশন (হুকিং ফ্রেমওয়ার্ক) শনাক্ত হয়েছে।';
+  static const emulatorDetected = 'এমুলেটর বা সিমুলেটর শনাক্ত হয়েছে।';
+  static const debuggerAttachedDetected = 'ডিবাগার সংযুক্ত শনাক্ত হয়েছে।';
+  static const testKeysDetected = 'কাস্টম ROM সিস্টেম সিগনেচার শনাক্ত হয়েছে।';
+  static const appIntegrityViolated = 'অ্যাপ অখণ্ডতা লঙ্ঘন শনাক্ত হয়েছে।';
 
   // Security gate
   static const verifyingDeviceSecurity = 'ডিভাইসের নিরাপত্তা যাচাই হচ্ছে';

@@ -16,9 +16,7 @@ class SecurityRepositoryImpl implements SecurityRepository {
       final status = await _localDataSource.checkDeviceIntegrity();
       return Success(status);
     } catch (error) {
-      return ErrorResult(
-        SecurityFailure('${AppStrings.deviceIntegrityCheckFailed}: $error'),
-      );
+      return Success(DeviceIntegrityStatus.checkFailed());
     }
   }
 

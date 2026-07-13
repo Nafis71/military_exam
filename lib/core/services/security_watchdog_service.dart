@@ -14,6 +14,7 @@ import '../logging/log_event.dart';
 import 'app_lifecycle_service.dart';
 import 'exam_connectivity_alert_service.dart';
 import 'screen_security_service.dart';
+import 'security_service.dart';
 
 class SecurityPolicy {
   const SecurityPolicy({
@@ -194,6 +195,8 @@ class SecurityWatchdogService {
   void _startAirplaneModePolling(Duration interval) {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(interval, (_) async {
+      await _verifyDeviceIntegrity();
+
       final airplaneResult = await _repository.checkAirplaneMode();
       final airplane = airplaneResult.dataOrNull;
       if (airplane != null && !airplane.isEnabled) {
@@ -221,6 +224,7 @@ class SecurityWatchdogService {
           _scheduleLifecycleViolation(ViolationType.appMinimized);
         case AppLifecycleState.resumed:
           _cancelLifecycleGraceTimer();
+          unawaited(_verifyDeviceIntegrity());
         case AppLifecycleState.inactive:
         case AppLifecycleState.detached:
           break;
@@ -262,6 +266,16 @@ class SecurityWatchdogService {
 
   bool _isActiveExamPhase() =>
       _phase == ExamPhase.mcq || _phase == ExamPhase.written;
+
+  Future<void> _verifyDeviceIntegrity() async {
+    if (!_shouldMonitorCurrentPhase()) return;
+    if (_violationHandled) return;
+
+    final isSafe = await SecurityService.instance.verifyBeforeSensitiveOp();
+    if (!isSafe) {
+      await _onViolation(ViolationType.rootedDevice);
+    }
+  }
 
   Future<void> _onViolation(ViolationType type) async {
     if (_violationHandled || !_shouldMonitorCurrentPhase()) return;

@@ -234,17 +234,70 @@ class DeviceIntegrityStatus extends Equatable {
     required this.isRooted,
     required this.isJailbroken,
     required this.isDeveloperModeEnabled,
+    required this.isHooked,
+    required this.isDebuggerAttached,
+    required this.isEmulator,
+    required this.hasTestKeys,
+    required this.isIntegrityViolated,
+    required this.isEnvironmentSpoofed,
+    required this.isCustomRom,
+    required this.checkFailed,
     required this.isCompromised,
   });
 
   final bool isRooted;
   final bool isJailbroken;
   final bool isDeveloperModeEnabled;
+  final bool isHooked;
+  final bool isDebuggerAttached;
+  final bool isEmulator;
+  final bool hasTestKeys;
+  final bool isIntegrityViolated;
+  final bool isEnvironmentSpoofed;
+  final bool isCustomRom;
+  final bool checkFailed;
   final bool isCompromised;
 
+  bool get isRaspClean =>
+      !isRooted &&
+      !isJailbroken &&
+      !isHooked &&
+      !isDebuggerAttached &&
+      !isEmulator &&
+      !hasTestKeys &&
+      !isIntegrityViolated &&
+      !checkFailed;
+
+  factory DeviceIntegrityStatus.checkFailed() => const DeviceIntegrityStatus(
+        isRooted: true,
+        isJailbroken: true,
+        isDeveloperModeEnabled: true,
+        isHooked: true,
+        isDebuggerAttached: true,
+        isEmulator: true,
+        hasTestKeys: true,
+        isIntegrityViolated: true,
+        isEnvironmentSpoofed: true,
+        isCustomRom: true,
+        checkFailed: true,
+        isCompromised: true,
+      );
+
   @override
-  List<Object?> get props =>
-      [isRooted, isJailbroken, isDeveloperModeEnabled, isCompromised];
+  List<Object?> get props => [
+        isRooted,
+        isJailbroken,
+        isDeveloperModeEnabled,
+        isHooked,
+        isDebuggerAttached,
+        isEmulator,
+        hasTestKeys,
+        isIntegrityViolated,
+        isEnvironmentSpoofed,
+        isCustomRom,
+        checkFailed,
+        isCompromised,
+      ];
 }
 
 class AirplaneModeStatus extends Equatable {
