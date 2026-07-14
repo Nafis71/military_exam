@@ -103,7 +103,7 @@ const char* const LibScanCtx::KEYWORDS[] = {
 };
 
 static int phdrCallback(struct dl_phdr_info* info, size_t /*size*/, void* data) {
-    if (!info->dlpi_name || info->dlpi_name[0] == '\0') return 0;
+    if (!info || !info->dlpi_name || info->dlpi_name[0] == '\0') return 0;
     std::string name(info->dlpi_name);
     std::string lower = name;
     for (char& c : lower) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));

@@ -18,16 +18,16 @@ class SecurityLocalDataSource {
   Future<DeviceIntegrityStatus> checkDeviceIntegrity() async {
     final rasp = await SecurityService.instance.recheck();
     final isDeveloperMode = detectDeveloperMode(rasp.detectedThreats);
-    final blockEmulator = Deployment.instance.isProduction;
+    final strictExamIntegrity = Deployment.instance.strictExamIntegrity;
     final isDeveloperModeOnly = isDeveloperModeOnlyIssue(
       status: rasp,
-      blockEmulator: blockEmulator,
+      strictExamIntegrity: strictExamIntegrity,
     );
     final isCompromised = !isDeveloperModeOnly &&
-        (rasp.hasCriticalThreat ||
-            rasp.posture == SecurityPosture.checkFailed ||
-            rasp.isEnvironmentSpoofed ||
-            (Deployment.instance.strictExamIntegrity && rasp.isCustomRom));
+        (rasp.isRooted ||
+            rasp.isJailbroken ||
+            (strictExamIntegrity && rasp.isCustomRom) ||
+            rasp.posture == SecurityPosture.checkFailed);
 
     return DeviceIntegrityStatus(
       isRooted: rasp.isRooted,

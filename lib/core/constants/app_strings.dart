@@ -67,6 +67,7 @@ abstract final class AppStrings {
   static const deviceCompromisedGeneric =
       'ডিভাইসের নিরাপত্তা লঙ্ঘন শনাক্ত হয়েছে। নিরাপত্তার কারণে এই ডিভাইস দিয়ে পরীক্ষায় অংশগ্রহণ করা সম্ভব নয়।';
   static const raspRootClean = 'ডিভাইস রুট/জেলব্রেক মুক্ত';
+  static const raspNoCustomRom = 'কাস্টম ROM নেই';
   static const raspNoHooks = 'রানটাইম ম্যানিপুলেশন নেই';
   static const raspNoDebugger = 'ডিবাগার সংযুক্ত নেই';
   static const raspNotEmulator = 'এমুলেটর নয়';

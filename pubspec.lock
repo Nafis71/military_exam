@@ -7,7 +7,7 @@ packages:
       path: "packages/advanced_root_detection"
       relative: true
     source: path
-    version: "0.0.4"
+    version: "0.0.4+1"
   airplane_mode_checker:
     dependency: "direct main"
     description:

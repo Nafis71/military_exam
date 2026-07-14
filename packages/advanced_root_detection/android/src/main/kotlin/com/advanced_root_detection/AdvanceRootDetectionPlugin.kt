@@ -119,7 +119,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
                 Executors.newSingleThreadExecutor().execute {
                     try {
                         val threats = collectAllThreats(context, config)
-                        val safe = threats.none { it.severity == "critical" || it.severity == "high" }
+                        val safe = !hasBlockingThreats(threats, config)
                         mainHandler.post { result.success(safe) }
                     } catch (e: Exception) {
                         mainHandler.post { result.success(false) }
@@ -173,6 +173,24 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
     // ── Detection orchestration ───────────────────────────────────────────────
 
     private fun collectAllThreats(ctx: Context, config: DetectionConfig): List<ThreatResult> {
+        if (config.isEssentialScope) {
+            return collectEssentialThreats(ctx, config)
+        }
+        return collectFullThreats(ctx, config)
+    }
+
+    private fun collectEssentialThreats(
+        ctx: Context,
+        config: DetectionConfig,
+    ): List<ThreatResult> {
+        val threats = mutableListOf<ThreatResult>()
+        threats += RootDetector(ctx).detect()
+        threats += CustomRomDetector(config).detect()
+        threats += SpoofingDetector(ctx, config).detectDeveloperModeOnly()
+        return threats
+    }
+
+    private fun collectFullThreats(ctx: Context, config: DetectionConfig): List<ThreatResult> {
         val threats = mutableListOf<ThreatResult>()
 
         // Root / privileged access
@@ -202,13 +220,12 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
         // Hardware Keystore Bootloader Attestation
         threats += BootloaderAttestationDetector().detect()
 
-        // NDK native checks
-        threats += NativeDetector.runNativeChecks()
-
-        // Execute IPC checks to bypass DenyList/MagiskHide!
+        // Isolated-process checks (native + root) bypass DenyList/MagiskHide.
+        // Prefer isolated native checks; fall back to main-process native only
+        // when the isolated service is unavailable (isolated crash won't kill app).
+        var isolatedNativeMerged = false
         isolatedService?.let { service ->
             try {
-                // Pass empty config or full config JSON if needed
                 val jsonString = service.evaluateThreats("{}")
                 val array = JSONArray(jsonString)
                 for (i in 0 until array.length()) {
@@ -217,7 +234,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
                     val desc = obj.optString("description", "")
                     val severity = obj.optString("severity", "high")
                     var detailsMap: Map<String, String>? = null
-                    
+
                     if (obj.has("details")) {
                         val d = obj.getJSONObject("details")
                         val map = mutableMapOf<String, String>()
@@ -225,15 +242,29 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
                         detailsMap = map
                     }
                     val t = ThreatResult(category, desc, severity, detailsMap)
-                    // Avoid duplicating threats identical to main process
                     if (threats.none { it.description == desc }) {
                         threats.add(t)
                     }
                 }
+                isolatedNativeMerged = true
             } catch (_: Exception) { }
         }
 
+        if (!isolatedNativeMerged) {
+            threats += NativeDetector.runNativeChecks()
+        }
+
         return threats
+    }
+
+    private fun hasBlockingThreats(
+        threats: List<ThreatResult>,
+        config: DetectionConfig,
+    ): Boolean {
+        if (config.isEssentialScope) {
+            return threats.any { it.severity == "critical" || it.severity == "high" }
+        }
+        return threats.any { it.severity == "critical" || it.severity == "high" }
     }
 
     private fun buildReport(ctx: Context, config: DetectionConfig): Map<String, Any> {
@@ -259,6 +290,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
             allowSideload = androidArgs["allowSideload"] as? Boolean ?: false,
             strictExamIntegrity = androidArgs["strictExamIntegrity"] as? Boolean ?: false,
             monitoringIntervalSeconds = (args["monitoringIntervalSeconds"] as? Int) ?: 30,
+            scope = args["scope"] as? String ?: "essential",
         )
     }
 }
@@ -274,7 +306,11 @@ data class DetectionConfig(
     val allowSideload: Boolean = false,
     val strictExamIntegrity: Boolean = false,
     val monitoringIntervalSeconds: Int = 30,
-)
+    val scope: String = "essential",
+) {
+    val isEssentialScope: Boolean
+        get() = scope != "full"
+}
 
 data class ThreatResult(
     val category: String,

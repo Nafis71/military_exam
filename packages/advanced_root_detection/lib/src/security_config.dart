@@ -1,3 +1,12 @@
+/// Which detectors [AdvanceRootDetection.performCheck] runs.
+enum SecurityCheckScope {
+  /// Root, jailbreak, developer mode, and custom ROM only.
+  essential,
+
+  /// All detectors (hooks, emulator, native, tampering, etc.).
+  full,
+}
+
 /// Allowlist of trusted app stores / install sources.
 enum AppStore {
   /// Google Play Store.
@@ -115,6 +124,9 @@ class IOSConfig {
 /// );
 /// ```
 class SecurityConfig {
+  /// Which integrity checks to run. Defaults to [SecurityCheckScope.essential].
+  final SecurityCheckScope scope;
+
   /// Android-specific settings. If `null`, defaults are used.
   final AndroidConfig android;
 
@@ -128,6 +140,7 @@ class SecurityConfig {
 
   /// Creates a [SecurityConfig].
   const SecurityConfig({
+    this.scope = SecurityCheckScope.essential,
     this.android = const AndroidConfig(),
     this.ios = const IOSConfig(),
     this.monitoringInterval = const Duration(seconds: 30),
@@ -135,6 +148,7 @@ class SecurityConfig {
 
   /// Converts to a map for passing over the MethodChannel.
   Map<String, dynamic> toMap() => {
+        'scope': scope.name,
         'android': android.toMap(),
         'ios': ios.toMap(),
         'monitoringIntervalSeconds': monitoringInterval.inSeconds,

@@ -87,7 +87,7 @@ std::vector<std::string> detectInlineHooks() {
  * If any pointer is outside that range, a hook has redirected it.
  */
 bool isJNIEnvIntact(JNIEnv* env) {
-    if (!env) return true; // can't check
+    if (!env || !env->functions) return true; // can't check
 
     // Find libart.so range from /proc/self/maps
     int fd = static_cast<int>(syscall(SYS_openat, AT_FDCWD, "/proc/self/maps", O_RDONLY));

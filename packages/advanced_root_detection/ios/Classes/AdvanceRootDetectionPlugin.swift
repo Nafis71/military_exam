@@ -51,7 +51,7 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
             let config = parseConfig(call.arguments)
             DispatchQueue.global(qos: .userInitiated).async {
                 let threats = self.collectAllThreats(config: config)
-                let safe = !threats.contains { $0.severity == "critical" || $0.severity == "high" }
+                let safe = !self.hasBlockingThreats(threats: threats, config: config)
                 DispatchQueue.main.async { result(safe) }
             }
 
@@ -97,6 +97,9 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
     // MARK: - Detection orchestration
 
     private func collectAllThreats(config: DetectionConfig) -> [ThreatResult] {
+        if config.isEssentialScope {
+            return JailbreakDetector.shared.detect()
+        }
         var threats: [ThreatResult] = []
         threats += JailbreakDetector.shared.detect()
         threats += HookDetector.shared.detect()
@@ -104,6 +107,10 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
         threats += IntegrityDetector.shared.detect(config: config)
         threats += EnvironmentDetector.shared.detect()
         return threats
+    }
+
+    private func hasBlockingThreats(threats: [ThreatResult], config: DetectionConfig) -> Bool {
+        threats.contains { $0.severity == "critical" || $0.severity == "high" }
     }
 
     private func buildReport(config: DetectionConfig) -> [String: Any] {
@@ -120,10 +127,12 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
         guard let args = arguments as? [String: Any] else { return DetectionConfig() }
         let ios = args["ios"] as? [String: Any] ?? [:]
         let intervalSeconds = (args["monitoringIntervalSeconds"] as? Int) ?? 30
+        let scope = args["scope"] as? String ?? "essential"
         return DetectionConfig(
             bundleIds: (ios["bundleIds"] as? [String]) ?? [],
             teamId: ios["teamId"] as? String,
-            monitoringIntervalSeconds: intervalSeconds
+            monitoringIntervalSeconds: intervalSeconds,
+            scope: scope
         )
     }
 }
@@ -134,12 +143,21 @@ struct DetectionConfig {
     let bundleIds: [String]
     let teamId: String?
     let monitoringIntervalSeconds: Int
+    let scope: String
 
-    init(bundleIds: [String] = [], teamId: String? = nil, monitoringIntervalSeconds: Int = 30) {
+    init(
+        bundleIds: [String] = [],
+        teamId: String? = nil,
+        monitoringIntervalSeconds: Int = 30,
+        scope: String = "essential"
+    ) {
         self.bundleIds = bundleIds
         self.teamId = teamId
         self.monitoringIntervalSeconds = monitoringIntervalSeconds
+        self.scope = scope
     }
+
+    var isEssentialScope: Bool { scope != "full" }
 }
 
 struct ThreatResult {

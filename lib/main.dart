@@ -19,7 +19,9 @@ Future<void> main() async {
   Deployment.init(demo: true);
 
   final securityStatus = await SecurityService.instance.initialize();
-  if (securityStatus.hasCriticalThreat) {
+  if (securityStatus.hasBlockingIntegrityIssue(
+    strictExamIntegrity: Deployment.instance.strictExamIntegrity,
+  )) {
     runApp(
       DeviceCompromisedApp(
         reason: securityStatus.primaryBlockReason ??

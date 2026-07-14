@@ -17,6 +17,34 @@ class SpoofingDetector(
     private val config: DetectionConfig,
 ) {
 
+    /**
+     * Developer-mode signals via Settings only — no native property reads.
+     * Used when [DetectionConfig.scope] is essential.
+     */
+    fun detectDeveloperModeOnly(): List<ThreatResult> {
+        val threats = mutableListOf<ThreatResult>()
+        val strict = config.strictExamIntegrity
+
+        val settingsDevEnabled = isDeveloperModeEnabled()
+        val adbEnabled = isAdbEnabled()
+        val wirelessAdbEnabled = isWirelessAdbEnabled()
+
+        if (settingsDevEnabled || adbEnabled || wirelessAdbEnabled) {
+            val severity = when {
+                strict -> "high"
+                config.treatDeveloperModeAsThreat -> "medium"
+                else -> "info"
+            }
+            threats += ThreatResult(
+                category = "debuggerAttached",
+                description = "Developer options or ADB enabled (multi-source check)",
+                severity = severity,
+            )
+        }
+
+        return threats
+    }
+
     fun detect(): List<ThreatResult> {
         val threats = mutableListOf<ThreatResult>()
         val strict = config.strictExamIntegrity

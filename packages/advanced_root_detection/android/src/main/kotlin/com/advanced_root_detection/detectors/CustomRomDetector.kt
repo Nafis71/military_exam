@@ -28,8 +28,6 @@ class CustomRomDetector(private val config: DetectionConfig) {
         "statix",
         "yaap",
         "cherish",
-        "rising",
-        "spark",
         "project elixir",
         "projectelixir",
         "crimson",
@@ -74,7 +72,7 @@ class CustomRomDetector(private val config: DetectionConfig) {
         }
 
         for (prop in romProperties) {
-            val value = NativeDetector.getSystemProperty(prop)
+            val value = getJavaSystemProperty(prop)
             if (value.isNotEmpty()) {
                 threats += ThreatResult(
                     category = "privilegedAccess",
@@ -86,5 +84,15 @@ class CustomRomDetector(private val config: DetectionConfig) {
         }
 
         return threats
+    }
+
+    private fun getJavaSystemProperty(name: String): String {
+        return try {
+            val cls = Class.forName("android.os.SystemProperties")
+            val method = cls.getMethod("get", String::class.java)
+            method.invoke(null, name) as? String ?: ""
+        } catch (_: Exception) {
+            ""
+        }
     }
 }

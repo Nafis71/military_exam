@@ -151,7 +151,7 @@ class LoginController extends GetxController {
     if (rasp == null) return deviceIntegrity.isDeveloperModeEnabled;
     return isDeveloperModeOnlyIssue(
       status: rasp,
-      blockEmulator: Deployment.instance.isProduction,
+      strictExamIntegrity: Deployment.instance.strictExamIntegrity,
     );
   }
 

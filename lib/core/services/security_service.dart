@@ -71,7 +71,71 @@ class SecurityStatus {
         primaryBlockReason: failureReason,
       );
 
+  /// Hard-block issues for essential scope: root, jailbreak, custom ROM (strict).
+  bool hasBlockingIntegrityIssue({required bool strictExamIntegrity}) =>
+      posture == SecurityPosture.checkFailed ||
+      isRooted ||
+      isJailbroken ||
+      (strictExamIntegrity && isCustomRom);
+
   factory SecurityStatus.fromReport(
+    ThreatReport report, {
+    required bool allowSideload,
+    required bool strictExamIntegrity,
+    required bool blockEmulator,
+    SecurityCheckScope scope = SecurityCheckScope.essential,
+  }) {
+    if (scope == SecurityCheckScope.essential) {
+      return _fromEssentialReport(
+        report,
+        strictExamIntegrity: strictExamIntegrity,
+      );
+    }
+    return _fromFullReport(
+      report,
+      allowSideload: allowSideload,
+      strictExamIntegrity: strictExamIntegrity,
+      blockEmulator: blockEmulator,
+    );
+  }
+
+  static SecurityStatus _fromEssentialReport(
+    ThreatReport report, {
+    required bool strictExamIntegrity,
+  }) {
+    final threats = report.detectedThreats;
+    final isCustomRom = detectCustomRom(threats);
+    final isRooted = Platform.isAndroid && detectRootThreat(threats);
+    final isJailbroken = Platform.isIOS && detectJailbreakThreat(threats);
+    final isDeveloperMode = detectDeveloperMode(threats);
+    final isUnsafe =
+        isRooted || isJailbroken || (strictExamIntegrity && isCustomRom);
+
+    return SecurityStatus(
+      isRooted: isRooted,
+      isJailbroken: isJailbroken,
+      isHooked: false,
+      isDebuggerAttached: isDeveloperMode,
+      isEmulator: false,
+      hasTestKeys: false,
+      isIntegrityViolated: false,
+      isUntrustedInstall: false,
+      isEnvironmentSpoofed: false,
+      isCustomRom: isCustomRom,
+      posture: isUnsafe ? SecurityPosture.unsafe : SecurityPosture.safe,
+      checkedAt: report.checkedAt,
+      detectedThreats: threats,
+      primaryBlockReason: isRooted
+          ? _rootThreatReason(threats)
+          : isJailbroken
+              ? _jailbreakThreatReason(threats)
+              : isCustomRom && strictExamIntegrity
+                  ? _customRomThreatReason(threats)
+                  : null,
+    );
+  }
+
+  static SecurityStatus _fromFullReport(
     ThreatReport report, {
     required bool allowSideload,
     required bool strictExamIntegrity,
@@ -191,10 +255,12 @@ class SecurityService {
   SecurityConfig _buildConfig() {
     final deployment = Deployment.instance;
     return SecurityConfig(
+      scope: SecurityCheckScope.essential,
       android: AndroidConfig(
         packageName: 'com.example.military_exam',
         allowSideload: deployment.allowSideload,
         strictExamIntegrity: deployment.strictExamIntegrity,
+        treatDeveloperModeAsThreat: true,
         allowedInstallers: const [
           AppStore.googlePlay,
           AppStore.amazonAppstore,
@@ -209,10 +275,13 @@ class SecurityService {
     );
   }
 
+  SecurityCheckScope get _checkScope => _buildConfig().scope;
+
   Future<SecurityStatus> initialize() async {
     final allowSideload = Deployment.instance.allowSideload;
     final strictExamIntegrity = Deployment.instance.strictExamIntegrity;
     final blockEmulator = Deployment.instance.isProduction;
+    final scope = _checkScope;
     try {
       final report = await _shield.performCheck(_buildConfig());
       _logThreats(
@@ -220,12 +289,14 @@ class SecurityService {
         allowSideload: allowSideload,
         strictExamIntegrity: strictExamIntegrity,
         blockEmulator: blockEmulator,
+        scope: scope,
       );
       _lastStatus = SecurityStatus.fromReport(
         report,
         allowSideload: allowSideload,
         strictExamIntegrity: strictExamIntegrity,
         blockEmulator: blockEmulator,
+        scope: scope,
       );
     } on PlatformException catch (error, stackTrace) {
       if (kDebugMode) {
@@ -262,6 +333,7 @@ class SecurityService {
     required bool allowSideload,
     required bool strictExamIntegrity,
     required bool blockEmulator,
+    required SecurityCheckScope scope,
   }) {
     if (!kDebugMode) return;
     final logger = Logger();
@@ -270,6 +342,14 @@ class SecurityService {
         'RASP threat [${threat.category.name}/${threat.severity.name}]: '
         '${threat.description}',
       );
+    }
+    if (scope == SecurityCheckScope.essential) {
+      if (detectRootThreat(report.detectedThreats) ||
+          detectJailbreakThreat(report.detectedThreats) ||
+          (strictExamIntegrity && detectCustomRom(report.detectedThreats))) {
+        logger.e('RASP essential-scope blocking threats detected');
+      }
+      return;
     }
     final blocking = blockingThreats(
       report.detectedThreats,
@@ -448,15 +528,61 @@ bool detectDeveloperMode(List<Threat> threats) {
   return false;
 }
 
-/// True when developer mode / ADB is the only security issue (not root/spoof/ROM).
 bool isDeveloperModeOnlyIssue({
   required SecurityStatus status,
-  required bool blockEmulator,
+  required bool strictExamIntegrity,
 }) {
   if (!detectDeveloperMode(status.detectedThreats)) return false;
-  if (status.hasCriticalThreat || status.isDebuggerAttached) return false;
-  if (blockEmulator && status.isEmulator) return false;
+  if (status.hasBlockingIntegrityIssue(
+        strictExamIntegrity: strictExamIntegrity,
+      )) {
+    return false;
+  }
   return true;
+}
+
+bool detectRootThreat(List<Threat> threats) {
+  return threats.any((threat) {
+    if (threat.category != ThreatCategory.privilegedAccess) return false;
+    if (threat.description.toLowerCase().contains('custom rom')) return false;
+    return severityAtLeast(threat.severity, Severity.high);
+  });
+}
+
+bool detectJailbreakThreat(List<Threat> threats) {
+  return threats.any(
+    (threat) =>
+        threat.category == ThreatCategory.privilegedAccess &&
+        severityAtLeast(threat.severity, Severity.high),
+  );
+}
+
+String? _rootThreatReason(List<Threat> threats) {
+  for (final threat in threats) {
+    if (threat.category == ThreatCategory.privilegedAccess &&
+        !threat.description.toLowerCase().contains('custom rom')) {
+      return threat.description;
+    }
+  }
+  return null;
+}
+
+String? _jailbreakThreatReason(List<Threat> threats) {
+  for (final threat in threats) {
+    if (threat.category == ThreatCategory.privilegedAccess) {
+      return threat.description;
+    }
+  }
+  return null;
+}
+
+String? _customRomThreatReason(List<Threat> threats) {
+  for (final threat in threats) {
+    if (threat.description.toLowerCase().contains('custom rom')) {
+      return threat.description;
+    }
+  }
+  return null;
 }
 
 bool detectEnvironmentSpoofed(List<Threat> threats) {

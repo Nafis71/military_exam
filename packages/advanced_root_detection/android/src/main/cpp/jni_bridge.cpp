@@ -70,6 +70,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
     std::vector<NativeThreat> threats;
 
     // 1. Debugger checks (TracerPid only — ptrace heuristics removed)
+    LOGI("checkpoint: debugger");
     if (shield::isDebuggerPresent()) {
         threats.push_back({"debuggerAttached",
                            "Native ptrace/TracerPid check: debugger attached",
@@ -77,6 +78,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
     }
 
     // 2. /proc/self/maps hook scan
+    LOGI("checkpoint: maps_hooks");
     auto hookedLibs = shield::scanMapsForHooks();
     for (const auto& lib : hookedLibs) {
         threats.push_back({"runtimeManipulation",
@@ -92,6 +94,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
 
     // 2b. dl_iterate_phdr — queries the dynamic linker's internal link_map,
     //     which Shamiko does not patch (unlike /proc/self/maps).
+    LOGI("checkpoint: dl_iterate_phdr");
     if (shield::detectInjectedLibraries()) {
         threats.push_back({"privilegedAccess",
                            "Zygisk/Magisk library detected via dl_iterate_phdr",
@@ -101,8 +104,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
     // 2c. Anonymous rwxp pages removed — ART JIT creates legitimate rwxp on Android 10+.
 
     // 3a. Shamiko hooked-I/O detection (THE primary Shamiko detector).
-    // Compares libc fopen/fread result vs raw SYS_openat/SYS_read result for
-    // /proc/self/mountinfo and /proc/self/maps. Any difference = active filtering.
+    LOGI("checkpoint: hooked_file_io");
     if (shield::detectHookedFileIO()) {
         threats.push_back({"privilegedAccess",
                            "Shamiko/libc hook detected: /proc file content differs between "
@@ -119,6 +121,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
     }
 
     // 4. JNIEnv integrity
+    LOGI("checkpoint: jni_env");
     if (!shield::isJNIEnvIntact(env)) {
         threats.push_back({"runtimeManipulation",
                            "JNIEnv function table pointers outside libart.so range",
@@ -155,6 +158,7 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
     }
 
     // Zygisk companion library mapped via memfd — already in memory before DenyList runs.
+    LOGI("checkpoint: zygisk_memory");
     if (shield::detectZygiskInMemory()) {
         threats.push_back({"privilegedAccess",
                            "Zygisk companion ELF detected in process memory (memfd-loaded library)",
@@ -172,10 +176,11 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
 
     // __system_property_foreach scan — enumerates every system property at the
     // native level; Shamiko would need to patch the property tree itself to hide.
-    if (shield::detectMagiskProperties()) {
+    LOGI("checkpoint: magisk_properties");
+    if (const auto magiskProp = shield::detectMagiskProperties()) {
         threats.push_back({"privilegedAccess",
-                           "Magisk-specific system property detected via "
-                           "__system_property_foreach",
+                           std::string("Magisk property detected via "
+                                       "__system_property_foreach: ") + *magiskProp,
                            "critical"});
     }
 
@@ -210,6 +215,8 @@ Java_com_advanced_1root_1detection_detectors_NativeDetector_nativeRunChecks(
                            "Magisk mount entries detected in /proc/self/mountinfo",
                            "critical"});
     }
+
+    LOGI("checkpoint: complete (%zu threats)", threats.size());
 
     // ── Build Java array ───────────────────────────────────────────────────
 

@@ -215,7 +215,7 @@ class SecurityGateController extends GetxController {
     if (rasp == null) return deviceIntegrity.isDeveloperModeEnabled;
     return isDeveloperModeOnlyIssue(
       status: rasp,
-      blockEmulator: blockEmulator,
+      strictExamIntegrity: Deployment.instance.strictExamIntegrity,
     );
   }
 

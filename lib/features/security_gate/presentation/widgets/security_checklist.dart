@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -32,22 +34,11 @@ class SecurityChecklist extends StatelessWidget {
           label: AppStrings.raspRootClean,
           state: SecurityChecklistState.checking,
         ),
-        const SecurityChecklistItemData(
-          label: AppStrings.raspNoHooks,
-          state: SecurityChecklistState.checking,
-        ),
-        const SecurityChecklistItemData(
-          label: AppStrings.raspNoDebugger,
-          state: SecurityChecklistState.checking,
-        ),
-        const SecurityChecklistItemData(
-          label: AppStrings.raspNotEmulator,
-          state: SecurityChecklistState.checking,
-        ),
-        const SecurityChecklistItemData(
-          label: AppStrings.raspNoTestKeys,
-          state: SecurityChecklistState.checking,
-        ),
+        if (Platform.isAndroid)
+          const SecurityChecklistItemData(
+            label: AppStrings.raspNoCustomRom,
+            state: SecurityChecklistState.checking,
+          ),
         const SecurityChecklistItemData(
           label: AppStrings.developerModeInactive,
           state: SecurityChecklistState.checking,
@@ -72,29 +63,16 @@ class SecurityChecklist extends StatelessWidget {
     SecurityChecklistState stateFor(bool passed) =>
         passed ? SecurityChecklistState.passed : SecurityChecklistState.failed;
 
-    final emulatorPassed = !blockEmulator || !integrity.isEmulator;
-
     return [
       SecurityChecklistItemData(
         label: AppStrings.raspRootClean,
         state: stateFor(!integrity.isRooted && !integrity.isJailbroken),
       ),
-      SecurityChecklistItemData(
-        label: AppStrings.raspNoHooks,
-        state: stateFor(!integrity.isHooked),
-      ),
-      SecurityChecklistItemData(
-        label: AppStrings.raspNoDebugger,
-        state: stateFor(!integrity.isDebuggerAttached),
-      ),
-      SecurityChecklistItemData(
-        label: AppStrings.raspNotEmulator,
-        state: stateFor(emulatorPassed),
-      ),
-      SecurityChecklistItemData(
-        label: AppStrings.raspNoTestKeys,
-        state: stateFor(!integrity.hasTestKeys),
-      ),
+      if (Platform.isAndroid)
+        SecurityChecklistItemData(
+          label: AppStrings.raspNoCustomRom,
+          state: stateFor(!integrity.isCustomRom),
+        ),
       SecurityChecklistItemData(
         label: AppStrings.developerModeInactive,
         state: stateFor(!integrity.isDeveloperModeEnabled),

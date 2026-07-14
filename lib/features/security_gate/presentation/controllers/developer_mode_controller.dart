@@ -79,16 +79,10 @@ class DeveloperModeController extends GetxController {
     if (integrity.checkFailed ||
         integrity.isRooted ||
         integrity.isJailbroken ||
-        integrity.isHooked ||
-        (integrity.isDebuggerAttached && !integrity.isDeveloperModeEnabled) ||
-        integrity.hasTestKeys ||
-        (integrity.isIntegrityViolated && !integrity.isDeveloperModeEnabled) ||
-        (integrity.isEmulator && Deployment.instance.isProduction) ||
-        integrity.isEnvironmentSpoofed ||
-        integrity.isCustomRom) {
+        (integrity.isCustomRom && Deployment.instance.strictExamIntegrity)) {
       status.value = DeveloperModeGateStatus.deviceCompromised;
       _logger.error(
-        integrity.isEnvironmentSpoofed || integrity.isCustomRom
+        integrity.isCustomRom
             ? SecurityService.instance.lastStatus?.primaryBlockReason ??
                 AppStrings.deviceCompromisedGeneric
             : integrity.isRooted

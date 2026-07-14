@@ -28,6 +28,7 @@
 #include <cstring>
 #include <cstdint>
 #include <cctype>
+#include <optional>
 #include <string>
 #include <vector>
 #include <sys/system_properties.h>
@@ -226,26 +227,35 @@ bool detectOverlayMount() {
 
 // ── __system_property_foreach scan ───────────────────────────────────────────
 
-struct PropCtx { bool found; };
+static bool isHuaweiHonorHideProp(const std::string& name) {
+    return name == "ro.build.hide" || name.rfind("ro.build.hide.", 0) == 0;
+}
+
+static bool isMagiskProperty(const std::string& name) {
+    if (isHuaweiHonorHideProp(name)) return false;
+    if (name == "persist.magisk.hide") return true;
+    if (name.rfind("persist.magisk.", 0) == 0) return true;
+    if (name.rfind("init.svc.magisk", 0) == 0) return true;
+    if (name.rfind("magisk.", 0) == 0) return true;
+    return false;
+}
+
+struct PropCtx { std::optional<std::string> matched; };
 
 static void onProp(const prop_info* pi, void* cookie) {
     auto* ctx = static_cast<PropCtx*>(cookie);
-    if (ctx->found) return;
+    if (ctx->matched.has_value()) return;
 
     char name[PROP_NAME_MAX]   = {};
     char value[PROP_VALUE_MAX] = {};
     __system_property_read(pi, name, value);
 
-    std::string sname(name);
-    // Only flag property NAMES that are uniquely associated with Magisk being
-    // installed. We deliberately exclude boot-state properties
-    // (ro.boot.verifiedbootstate, ro.boot.flash.locked) here because an unlocked
-    // bootloader on a developer phone is not the same as a rooted device.
-    // Those properties are checked separately in detectUnlockedBootloader().
-    if (sname.find("magisk") != std::string::npos ||
-        sname == "ro.build.hide"                  ||
-        sname == "persist.magisk.hide") {
-        ctx->found = true;
+    const std::string sname(name);
+    // Only flag property NAMES uniquely associated with Magisk. Boot-state props
+    // (ro.boot.verifiedbootstate, ro.boot.flash.locked) are checked separately
+    // in detectUnlockedBootloader(). ro.build.hide* is Huawei/Honor OEM — not Magisk.
+    if (isMagiskProperty(sname)) {
+        ctx->matched = sname;
     }
 }
 
@@ -254,10 +264,10 @@ static void onProp(const prop_info* pi, void* cookie) {
  * Shamiko would need to hook this low-level callback mechanism to hide Magisk
  * properties — doing so reliably without breaking the OS is extremely difficult.
  */
-bool detectMagiskProperties() {
-    PropCtx ctx{false};
+std::optional<std::string> detectMagiskProperties() {
+    PropCtx ctx{std::nullopt};
     __system_property_foreach(onProp, &ctx);
-    return ctx.found;
+    return ctx.matched;
 }
 
 /**
@@ -305,33 +315,43 @@ bool detectZygiskInMemory() {
     struct Ctx { bool found; };
     Ctx ctx{false};
 
+    constexpr ElfW(Half) kMaxPhnum = 128;
+
     dl_iterate_phdr([](struct dl_phdr_info* info, size_t /*sz*/, void* data) -> int {
         auto* ctx = static_cast<Ctx*>(data);
-        if (!info->dlpi_name) return 0;
+        if (!info) return 0;
 
-        std::string name(info->dlpi_name);
+        // dlpi_name may be null on some OEM link_map entries (e.g. MIUI/HyperOS).
+        const char* rawName = info->dlpi_name;
+        const std::string name = rawName ? std::string(rawName) : std::string();
 
         // Case 1: library loaded from a memfd or a /proc/self/fd file descriptor
-        if (name.find("/memfd:") != std::string::npos &&
-            name.find("jit-zygote-cache") == std::string::npos) {
-            // Exclude the legitimate ART JIT cache memfd
-            ctx->found = true;
-            return 1;
-        }
-        if (name.find("/proc/self/fd/") != std::string::npos) {
-            ctx->found = true;
-            return 1;
+        if (!name.empty()) {
+            if (name.find("/memfd:") != std::string::npos &&
+                name.find("jit-zygote-cache") == std::string::npos) {
+                // Exclude the legitimate ART JIT cache memfd
+                ctx->found = true;
+                return 1;
+            }
+            if (name.find("/proc/self/fd/") != std::string::npos) {
+                ctx->found = true;
+                return 1;
+            }
+            return 0;
         }
 
-        // Case 2: anonymous library (empty name) with a large executable segment
-        if (name.empty()) {
-            for (ElfW(Half) i = 0; i < info->dlpi_phnum; ++i) {
-                if (info->dlpi_phdr[i].p_type  == PT_LOAD &&
-                    (info->dlpi_phdr[i].p_flags & PF_X)   &&
-                    info->dlpi_phdr[i].p_memsz  > 256 * 1024) {
-                    ctx->found = true;
-                    return 1;
-                }
+        // Case 2: anonymous library (empty name) with a large executable segment.
+        // Guard dlpi_phdr — MIUI can expose null phdr with non-zero phnum.
+        if (!info->dlpi_phdr || info->dlpi_phnum == 0) return 0;
+
+        const ElfW(Half) phnum = info->dlpi_phnum > kMaxPhnum ? kMaxPhnum : info->dlpi_phnum;
+        for (ElfW(Half) i = 0; i < phnum; ++i) {
+            const ElfW(Phdr)& ph = info->dlpi_phdr[i];
+            if (ph.p_type  == PT_LOAD &&
+                (ph.p_flags & PF_X) &&
+                ph.p_memsz  > 256 * 1024) {
+                ctx->found = true;
+                return 1;
             }
         }
         return 0;

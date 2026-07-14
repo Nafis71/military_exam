@@ -1,5 +1,8 @@
 #pragma once
 
+#include <optional>
+#include <string>
+
 namespace shield {
     /** Scan /proc/self/task/<tid>/comm for Zygisk companion thread names. */
     bool detectZygiskThreads();
@@ -43,7 +46,9 @@ namespace shield {
 
     /**
      * Walk ALL system properties via __system_property_foreach looking for
-     * Magisk-specific names or an unlocked verifiedbootstate.
+     * Magisk-specific property names. Returns the first matched property name,
+     * or std::nullopt on clean devices. Huawei/Honor ro.build.hide.* OEM props
+     * are explicitly excluded.
      */
-    bool detectMagiskProperties();
+    std::optional<std::string> detectMagiskProperties();
 } // namespace shield
