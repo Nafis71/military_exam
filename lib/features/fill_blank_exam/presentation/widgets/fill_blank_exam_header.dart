@@ -5,8 +5,8 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
-class WrittenExamHeader extends StatelessWidget {
-  const WrittenExamHeader({
+class FillBlankExamHeader extends StatelessWidget {
+  const FillBlankExamHeader({
     super.key,
     required this.questionIndex,
     required this.questionTotal,
@@ -78,7 +78,7 @@ class WrittenExamHeader extends StatelessWidget {
               SizedBox(height: (10.h).clamp(6.0, 10.0)),
               Center(
                 child: Text(
-                  AppStrings.writtenAnswers,
+                  AppStrings.fillInBlank,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,

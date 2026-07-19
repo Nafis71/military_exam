@@ -4,7 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:military_exam/core/utils/validators.dart';
 
-import '../../../../app/routes/app_routes.dart';
 import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -19,7 +18,7 @@ import '../../../../core/widgets/app_error_toast.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
-import '../../../exam_session/domain/usecases/start_exam_session_usecase.dart';
+import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
@@ -35,7 +34,7 @@ class LoginController extends GetxController {
     this._loginUseCase,
     this._getDistrictsUseCase,
     this._validateEligibilityUseCase,
-    this._startExamSessionUseCase,
+    this._sessionController,
     this._startWatchdog,
     this._cameraPermissionService,
     this._checkAirplaneMode,
@@ -48,7 +47,7 @@ class LoginController extends GetxController {
   final LoginUseCase _loginUseCase;
   final GetDistrictsUseCase _getDistrictsUseCase;
   final ValidateExamEligibilityUseCase _validateEligibilityUseCase;
-  final StartExamSessionUseCase _startExamSessionUseCase;
+  final ExamSessionController _sessionController;
   final StartSecurityWatchdogUseCase _startWatchdog;
   final CameraPermissionService _cameraPermissionService;
   final CheckAirplaneModeUseCase _checkAirplaneMode;
@@ -252,23 +251,33 @@ class LoginController extends GetxController {
       return;
     }
 
-    final startResult = await _startExamSessionUseCase(authSessionId);
-    switch (startResult) {
-      case Success(:final data):
-        _pollTimer?.cancel();
-        _pollTimer = null;
-        await _startWatchdog(
-          policy: const SecurityPolicy(
-            requireAirplaneMode: true,
-            monitoredPhases: [ExamPhase.mcq, ExamPhase.written],
-          ),
-          phase: ExamPhase.mcq,
-          sessionId: data.sessionId,
-        );
-        Get.offAllNamed(AppRoutes.mcqExam, arguments: data.sessionId);
-      case ErrorResult(:final failure):
-        errorMessage.value = failure.message;
+    await _sessionController.startSession(authSessionId);
+    if (_sessionController.errorMessage.value != null) {
+      errorMessage.value = _sessionController.errorMessage.value;
+      return;
     }
+    final examSession = _sessionController.examSession.value;
+    if (examSession == null) return;
+
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    final sessionId = examSession.sessionId;
+    await _startWatchdog(
+      policy: const SecurityPolicy(
+        requireAirplaneMode: true,
+        monitoredPhases: [
+          ExamPhase.mcq,
+          ExamPhase.fillBlank,
+          ExamPhase.written,
+        ],
+      ),
+      phase: ExamPhase.mcq,
+      sessionId: sessionId,
+    );
+    Get.offAllNamed(
+      _sessionController.initialExamRoute,
+      arguments: sessionId,
+    );
   }
 
   String? validateDistrict(String? value) => Validators.requiredField(value);

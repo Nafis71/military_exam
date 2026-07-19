@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const cameraPermissionRequired = '/security/camera-permission';
   static const login = '/login';
   static const mcqExam = '/exam/mcq';
+  static const fillBlankExam = '/exam/fill-blank';
   static const writtenExam = '/exam/written';
   static const finishExam = '/exam/finish';
   static const violation = '/violation';

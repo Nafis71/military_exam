@@ -99,14 +99,15 @@ class WrittenExamQuestionCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    GestureDetector(
-                      onTap: onAddImage,
-                      child: AppSvgAsset(
-                        assetPath: SvgAsset.writtenExamAdd,
-                        width: 24.w,
-                        height: 24.w,
+                    if (images.isEmpty)
+                      GestureDetector(
+                        onTap: onAddImage,
+                        child: AppSvgAsset(
+                          assetPath: SvgAsset.writtenExamAdd,
+                          width: 24.w,
+                          height: 24.w,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

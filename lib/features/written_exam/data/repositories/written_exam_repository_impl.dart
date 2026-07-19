@@ -35,6 +35,15 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       return ErrorResult(imagesResult.failure);
     }
 
+    final images = imagesResult.dataOrNull ?? [];
+    final existingForQuestion =
+        images.where((img) => img.questionId == questionId).length;
+    if (existingForQuestion >= 1) {
+      return const ErrorResult(
+        ValidationFailure(AppStrings.writtenExamMaxOneImage),
+      );
+    }
+
     final image = WrittenAnswerImage(
       localId: _uuid.v4(),
       localPath: localPath,

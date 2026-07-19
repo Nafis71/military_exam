@@ -6,9 +6,16 @@ enum ExamPhase {
   securityGate,
   login,
   mcq,
+  fillBlank,
   written,
   finished,
   locked,
+}
+
+enum ExamQuestionType {
+  mcq,
+  fillInBlank,
+  descriptive,
 }
 
 enum ViolationType {

@@ -2,26 +2,31 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../core/services/exam_lock_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../domain/usecases/auto_submit_exam_usecase.dart';
 import '../../domain/usecases/finish_exam_usecase.dart';
+import '../../domain/usecases/get_current_exam_usecase.dart';
 import '../../domain/usecases/get_exam_timer_usecase.dart';
 import '../../domain/usecases/lock_exam_session_usecase.dart';
 import '../../domain/usecases/report_security_violation_usecase.dart';
 import '../../domain/usecases/start_exam_session_usecase.dart';
+import '../../domain/utils/exam_question_splitter.dart';
 
 class ExamSessionController extends GetxController {
   ExamSessionController({
     required StartExamSessionUseCase startExamSessionUseCase,
+    required GetCurrentExamUseCase getCurrentExamUseCase,
     required GetExamTimerUseCase getExamTimerUseCase,
     required AutoSubmitExamUseCase autoSubmitExamUseCase,
     required FinishExamUseCase finishExamUseCase,
     required LockExamSessionUseCase lockExamSessionUseCase,
     required ReportSecurityViolationUseCase reportSecurityViolationUseCase,
   })  : _startExamSessionUseCase = startExamSessionUseCase,
+        _getCurrentExamUseCase = getCurrentExamUseCase,
         _getExamTimerUseCase = getExamTimerUseCase,
         _autoSubmitExamUseCase = autoSubmitExamUseCase,
         _finishExamUseCase = finishExamUseCase,
@@ -29,6 +34,7 @@ class ExamSessionController extends GetxController {
         _reportSecurityViolationUseCase = reportSecurityViolationUseCase;
 
   final StartExamSessionUseCase _startExamSessionUseCase;
+  final GetCurrentExamUseCase _getCurrentExamUseCase;
   final GetExamTimerUseCase _getExamTimerUseCase;
   final AutoSubmitExamUseCase _autoSubmitExamUseCase;
   final FinishExamUseCase _finishExamUseCase;
@@ -36,12 +42,20 @@ class ExamSessionController extends GetxController {
   final ReportSecurityViolationUseCase _reportSecurityViolationUseCase;
 
   final examSession = Rxn<ExamSession>();
+  final currentExam = Rxn<CurrentExam>();
   final timer = Rxn<ExamTimer>();
   final submissionReceipt = Rxn<SubmissionReceipt>();
   final lockState = Rxn<ExamLockState>();
   final currentPhase = ExamPhase.mcq.obs;
   final isLoading = false.obs;
+  final isExamLoading = false.obs;
   final errorMessage = RxnString();
+  final canAccessQuestions = true.obs;
+  final canSubmitExam = true.obs;
+
+  final mcqQuestions = <McqQuestion>[].obs;
+  final fillBlankQuestions = <FillBlankQuestion>[].obs;
+  final descriptiveQuestions = <WrittenQuestion>[].obs;
 
   Timer? _timerTicker;
   Worker? _lockWorker;
@@ -82,10 +96,58 @@ class ExamSessionController extends GetxController {
       case Success(:final data):
         examSession.value = data;
         currentPhase.value = ExamPhase.mcq;
+        await loadCurrentExam();
         await _refreshTimer();
         _startTimerTicker();
       case ErrorResult(:final failure):
         errorMessage.value = failure.message;
+    }
+  }
+
+  Future<void> loadCurrentExam() async {
+    isExamLoading.value = true;
+    errorMessage.value = null;
+
+    final result = await _getCurrentExamUseCase();
+    isExamLoading.value = false;
+
+    switch (result) {
+      case Success(:final data):
+        currentExam.value = data;
+        canAccessQuestions.value = data.window.canAccessQuestions;
+        canSubmitExam.value = data.window.canSubmit;
+        mcqQuestions.assignAll(
+          ExamQuestionSplitter.toMcqQuestions(data.questions),
+        );
+        fillBlankQuestions.assignAll(
+          ExamQuestionSplitter.toFillBlankQuestions(data.questions),
+        );
+        descriptiveQuestions.assignAll(
+          ExamQuestionSplitter.toDescriptiveQuestions(data.questions),
+        );
+        _applyExamDuration(data);
+      case ErrorResult(:final failure):
+        errorMessage.value = failure.message;
+    }
+  }
+
+  void _applyExamDuration(CurrentExam exam) {
+    final remainingMinutes = exam.window.remainingExamMinutes;
+    if (remainingMinutes > 0) {
+      timer.value = ExamTimer(remainingSeconds: remainingMinutes * 60);
+      return;
+    }
+
+    final session = examSession.value;
+    if (session != null && exam.durationMinutes > 0) {
+      examSession.value = ExamSession(
+        sessionId: session.sessionId,
+        examineeId: session.examineeId,
+        startedAt: session.startedAt,
+        durationMinutes: exam.durationMinutes,
+        isLocked: session.isLocked,
+        currentPhase: session.currentPhase,
+      );
     }
   }
 
@@ -96,7 +158,9 @@ class ExamSessionController extends GetxController {
     final result = await _getExamTimerUseCase(sessionId);
     switch (result) {
       case Success(:final data):
-        timer.value = data;
+        if (timer.value == null || timer.value!.remainingSeconds <= 0) {
+          timer.value = data;
+        }
         if (data.remainingSeconds <= 0) {
           await autoSubmit();
         }
@@ -180,7 +244,36 @@ class ExamSessionController extends GetxController {
     }
   }
 
+  void advanceToFillBlankPhase() {
+    currentPhase.value = ExamPhase.fillBlank;
+  }
+
   void advanceToWrittenPhase() {
     currentPhase.value = ExamPhase.written;
+  }
+
+  String completePhaseAndGetNextRoute(ExamPhase completedPhase) {
+    final nextPhase = ExamQuestionSplitter.nextPhaseAfter(
+      completedPhase: completedPhase,
+      fillBlankCount: fillBlankQuestions.length,
+      descriptiveCount: descriptiveQuestions.length,
+    );
+    if (nextPhase != null) {
+      currentPhase.value = nextPhase;
+    }
+    return ExamQuestionSplitter.nextRouteAfterPhase(
+          completedPhase: completedPhase,
+          mcqCount: mcqQuestions.length,
+          fillBlankCount: fillBlankQuestions.length,
+          descriptiveCount: descriptiveQuestions.length,
+        ) ??
+        AppRoutes.finishExam;
+  }
+
+  String get initialExamRoute {
+    if (mcqQuestions.isNotEmpty) return AppRoutes.mcqExam;
+    if (fillBlankQuestions.isNotEmpty) return AppRoutes.fillBlankExam;
+    if (descriptiveQuestions.isNotEmpty) return AppRoutes.writtenExam;
+    return AppRoutes.finishExam;
   }
 }

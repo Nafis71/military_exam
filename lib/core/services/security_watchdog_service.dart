@@ -21,7 +21,11 @@ class SecurityPolicy {
     this.requireAirplaneMode = true,
     this.monitorLifecycle = true,
     this.preventScreenCapture = true,
-    this.monitoredPhases = const [ExamPhase.mcq, ExamPhase.written],
+    this.monitoredPhases = const [
+      ExamPhase.mcq,
+      ExamPhase.fillBlank,
+      ExamPhase.written,
+    ],
     this.pollInterval = AppConstants.securityPollInterval,
     this.lifecycleViolationGracePeriod =
         AppConstants.lifecycleViolationGracePeriod,
@@ -265,7 +269,9 @@ class SecurityWatchdogService {
   }
 
   bool _isActiveExamPhase() =>
-      _phase == ExamPhase.mcq || _phase == ExamPhase.written;
+      _phase == ExamPhase.mcq ||
+      _phase == ExamPhase.fillBlank ||
+      _phase == ExamPhase.written;
 
   Future<void> _verifyDeviceIntegrity() async {
     if (!_shouldMonitorCurrentPhase()) return;

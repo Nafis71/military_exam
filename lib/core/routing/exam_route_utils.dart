@@ -6,6 +6,8 @@ import '../../app/routes/app_routes.dart';
 abstract final class ExamRouteUtils {
   static bool get isOnActiveExamRoute {
     final route = Get.currentRoute;
-    return route == AppRoutes.mcqExam || route == AppRoutes.writtenExam;
+    return route == AppRoutes.mcqExam ||
+        route == AppRoutes.fillBlankExam ||
+        route == AppRoutes.writtenExam;
   }
 }

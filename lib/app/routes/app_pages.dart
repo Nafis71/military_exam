@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/finish_exam/presentation/pages/finish_exam_page.dart';
 import '../../features/instructions/presentation/pages/instructions_page.dart';
+import '../../features/fill_blank_exam/presentation/pages/fill_blank_exam_page.dart';
 import '../../features/mcq_exam/presentation/pages/mcq_exam_page.dart';
 import '../../features/security_gate/presentation/pages/airplane_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/camera_permission_required_page.dart';
@@ -69,6 +70,12 @@ class AppPages {
       name: AppRoutes.mcqExam,
       page: () => const McqExamPage(),
       binding: McqExamBinding(),
+      middlewares: [ExamRouteGuard()],
+    ),
+    GetPage(
+      name: AppRoutes.fillBlankExam,
+      page: () => const FillBlankExamPage(),
+      binding: FillBlankExamBinding(),
       middlewares: [ExamRouteGuard()],
     ),
     GetPage(

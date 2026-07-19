@@ -36,6 +36,7 @@ import '../../features/exam_session/domain/repositories/exam_repository.dart';
 import '../../features/exam_session/domain/repositories/penalty_repository.dart';
 import '../../features/exam_session/domain/usecases/auto_submit_exam_usecase.dart';
 import '../../features/exam_session/domain/usecases/finish_exam_usecase.dart';
+import '../../features/exam_session/domain/usecases/get_current_exam_usecase.dart';
 import '../../features/exam_session/domain/usecases/get_exam_timer_usecase.dart';
 import '../../features/exam_session/domain/usecases/lock_exam_session_usecase.dart';
 import '../../features/exam_session/domain/usecases/report_security_violation_usecase.dart';
@@ -43,6 +44,10 @@ import '../../features/exam_session/domain/usecases/start_exam_session_usecase.d
 import '../../features/exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../features/finish_exam/presentation/controllers/finish_exam_controller.dart';
 import '../../features/instructions/presentation/controllers/instructions_controller.dart';
+import '../../features/fill_blank_exam/domain/usecases/get_fill_blank_progress_usecase.dart';
+import '../../features/fill_blank_exam/domain/usecases/get_fill_blank_questions_usecase.dart';
+import '../../features/fill_blank_exam/domain/usecases/save_fill_blank_answer_usecase.dart';
+import '../../features/fill_blank_exam/presentation/controllers/fill_blank_exam_controller.dart';
 import '../../features/mcq_exam/domain/usecases/get_current_mcq_progress_usecase.dart';
 import '../../features/mcq_exam/domain/usecases/get_mcq_questions_usecase.dart';
 import '../../features/mcq_exam/domain/usecases/submit_mcq_answer_usecase.dart';
@@ -144,11 +149,26 @@ class DependencyRegistry {
     Get.put<ExamLockService>(lockService, permanent: true);
 
     Get.put(StartExamSessionUseCase(examRepo), permanent: true);
+    Get.put(GetCurrentExamUseCase(examRepo), permanent: true);
     Get.put(GetExamTimerUseCase(examRepo), permanent: true);
     Get.put(AutoSubmitExamUseCase(examRepo), permanent: true);
     Get.put(FinishExamUseCase(examRepo), permanent: true);
     Get.put(LockExamSessionUseCase(examRepo), permanent: true);
     Get.put(ReportSecurityViolationUseCase(examRepo, penaltyRepo), permanent: true);
+
+    Get.put(
+      ExamSessionController(
+        startExamSessionUseCase: Get.find<StartExamSessionUseCase>(),
+        getCurrentExamUseCase: Get.find<GetCurrentExamUseCase>(),
+        getExamTimerUseCase: Get.find<GetExamTimerUseCase>(),
+        autoSubmitExamUseCase: Get.find<AutoSubmitExamUseCase>(),
+        finishExamUseCase: Get.find<FinishExamUseCase>(),
+        lockExamSessionUseCase: Get.find<LockExamSessionUseCase>(),
+        reportSecurityViolationUseCase:
+            Get.find<ReportSecurityViolationUseCase>(),
+      ),
+      permanent: true,
+    );
 
     final handleViolation = HandleSecurityViolationUseCase(
       lockService,
@@ -205,6 +225,9 @@ class DependencyRegistry {
     Get.put(GetMcqQuestionsUseCase(examRepo), permanent: true);
     Get.put(SubmitMcqAnswerUseCase(examRepo), permanent: true);
     Get.put(GetCurrentMcqProgressUseCase(examRepo), permanent: true);
+    Get.put(GetFillBlankQuestionsUseCase(examRepo), permanent: true);
+    Get.put(SaveFillBlankAnswerUseCase(examRepo), permanent: true);
+    Get.put(GetFillBlankProgressUseCase(examRepo), permanent: true);
     Get.put(AddWrittenImageUseCase(writtenRepo), permanent: true);
     Get.put(ReplaceWrittenImageUseCase(writtenRepo), permanent: true);
     Get.put(DeleteWrittenImageUseCase(writtenRepo), permanent: true);
@@ -310,7 +333,7 @@ class LoginBinding extends Bindings {
         Get.find<LoginUseCase>(),
         Get.find<GetDistrictsUseCase>(),
         Get.find<ValidateExamEligibilityUseCase>(),
-        Get.find<StartExamSessionUseCase>(),
+        Get.find<ExamSessionController>(),
         Get.find<StartSecurityWatchdogUseCase>(),
         Get.find<CameraPermissionService>(),
         Get.find<CheckAirplaneModeUseCase>(),
@@ -330,6 +353,7 @@ class McqExamBinding extends Bindings {
       Get.put(
         ExamSessionController(
           startExamSessionUseCase: Get.find(),
+          getCurrentExamUseCase: Get.find(),
           getExamTimerUseCase: Get.find(),
           autoSubmitExamUseCase: Get.find(),
           finishExamUseCase: Get.find(),
@@ -349,11 +373,39 @@ class McqExamBinding extends Bindings {
   }
 }
 
+class FillBlankExamBinding extends Bindings {
+  @override
+  void dependencies() {
+    if (!Get.isRegistered<ExamSessionController>()) {
+      Get.put(
+        ExamSessionController(
+          startExamSessionUseCase: Get.find(),
+          getCurrentExamUseCase: Get.find(),
+          getExamTimerUseCase: Get.find(),
+          autoSubmitExamUseCase: Get.find(),
+          finishExamUseCase: Get.find(),
+          lockExamSessionUseCase: Get.find(),
+          reportSecurityViolationUseCase: Get.find(),
+        ),
+        permanent: true,
+      );
+    }
+    Get.lazyPut(
+      () => FillBlankExamController(
+        getFillBlankQuestionsUseCase: Get.find(),
+        saveFillBlankAnswerUseCase: Get.find(),
+        getFillBlankProgressUseCase: Get.find(),
+      ),
+    );
+  }
+}
+
 class WrittenExamBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(
       () => WrittenExamController(
+        sessionController: Get.find<ExamSessionController>(),
         addWrittenImageUseCase: Get.find(),
         replaceWrittenImageUseCase: Get.find(),
         deleteWrittenImageUseCase: Get.find(),

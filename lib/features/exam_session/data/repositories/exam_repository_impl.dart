@@ -5,13 +5,32 @@ import '../../domain/repositories/exam_repository.dart';
 import '../datasources/exam_local_datasource.dart';
 import '../datasources/exam_remote_datasource.dart';
 import '../models/exam_session_model.dart';
+import '../models/fill_blank_answer_model.dart';
 import '../models/mcq_answer_model.dart';
+import '../../domain/utils/exam_question_splitter.dart';
 
 class ExamRepositoryImpl implements ExamRepository {
   ExamRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   final ExamRemoteDataSource _remoteDataSource;
   final ExamLocalDataSource _localDataSource;
+  CurrentExam? _cachedCurrentExam;
+
+  @override
+  Future<Result<CurrentExam>> getCurrentExam() async {
+    if (_cachedCurrentExam != null) {
+      return Success(_cachedCurrentExam!);
+    }
+
+    final result = await _remoteDataSource.fetchCurrentExam();
+    return switch (result) {
+      Success(:final data) => () {
+          _cachedCurrentExam = data;
+          return Success<CurrentExam>(data);
+        }(),
+      ErrorResult(:final failure) => ErrorResult(failure),
+    };
+  }
 
   @override
   Future<Result<ExamSession>> startSession(String authSessionId) async {
@@ -71,12 +90,26 @@ class ExamRepositoryImpl implements ExamRepository {
 
   @override
   Future<Result<List<McqQuestion>>> getMcqQuestions(String sessionId) async {
-    final result = await _remoteDataSource.fetchMcqQuestions(sessionId);
-    return switch (result) {
-      Success(:final data) =>
-        Success(data.map((q) => q.toEntity()).toList()),
-      ErrorResult(:final failure) => ErrorResult(failure),
-    };
+    final examResult = await getCurrentExam();
+    if (examResult is ErrorResult<CurrentExam>) {
+      return ErrorResult(examResult.failure);
+    }
+
+    final exam = (examResult as Success<CurrentExam>).data;
+    return Success(ExamQuestionSplitter.toMcqQuestions(exam.questions));
+  }
+
+  @override
+  Future<Result<List<FillBlankQuestion>>> getFillBlankQuestions(
+    String sessionId,
+  ) async {
+    final examResult = await getCurrentExam();
+    if (examResult is ErrorResult<CurrentExam>) {
+      return ErrorResult(examResult.failure);
+    }
+
+    final exam = (examResult as Success<CurrentExam>).data;
+    return Success(ExamQuestionSplitter.toFillBlankQuestions(exam.questions));
   }
 
   @override
@@ -96,8 +129,24 @@ class ExamRepositoryImpl implements ExamRepository {
   }
 
   @override
+  Future<Result<FillBlankAnswer>> saveFillBlankAnswer(
+    FillBlankAnswer answer,
+  ) async {
+    final model = FillBlankAnswerModel.fromEntity(answer);
+    final result = await _localDataSource.saveFillBlankAnswer(model);
+    if (result is ErrorResult<void>) {
+      return ErrorResult(result.failure);
+    }
+    return Success(answer);
+  }
+
+  @override
   Future<Result<Map<String, String>>> getMcqProgress(String sessionId) =>
       _localDataSource.readMcqAnswers();
+
+  @override
+  Future<Result<Map<String, String>>> getFillBlankProgress(String sessionId) =>
+      _localDataSource.readFillBlankAnswers();
 
   @override
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId) =>

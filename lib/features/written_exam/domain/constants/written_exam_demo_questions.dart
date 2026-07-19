@@ -8,11 +8,13 @@ abstract final class WrittenExamDemoQuestions {
     WrittenQuestion(
       id: question1Id,
       index: 1,
+      total: 2,
       text: 'তোমার জীবনের লক্ষ্য সম্পর্কে ১০টি বাক্য লেখ।',
     ),
     WrittenQuestion(
       id: question2Id,
       index: 2,
+      total: 2,
       text: 'তোমার দেশ সম্পর্কে ৫টি বাক্য লেখ।',
     ),
   ];

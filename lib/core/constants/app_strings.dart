@@ -176,8 +176,22 @@ abstract final class AppStrings {
   static const noQuestionsAvailable = 'কোনো প্রশ্ন পাওয়া যায়নি।';
   static const finishMcq = 'বহুনির্বাচনী শেষ করুন';
   static const nextQuestion = 'পরবর্তী প্রশ্ন';
+  static const previousQuestion = 'পূর্ববর্তী প্রশ্ন';
   static const questionOf = 'প্রশ্ন'; // used as: প্রশ্ন ১ / ৫
   static const of = '/';
+  static const fillInBlank = 'শূন্যস্থান পূরণ';
+  static const finishFillBlank = 'শূন্যস্থান শেষ করুন';
+  static const fillBlankAnswerHint = 'আপনার উত্তর লিখুন';
+  static const cannotAccessQuestions =
+      'এখনও প্রশ্ন দেখার সময় হয়নি। অনুগ্রহ করে অপেক্ষা করুন।';
+  static const cannotSubmitYet =
+      'এখনও উত্তর জমা দেওয়ার সময় হয়নি।';
+  static const demoFillBlankQuestion1 = 'মারাডোনা ____ দিয়ে গোল দিয়েছে';
+  static const demoFillBlankQuestion2 = 'কার কাছে খাওয়া পাই?';
+  static const demoDescriptiveQuestion1 =
+      'তোমার জীবনের লক্ষ্য সম্পর্কে ১০টি বাক্য লেখ।';
+  static const writtenExamMaxOneImage =
+      'প্রতি প্রশ্নে শুধুমাত্র একটি ছবি যুক্ত করা যাবে।';
 
   // Written exam
   static const writtenAnswers = 'লিখিত উত্তর';
@@ -286,6 +300,10 @@ abstract final class AppStrings {
       'বহুনির্বাচনী উত্তর সংরক্ষণ করা যায়নি';
   static const failedToReadMcqAnswers =
       'বহুনির্বাচনী উত্তর পড়া যায়নি';
+  static const failedToSaveFillBlankAnswer =
+      'শূন্যস্থান উত্তর সংরক্ষণ করা যায়নি';
+  static const failedToReadFillBlankAnswers =
+      'শূন্যস্থান উত্তর পড়া যায়নি';
   static const failedToSetLockState = 'লক অবস্থা সেট করা যায়নি';
   static const failedToReadLockState = 'লক অবস্থা পড়া যায়নি';
 

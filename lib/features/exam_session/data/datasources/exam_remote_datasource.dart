@@ -7,7 +7,11 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
+import '../models/current_exam_model.dart';
+import '../models/exam_question_model.dart';
+import '../models/exam_question_option_model.dart';
 import '../models/exam_session_model.dart';
+import '../models/exam_window_model.dart';
 import '../models/mcq_answer_model.dart';
 import '../models/mcq_option_model.dart';
 import '../models/mcq_question_model.dart';
@@ -18,6 +22,8 @@ abstract class ExamRemoteDataSource {
   Future<Result<ExamSessionModel?>> fetchCurrentSession();
 
   Future<Result<int>> fetchRemainingSeconds(String sessionId);
+
+  Future<Result<CurrentExamModel>> fetchCurrentExam();
 
   Future<Result<List<McqQuestionModel>>> fetchMcqQuestions(String sessionId);
 
@@ -107,6 +113,29 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
     _logger.warning('Timer API failed, returning demo remaining time');
     return Success(_demoDurationMinutes * 60);
+  }
+
+  @override
+  Future<Result<CurrentExamModel>> fetchCurrentExam() async {
+    if (Deployment.instance.isDemo) {
+      _logger.info('Demo mode: current exam served from device (no API call)');
+      return Success(_demoCurrentExam);
+    }
+
+    final result = await _apiClient.get<Map<String, dynamic>>(
+      ApiEndpoints.currentExam,
+    );
+
+    if (result is Success<Map<String, dynamic>>) {
+      final data = result.data['data'];
+      if (data is Map<String, dynamic>) {
+        return Success(CurrentExamModel.fromJson(data));
+      }
+      _logger.warning('Current exam API returned invalid data shape');
+    }
+
+    _logger.warning('Current exam API failed, returning demo exam');
+    return Success(_demoCurrentExam);
   }
 
   @override
@@ -233,6 +262,77 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       submissionId: json['submission_id'] as String,
       submittedAt: DateTime.parse(json['submitted_at'] as String),
       message: json['message'] as String? ?? AppStrings.submitted,
+    );
+  }
+
+  static CurrentExamModel get _demoCurrentExam {
+    return CurrentExamModel(
+      examId: 'demo-exam-1',
+      examName: AppStrings.finishExamDefaultName,
+      batchName: 'demo-batch',
+      batchStatus: 'active',
+      batchId: 'demo-batch-id',
+      totalQuestions: 5,
+      durationMinutes: _demoDurationMinutes,
+      window: const ExamWindowModel(
+        startTime: null,
+        examEndTime: null,
+        submitEndTime: null,
+        bufferTimeMinutes: 5,
+        canAccessQuestions: true,
+        canSubmit: true,
+        remainingExamMinutes: _demoDurationMinutes,
+        remainingSubmitMinutes: _demoDurationMinutes + 5,
+      ),
+      questions: [
+        ExamQuestionModel(
+          id: 'demo-mcq-1',
+          questionNumber: 1,
+          type: ExamQuestionType.mcq,
+          text: AppStrings.mcq1Question,
+          mark: 1,
+          options: [
+            ExamQuestionOptionModel(key: 'a', text: AppStrings.mcq1OptionA),
+            ExamQuestionOptionModel(key: 'b', text: AppStrings.mcq1OptionB),
+            ExamQuestionOptionModel(key: 'c', text: AppStrings.mcq1OptionC),
+            ExamQuestionOptionModel(key: 'd', text: AppStrings.mcq1OptionD),
+          ],
+        ),
+        ExamQuestionModel(
+          id: 'demo-mcq-2',
+          questionNumber: 2,
+          type: ExamQuestionType.mcq,
+          text: AppStrings.mcq2Question,
+          mark: 1,
+          options: [
+            ExamQuestionOptionModel(key: 'a', text: AppStrings.mcq2OptionA),
+            ExamQuestionOptionModel(key: 'b', text: AppStrings.mcq2OptionB),
+            ExamQuestionOptionModel(key: 'c', text: AppStrings.mcq2OptionC),
+            ExamQuestionOptionModel(key: 'd', text: AppStrings.mcq2OptionD),
+          ],
+        ),
+        ExamQuestionModel(
+          id: 'demo-fill-1',
+          questionNumber: 3,
+          type: ExamQuestionType.fillInBlank,
+          text: AppStrings.demoFillBlankQuestion1,
+          mark: 1,
+        ),
+        ExamQuestionModel(
+          id: 'demo-fill-2',
+          questionNumber: 4,
+          type: ExamQuestionType.fillInBlank,
+          text: AppStrings.demoFillBlankQuestion2,
+          mark: 1,
+        ),
+        ExamQuestionModel(
+          id: 'demo-desc-1',
+          questionNumber: 5,
+          type: ExamQuestionType.descriptive,
+          text: AppStrings.demoDescriptiveQuestion1,
+          mark: 10,
+        ),
+      ],
     );
   }
 

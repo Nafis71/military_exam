@@ -118,6 +118,142 @@ class McqQuestion extends Equatable {
   List<Object?> get props => [id, question, options, index, total];
 }
 
+class ExamQuestionOption extends Equatable {
+  const ExamQuestionOption({required this.key, required this.text});
+
+  final String key;
+  final String text;
+
+  @override
+  List<Object?> get props => [key, text];
+}
+
+class ExamQuestion extends Equatable {
+  const ExamQuestion({
+    required this.id,
+    required this.questionNumber,
+    required this.type,
+    required this.text,
+    required this.mark,
+    this.options = const [],
+  });
+
+  final String id;
+  final int questionNumber;
+  final ExamQuestionType type;
+  final String text;
+  final int mark;
+  final List<ExamQuestionOption> options;
+
+  @override
+  List<Object?> get props => [id, questionNumber, type, text, mark, options];
+}
+
+class ExamWindow extends Equatable {
+  const ExamWindow({
+    required this.startTime,
+    required this.examEndTime,
+    required this.submitEndTime,
+    required this.bufferTimeMinutes,
+    required this.canAccessQuestions,
+    required this.canSubmit,
+    required this.remainingExamMinutes,
+    required this.remainingSubmitMinutes,
+  });
+
+  final DateTime? startTime;
+  final DateTime? examEndTime;
+  final DateTime? submitEndTime;
+  final int bufferTimeMinutes;
+  final bool canAccessQuestions;
+  final bool canSubmit;
+  final int remainingExamMinutes;
+  final int remainingSubmitMinutes;
+
+  @override
+  List<Object?> get props => [
+        startTime,
+        examEndTime,
+        submitEndTime,
+        bufferTimeMinutes,
+        canAccessQuestions,
+        canSubmit,
+        remainingExamMinutes,
+        remainingSubmitMinutes,
+      ];
+}
+
+class CurrentExam extends Equatable {
+  const CurrentExam({
+    required this.examId,
+    required this.examName,
+    required this.batchName,
+    required this.batchStatus,
+    required this.batchId,
+    required this.totalQuestions,
+    required this.durationMinutes,
+    required this.window,
+    required this.questions,
+  });
+
+  final String examId;
+  final String examName;
+  final String batchName;
+  final String batchStatus;
+  final String batchId;
+  final int totalQuestions;
+  final int durationMinutes;
+  final ExamWindow window;
+  final List<ExamQuestion> questions;
+
+  @override
+  List<Object?> get props => [
+        examId,
+        examName,
+        batchName,
+        batchStatus,
+        batchId,
+        totalQuestions,
+        durationMinutes,
+        window,
+        questions,
+      ];
+}
+
+class FillBlankQuestion extends Equatable {
+  const FillBlankQuestion({
+    required this.id,
+    required this.question,
+    required this.index,
+    required this.total,
+    this.mark = 1,
+  });
+
+  final String id;
+  final String question;
+  final int index;
+  final int total;
+  final int mark;
+
+  @override
+  List<Object?> get props => [id, question, index, total, mark];
+}
+
+class FillBlankAnswer extends Equatable {
+  const FillBlankAnswer({
+    required this.questionId,
+    required this.text,
+    required this.isFinal,
+  });
+
+  final String questionId;
+  final String text;
+  final bool isFinal;
+
+  @override
+  List<Object?> get props => [questionId, text, isFinal];
+}
+
 class McqAnswer extends Equatable {
   const McqAnswer({
     required this.questionId,
@@ -137,15 +273,17 @@ class WrittenQuestion extends Equatable {
   const WrittenQuestion({
     required this.id,
     required this.index,
+    required this.total,
     required this.text,
   });
 
   final String id;
   final int index;
+  final int total;
   final String text;
 
   @override
-  List<Object?> get props => [id, index, text];
+  List<Object?> get props => [id, index, total, text];
 }
 
 class WrittenAnswerImage extends Equatable {

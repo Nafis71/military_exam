@@ -6,13 +6,21 @@ abstract class ExamRepository {
 
   Future<Result<ExamSession?>> getCurrentSession();
 
+  Future<Result<CurrentExam>> getCurrentExam();
+
   Future<Result<ExamTimer>> getTimer(String sessionId);
 
   Future<Result<List<McqQuestion>>> getMcqQuestions(String sessionId);
 
+  Future<Result<List<FillBlankQuestion>>> getFillBlankQuestions(String sessionId);
+
   Future<Result<McqAnswer>> submitMcqAnswer(McqAnswer answer);
 
+  Future<Result<FillBlankAnswer>> saveFillBlankAnswer(FillBlankAnswer answer);
+
   Future<Result<Map<String, String>>> getMcqProgress(String sessionId);
+
+  Future<Result<Map<String, String>>> getFillBlankProgress(String sessionId);
 
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId);
 

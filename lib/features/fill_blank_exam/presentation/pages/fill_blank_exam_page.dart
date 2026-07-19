@@ -13,26 +13,26 @@ import '../../../../core/widgets/exam_connectivity_snackbar_listener.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
-import '../controllers/mcq_exam_controller.dart';
-import '../widgets/mcq_exam_header.dart';
-import '../widgets/mcq_question_body.dart';
+import '../controllers/fill_blank_exam_controller.dart';
+import '../widgets/fill_blank_exam_header.dart';
+import '../widgets/fill_blank_question_body.dart';
 
-class McqExamPage extends StatefulWidget {
-  const McqExamPage({super.key});
+class FillBlankExamPage extends StatefulWidget {
+  const FillBlankExamPage({super.key});
 
   @override
-  State<McqExamPage> createState() => _McqExamPageState();
+  State<FillBlankExamPage> createState() => _FillBlankExamPageState();
 }
 
-class _McqExamPageState extends State<McqExamPage> {
-  late final McqExamController controller;
+class _FillBlankExamPageState extends State<FillBlankExamPage> {
+  late final FillBlankExamController controller;
   late final ExamSessionController sessionController;
   late final String sessionId;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.find<McqExamController>();
+    controller = Get.find<FillBlankExamController>();
     sessionController = Get.find<ExamSessionController>();
     sessionId = Get.arguments as String? ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -59,15 +59,8 @@ class _McqExamPageState extends State<McqExamPage> {
           backgroundColor: AppColors.background,
           body: Obx(() {
             if (!sessionController.canAccessQuestions.value) {
-              return Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-                  child: Text(
-                    AppStrings.cannotAccessQuestions,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodyMedium,
-                  ),
-                ),
+              return _AccessBlockedView(
+                message: AppStrings.cannotAccessQuestions,
               );
             }
 
@@ -76,7 +69,7 @@ class _McqExamPageState extends State<McqExamPage> {
                 Obx(() {
                   final timer = sessionController.timer.value;
                   final question = controller.currentQuestion;
-                  return McqExamHeader(
+                  return FillBlankExamHeader(
                     questionIndex: question?.index ?? 0,
                     questionTotal: question?.total ?? 0,
                     formattedTimer: timer?.formatted ?? '--:--',
@@ -105,17 +98,17 @@ class _McqExamPageState extends State<McqExamPage> {
                       );
                     }
 
-                    return McqQuestionBody(
+                    return FillBlankQuestionBody(
                       question: question,
-                      selectedOptionId: controller.selectedOptionId.value,
-                      onSelectOption: controller.selectOption,
+                      answerText: controller.answerText.value,
+                      onAnswerChanged: controller.updateAnswer,
                     );
                   }),
                 ),
-                _McqNavigationBar(
+                _FillBlankNavigationBar(
                   controller: controller,
                   canSubmit: sessionController.canSubmitExam.value,
-                  onFinished: _onMcqFinished,
+                  onFinished: _onFillBlankFinished,
                 ),
               ],
             );
@@ -125,10 +118,10 @@ class _McqExamPageState extends State<McqExamPage> {
     );
   }
 
-  Future<void> _onMcqFinished() async {
-    await controller.submitCurrentAnswer(advance: false);
+  Future<void> _onFillBlankFinished() async {
+    await controller.saveCurrentAnswer(advance: false);
     final nextRoute =
-        sessionController.completePhaseAndGetNextRoute(ExamPhase.mcq);
+        sessionController.completePhaseAndGetNextRoute(ExamPhase.fillBlank);
     final watchdog = Get.find<StartSecurityWatchdogUseCase>();
     await watchdog(
       policy: SecurityPolicy(
@@ -159,14 +152,34 @@ class _McqExamPageState extends State<McqExamPage> {
   }
 }
 
-class _McqNavigationBar extends StatelessWidget {
-  const _McqNavigationBar({
+class _AccessBlockedView extends StatelessWidget {
+  const _AccessBlockedView({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: AppTypography.bodyMedium,
+        ),
+      ),
+    );
+  }
+}
+
+class _FillBlankNavigationBar extends StatelessWidget {
+  const _FillBlankNavigationBar({
     required this.controller,
     required this.canSubmit,
     required this.onFinished,
   });
 
-  final McqExamController controller;
+  final FillBlankExamController controller;
   final bool canSubmit;
   final VoidCallback onFinished;
 
@@ -187,30 +200,51 @@ class _McqNavigationBar extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.cD9E5DE)),
       ),
       child: Obx(() {
-        final submitting = controller.isSubmitting.value;
-        final hasSelection = controller.selectedOptionId.value != null;
+        final saving = controller.isSaving.value;
         final isLast = controller.isLastQuestion;
-        return AppPrimaryButton(
-          label: isLast ? AppStrings.finishMcq : AppStrings.nextQuestion,
-          isLoading: submitting,
-          onPressed: !hasSelection || submitting || (isLast && !canSubmit)
-              ? null
-              : () async {
-                  if (isLast) {
-                    onFinished();
-                  } else {
-                    await controller.submitCurrentAnswer();
-                  }
-                },
-          boxShadow: hasSelection && !submitting
-              ? [
-                  BoxShadow(
-                    color: AppColors.c89D5B2.withValues(alpha: 0.4),
-                    blurRadius: 28,
-                    spreadRadius: 1,
+        final canGoBack = controller.currentIndex.value > 0;
+        return Row(
+          children: [
+            if (canGoBack)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: saving ? null : controller.goToPrevious,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.c176B4D,
+                    side: const BorderSide(color: AppColors.cD9E5DE),
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
+                    ),
                   ),
-                ]
-              : null,
+                  child: Text(
+                    AppStrings.previousQuestion,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.c176B4D,
+                        ),
+                  ),
+                ),
+              ),
+            if (canGoBack) SizedBox(width: 12.w),
+            Expanded(
+              flex: canGoBack ? 1 : 1,
+              child: AppPrimaryButton(
+                label: isLast
+                    ? AppStrings.finishFillBlank
+                    : AppStrings.nextQuestion,
+                isLoading: saving,
+                onPressed: saving || (isLast && !canSubmit)
+                    ? null
+                    : () async {
+                        if (isLast) {
+                          onFinished();
+                        } else {
+                          await controller.saveCurrentAnswer();
+                        }
+                      },
+              ),
+            ),
+          ],
         );
       }),
     );

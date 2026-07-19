@@ -8,6 +8,7 @@ import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../models/exam_session_model.dart';
+import '../models/fill_blank_answer_model.dart';
 import '../models/mcq_answer_model.dart';
 
 abstract class ExamLocalDataSource {
@@ -18,6 +19,10 @@ abstract class ExamLocalDataSource {
   Future<Result<void>> saveMcqAnswer(McqAnswerModel answer);
 
   Future<Result<Map<String, String>>> readMcqAnswers();
+
+  Future<Result<void>> saveFillBlankAnswer(FillBlankAnswerModel answer);
+
+  Future<Result<Map<String, String>>> readFillBlankAnswers();
 
   Future<Result<void>> setExamLocked(bool locked, {String? reason});
 
@@ -31,6 +36,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
 
   static const _examSessionKey = 'exam_session';
   static const _mcqAnswersKey = 'mcq_answers';
+  static const _fillBlankAnswersKey = 'fill_blank_answers';
   static const _lockReasonKey = 'exam_lock_reason';
   static const _lockedAtKey = 'exam_locked_at';
 
@@ -93,6 +99,42 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
     } catch (error) {
       return ErrorResult(
         UnexpectedFailure('${AppStrings.failedToReadMcqAnswers}: $error'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> saveFillBlankAnswer(FillBlankAnswerModel answer) async {
+    try {
+      final current = await readFillBlankAnswers();
+      final answers = Map<String, String>.from(current.dataOrNull ?? {});
+      answers[answer.questionId] = answer.text;
+      await _storage.write(
+        key: _fillBlankAnswersKey,
+        value: jsonEncode(answers),
+      );
+      return const Success(null);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('${AppStrings.failedToSaveFillBlankAnswer}: $error'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Map<String, String>>> readFillBlankAnswers() async {
+    try {
+      final raw = await _storage.read(key: _fillBlankAnswersKey);
+      if (raw == null) return Success(<String, String>{});
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return Success(
+        Map<String, String>.from(
+          decoded.map((key, value) => MapEntry(key, value.toString())),
+        ),
+      );
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('${AppStrings.failedToReadFillBlankAnswers}: $error'),
       );
     }
   }
