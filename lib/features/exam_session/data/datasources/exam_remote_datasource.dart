@@ -16,6 +16,7 @@ import '../models/exam_question_model.dart';
 import '../models/exam_question_option_model.dart';
 import '../models/exam_session_model.dart';
 import '../models/exam_window_model.dart';
+import '../mappers/submission_receipt_mapper.dart';
 import '../models/written_image_upload_result_model.dart';
 import '../models/mcq_answer_model.dart';
 import '../models/mcq_option_model.dart';
@@ -225,7 +226,10 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     );
 
     if (result is Success<Map<String, dynamic>>) {
-      return Success(_receiptFromJson(result.data));
+      return Success(_parseReceiptOrFallback(
+        result.data,
+        fallbackMessage: AppStrings.autoSubmittedTimeExpiry,
+      ));
     }
 
     return Success(_demoReceipt(AppStrings.autoSubmittedTimeExpiry));
@@ -243,7 +247,10 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     );
 
     if (result is Success<Map<String, dynamic>>) {
-      return Success(_receiptFromJson(result.data));
+      return Success(_parseReceiptOrFallback(
+        result.data,
+        fallbackMessage: AppStrings.examSubmittedSuccessfully,
+      ));
     }
 
     return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
@@ -264,7 +271,10 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
     if (result is Success<Map<String, dynamic>>) {
       final data = result.data['data'] as Map<String, dynamic>? ?? result.data;
-      return Success(_receiptFromJson(data));
+      return Success(_parseReceiptOrFallback(
+        data,
+        fallbackMessage: AppStrings.examSubmittedSuccessfully,
+      ));
     }
 
     return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
@@ -349,12 +359,20 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     );
   }
 
-  SubmissionReceipt _receiptFromJson(Map<String, dynamic> json) {
-    return SubmissionReceipt(
-      submissionId: json['submission_id'] as String,
-      submittedAt: DateTime.parse(json['submitted_at'] as String),
-      message: json['message'] as String? ?? AppStrings.submitted,
-    );
+  SubmissionReceipt _parseReceiptOrFallback(
+    Map<String, dynamic> json, {
+    required String fallbackMessage,
+  }) {
+    try {
+      return SubmissionReceiptMapper.fromJson(json);
+    } catch (error, stackTrace) {
+      _logger.error(
+        'Failed to parse submission receipt; using local fallback',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return _demoReceipt(fallbackMessage);
+    }
   }
 
   static CurrentExamModel get _demoCurrentExam {

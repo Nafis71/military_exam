@@ -304,6 +304,14 @@ extension ScannerViewController: RectangleDetectionDelegateProtocol {
             return
         }
 
+        guard quadView.bounds.width > 0, quadView.bounds.height > 0 else {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.captureSessionManager(captureSessionManager, didDetectQuad: quad, imageSize)
+            }
+            return
+        }
+
         let portraitImageSize = CGSize(width: imageSize.height, height: imageSize.width)
 
         let scaleTransform = CGAffineTransform.scaleTransform(forSize: portraitImageSize, aspectFillInSize: quadView.bounds.size)

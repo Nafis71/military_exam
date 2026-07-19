@@ -37,6 +37,7 @@ class PaperRectangle : View {
     private var cropMode = false
     private var latestDownX = 0.0F
     private var latestDownY = 0.0F
+    private var pendingCorners: Corners? = null
 
     init {
         rectPaint.color = ContextCompat.getColor(context, R.color.colorOverlay)
@@ -56,6 +57,17 @@ class PaperRectangle : View {
     }
 
     fun onCornersDetected(corners: Corners) {
+        if (measuredWidth == 0 || measuredHeight == 0) {
+            pendingCorners = corners
+            post {
+                val pending = pendingCorners ?: return@post
+                if (measuredWidth > 0 && measuredHeight > 0) {
+                    onCornersDetected(pending)
+                }
+            }
+            return
+        }
+        pendingCorners = null
 
         ratioX = corners.size.width.div(measuredWidth)
         ratioY = corners.size.height.div(measuredHeight)
@@ -116,6 +128,15 @@ class PaperRectangle : View {
     fun getCorners2Crop(): List<Point> {
         reverseSize()
         return listOf(tl, tr, br, bl)
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        val pending = pendingCorners ?: return
+        if (w > 0 && h > 0) {
+            pendingCorners = null
+            onCornersDetected(pending)
+        }
     }
 
     override fun onDraw(canvas: Canvas) {

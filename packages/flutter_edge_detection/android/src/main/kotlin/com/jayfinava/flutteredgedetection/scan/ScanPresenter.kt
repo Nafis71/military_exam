@@ -17,6 +17,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.Display
 import android.view.SurfaceHolder
+import android.view.View
 import android.widget.Toast
 import com.jayfinava.flutteredgedetection.EdgeDetectionHandler
 import com.jayfinava.flutteredgedetection.REQUEST_CODE
@@ -58,9 +59,14 @@ class ScanPresenter constructor(
     private var busy: Boolean = false
     private var mCameraLensFacing: String? = null
     private var flashEnabled: Boolean = false
+    private var missCount: Int = 0
 
     private var mLastClickTime = 0L
     private var shutted: Boolean = true
+
+    companion object {
+        private const val NO_RECTANGLE_THRESHOLD = 3
+    }
 
     init {
         mSurfaceHolder.addCallback(this)
@@ -186,9 +192,13 @@ class ScanPresenter constructor(
         val displayRatio = displayWidth.div(displayHeight.toFloat())
         val previewRatio = size?.height?.toFloat()?.div(size.width.toFloat()) ?: displayRatio
         if (displayRatio > previewRatio) {
-            val surfaceParams = iView.getSurfaceView().layoutParams
-            surfaceParams.height = (displayHeight / displayRatio * previewRatio).toInt()
-            iView.getSurfaceView().layoutParams = surfaceParams
+            val adjustedHeight = (displayHeight / displayRatio * previewRatio).toInt()
+            val previewContainer = iView.getSurfaceView().parent as? View
+            val containerParams = previewContainer?.layoutParams
+            if (containerParams != null) {
+                containerParams.height = adjustedHeight
+                previewContainer.layoutParams = containerParams
+            }
         }
 
         val supportPicSize = mCamera?.parameters?.supportedPictureSizes
@@ -290,56 +300,57 @@ class ScanPresenter constructor(
     }
 
     override fun onPreviewFrame(p0: ByteArray?, p1: Camera?) {
-        if (busy) {
+        if (busy || p0 == null || p1 == null) {
             return
         }
         busy = true
-        try {
-            Observable.just(p0)
-                .observeOn(proxySchedule)
-                .doOnError {}
-                .subscribe({
-                    val parameters = p1?.parameters
-                    val width = parameters?.previewSize?.width
-                    val height = parameters?.previewSize?.height
-                    val yuv = YuvImage(
-                        p0, parameters?.previewFormat ?: 0, width ?: 1080, height
-                            ?: 1920, null
-                    )
-                    val out = ByteArrayOutputStream()
-                    yuv.compressToJpeg(Rect(0, 0, width ?: 1080, height ?: 1920), 100, out)
-                    val bytes = out.toByteArray()
-                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    val img = Mat()
-                    Utils.bitmapToMat(bitmap, img)
-                    bitmap.recycle()
-                    Core.rotate(img, img, Core.ROTATE_90_CLOCKWISE)
-                    try {
-                        out.close()
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }
 
-                    Observable.create<Corners> {
-                        val corner = processPicture(img)
-                        busy = false
-                        if (null != corner && corner.corners.size == 4) {
-                            it.onNext(corner)
-                        } else {
-                            it.onError(Throwable("paper not detected"))
-                        }
-                    }.observeOn(AndroidSchedulers.mainThread())
-                        .subscribe({
-                            iView.getPaperRect().onCornersDetected(it)
-
-                        }, {
-                            iView.getPaperRect().onCornersNotDetected()
-                        })
-                }, { throwable -> Log.e(TAG, throwable.message!!) })
-        } catch (e: Exception) {
-            print(e.message)
+        Observable.fromCallable {
+            val parameters = p1.parameters
+            val width = parameters.previewSize.width
+            val height = parameters.previewSize.height
+            val yuv = YuvImage(p0, parameters.previewFormat, width, height, null)
+            val out = ByteArrayOutputStream()
+            yuv.compressToJpeg(Rect(0, 0, width, height), 100, out)
+            val bytes = out.toByteArray()
+            try {
+                out.close()
+            } catch (e: IOException) {
+                Log.e(TAG, "failed to close preview stream", e)
+            }
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val img = Mat()
+            Utils.bitmapToMat(bitmap, img)
+            bitmap.recycle()
+            Core.rotate(img, img, Core.ROTATE_90_CLOCKWISE)
+            try {
+                processPicture(img)
+            } finally {
+                img.release()
+            }
         }
+            .subscribeOn(proxySchedule)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ corner ->
+                busy = false
+                if (corner != null && corner.corners.size == 4) {
+                    missCount = 0
+                    iView.getPaperRect().onCornersDetected(corner)
+                } else {
+                    handleDetectionMiss()
+                }
+            }, { error ->
+                busy = false
+                Log.e(TAG, "preview frame processing failed", error)
+                handleDetectionMiss()
+            })
+    }
 
+    private fun handleDetectionMiss() {
+        missCount += 1
+        if (missCount > NO_RECTANGLE_THRESHOLD) {
+            iView.getPaperRect().onCornersNotDetected()
+        }
     }
 
     /** [CameraCharacteristics] corresponding to the provided Camera ID */
