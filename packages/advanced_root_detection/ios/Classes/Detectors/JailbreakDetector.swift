@@ -48,7 +48,11 @@ class JailbreakDetector {
         "activator://",
     ]
 
-    func detect() -> [ThreatResult] {
+    func detect(config: DetectionConfig) -> [ThreatResult] {
+        if config.skipJailbreakOnSimulator && SimulatorEnvironment.isSimulator() {
+            return []
+        }
+
         var threats: [ThreatResult] = []
 
         // 1. Classic paths

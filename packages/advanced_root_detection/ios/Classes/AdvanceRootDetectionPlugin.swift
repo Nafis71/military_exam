@@ -14,11 +14,11 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let methodChannel = FlutterMethodChannel(
-            name: "advance_root_detection/methods",
+            name: "advanced_root_detection/methods",
             binaryMessenger: registrar.messenger()
         )
         let eventChannel = FlutterEventChannel(
-            name: "advance_root_detection/threats",
+            name: "advanced_root_detection/threats",
             binaryMessenger: registrar.messenger()
         )
 
@@ -98,10 +98,10 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
 
     private func collectAllThreats(config: DetectionConfig) -> [ThreatResult] {
         if config.isEssentialScope {
-            return JailbreakDetector.shared.detect()
+            return JailbreakDetector.shared.detect(config: config)
         }
         var threats: [ThreatResult] = []
-        threats += JailbreakDetector.shared.detect()
+        threats += JailbreakDetector.shared.detect(config: config)
         threats += HookDetector.shared.detect()
         threats += DebuggerDetector.shared.detect()
         threats += IntegrityDetector.shared.detect(config: config)
@@ -132,7 +132,8 @@ public class AdvanceRootDetectionPlugin: NSObject, FlutterPlugin, FlutterStreamH
             bundleIds: (ios["bundleIds"] as? [String]) ?? [],
             teamId: ios["teamId"] as? String,
             monitoringIntervalSeconds: intervalSeconds,
-            scope: scope
+            scope: scope,
+            skipJailbreakOnSimulator: ios["skipJailbreakOnSimulator"] as? Bool ?? false
         )
     }
 }
@@ -144,17 +145,20 @@ struct DetectionConfig {
     let teamId: String?
     let monitoringIntervalSeconds: Int
     let scope: String
+    let skipJailbreakOnSimulator: Bool
 
     init(
         bundleIds: [String] = [],
         teamId: String? = nil,
         monitoringIntervalSeconds: Int = 30,
-        scope: String = "essential"
+        scope: String = "essential",
+        skipJailbreakOnSimulator: Bool = false
     ) {
         self.bundleIds = bundleIds
         self.teamId = teamId
         self.monitoringIntervalSeconds = monitoringIntervalSeconds
         self.scope = scope
+        self.skipJailbreakOnSimulator = skipJailbreakOnSimulator
     }
 
     var isEssentialScope: Bool { scope != "full" }
@@ -165,6 +169,18 @@ struct ThreatResult {
     let description: String
     let severity: String
     let details: [String: String]?
+
+    init(
+        category: String,
+        description: String,
+        severity: String,
+        details: [String: String]? = nil
+    ) {
+        self.category = category
+        self.description = description
+        self.severity = severity
+        self.details = details
+    }
 
     func toMap() -> [String: Any] {
         var map: [String: Any] = [

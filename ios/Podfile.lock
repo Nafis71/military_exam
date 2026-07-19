@@ -1,11 +1,12 @@
 PODS:
+  - advanced_root_detection (0.0.1):
+    - Flutter
   - airplane_mode_checker (3.2.1):
     - Flutter
   - app_settings (6.1.2):
     - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
-  - DTTJailbreakDetection (0.4.0)
   - Flutter (1.0.0)
   - "flutter_edge_detection (1.2.0+1)":
     - Flutter
@@ -15,13 +16,11 @@ PODS:
     - Flutter
   - permission_handler_apple (9.4.8):
     - Flutter
-  - root_checker_plus (0.0.1):
-    - DTTJailbreakDetection
-    - Flutter
   - screen_security (1.1.0):
     - Flutter
 
 DEPENDENCIES:
+  - advanced_root_detection (from `.symlinks/plugins/advanced_root_detection/ios`)
   - airplane_mode_checker (from `.symlinks/plugins/airplane_mode_checker/ios`)
   - app_settings (from `.symlinks/plugins/app_settings/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
@@ -30,14 +29,11 @@ DEPENDENCIES:
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - root_checker_plus (from `.symlinks/plugins/root_checker_plus/ios`)
   - screen_security (from `.symlinks/plugins/screen_security/ios`)
 
-SPEC REPOS:
-  trunk:
-    - DTTJailbreakDetection
-
 EXTERNAL SOURCES:
+  advanced_root_detection:
+    :path: ".symlinks/plugins/advanced_root_detection/ios"
   airplane_mode_checker:
     :path: ".symlinks/plugins/airplane_mode_checker/ios"
   app_settings:
@@ -54,22 +50,19 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
-  root_checker_plus:
-    :path: ".symlinks/plugins/root_checker_plus/ios"
   screen_security:
     :path: ".symlinks/plugins/screen_security/ios"
 
 SPEC CHECKSUMS:
+  advanced_root_detection: df5637c467b932bd67fb59f2990a080d7d107881
   airplane_mode_checker: 39cfbf90b11d636e88bf651bceb4f58165cab733
   app_settings: 0341ec6daa4f0c50f5a421bf0ad7c36084db6e90
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  DTTJailbreakDetection: 5e356c5badc17995f65a83ed9483f787a0057b71
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_edge_detection: ec7b3c5f600cc1538dad0c79c76c250514cba8a2
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e
-  root_checker_plus: 0d625cf912b8fa2d7c1976a80a4749acf937ce06
   screen_security: dd7003c23d935cb86d7887df49e0136c227811d5
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e

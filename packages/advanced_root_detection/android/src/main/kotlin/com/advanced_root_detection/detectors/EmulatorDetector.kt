@@ -14,6 +14,11 @@ import java.io.File
  */
 class EmulatorDetector(private val context: Context) {
 
+    companion object {
+        fun isEmulator(context: Context): Boolean =
+            EmulatorDetector(context).detect().isNotEmpty()
+    }
+
     private val emulatorFiles = listOf(
         "/dev/socket/qemud",
         "/dev/qemu_pipe",

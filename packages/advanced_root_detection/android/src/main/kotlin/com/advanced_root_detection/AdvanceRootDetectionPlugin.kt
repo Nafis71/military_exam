@@ -184,7 +184,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
         config: DetectionConfig,
     ): List<ThreatResult> {
         val threats = mutableListOf<ThreatResult>()
-        threats += RootDetector(ctx).detect()
+        threats += RootDetector(ctx, config).detect()
         threats += CustomRomDetector(config).detect()
         threats += SpoofingDetector(ctx, config).detectDeveloperModeOnly()
         return threats
@@ -194,7 +194,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
         val threats = mutableListOf<ThreatResult>()
 
         // Root / privileged access
-        threats += RootDetector(ctx).detect()
+        threats += RootDetector(ctx, config).detect()
 
         // Hooking frameworks
         threats += HookDetector(ctx).detect()
@@ -289,6 +289,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
             treatDeveloperModeAsThreat = androidArgs["treatDeveloperModeAsThreat"] as? Boolean ?: false,
             allowSideload = androidArgs["allowSideload"] as? Boolean ?: false,
             strictExamIntegrity = androidArgs["strictExamIntegrity"] as? Boolean ?: false,
+            skipRootOnEmulator = androidArgs["skipRootOnEmulator"] as? Boolean ?: false,
             monitoringIntervalSeconds = (args["monitoringIntervalSeconds"] as? Int) ?: 30,
             scope = args["scope"] as? String ?: "essential",
         )
@@ -305,6 +306,7 @@ data class DetectionConfig(
     val treatDeveloperModeAsThreat: Boolean = false,
     val allowSideload: Boolean = false,
     val strictExamIntegrity: Boolean = false,
+    val skipRootOnEmulator: Boolean = false,
     val monitoringIntervalSeconds: Int = 30,
     val scope: String = "essential",
 ) {

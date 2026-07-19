@@ -3,6 +3,7 @@ package com.advanced_root_detection.detectors
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.advanced_root_detection.DetectionConfig
 import com.advanced_root_detection.ThreatResult
 import java.io.BufferedReader
 import java.io.File
@@ -17,7 +18,10 @@ import java.io.InputStreamReader
  *   https://mas.owasp.org/MASTG/tests/android/MASVS-RESILIENCE/MASTG-TEST-0045/
  *   https://github.com/scottyab/rootbeer
  */
-class RootDetector(private val context: Context) {
+class RootDetector(
+    private val context: Context,
+    private val config: DetectionConfig = DetectionConfig(),
+) {
 
     private val suPaths = listOf(
         "/system/bin/su",
@@ -64,6 +68,10 @@ class RootDetector(private val context: Context) {
     )
 
     fun detect(): List<ThreatResult> {
+        if (config.skipRootOnEmulator && EmulatorDetector.isEmulator(context)) {
+            return emptyList()
+        }
+
         val threats = mutableListOf<ThreatResult>()
 
         // 1. su binary presence

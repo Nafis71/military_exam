@@ -63,6 +63,9 @@ class AndroidConfig {
   /// When true, block unlocked bootloader, custom ROM, and spoofing signals.
   final bool strictExamIntegrity;
 
+  /// When true, skip root detection on Android emulators (demo/staging QA).
+  final bool skipRootOnEmulator;
+
   /// Creates an [AndroidConfig].
   const AndroidConfig({
     this.packageName,
@@ -75,6 +78,7 @@ class AndroidConfig {
     this.treatDeveloperModeAsThreat = false,
     this.allowSideload = false,
     this.strictExamIntegrity = false,
+    this.skipRootOnEmulator = false,
   });
 
   /// Converts to a map for passing over the MethodChannel.
@@ -86,6 +90,7 @@ class AndroidConfig {
         'treatDeveloperModeAsThreat': treatDeveloperModeAsThreat,
         'allowSideload': allowSideload,
         'strictExamIntegrity': strictExamIntegrity,
+        'skipRootOnEmulator': skipRootOnEmulator,
       };
 }
 
@@ -97,16 +102,21 @@ class IOSConfig {
   /// Expected Apple Developer Team ID.
   final String? teamId;
 
+  /// When true, skip jailbreak detection on iOS simulator (demo/staging QA).
+  final bool skipJailbreakOnSimulator;
+
   /// Creates an [IOSConfig].
   const IOSConfig({
     this.bundleIds = const [],
     this.teamId,
+    this.skipJailbreakOnSimulator = false,
   });
 
   /// Converts to a map for passing over the MethodChannel.
   Map<String, dynamic> toMap() => {
         'bundleIds': bundleIds,
         'teamId': teamId,
+        'skipJailbreakOnSimulator': skipJailbreakOnSimulator,
       };
 }
 

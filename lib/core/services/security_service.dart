@@ -254,6 +254,7 @@ class SecurityService {
 
   SecurityConfig _buildConfig() {
     final deployment = Deployment.instance;
+    final relaxSimulator = deployment.relaxSimulatorIntegrityChecks;
     return SecurityConfig(
       scope: SecurityCheckScope.essential,
       android: AndroidConfig(
@@ -261,6 +262,7 @@ class SecurityService {
         allowSideload: deployment.allowSideload,
         strictExamIntegrity: deployment.strictExamIntegrity,
         treatDeveloperModeAsThreat: true,
+        skipRootOnEmulator: relaxSimulator,
         allowedInstallers: const [
           AppStore.googlePlay,
           AppStore.amazonAppstore,
@@ -269,8 +271,9 @@ class SecurityService {
           AppStore.huaweiAppGallery,
         ],
       ),
-      ios: const IOSConfig(
-        bundleIds: ['com.example.military_exam'],
+      ios: IOSConfig(
+        bundleIds: const ['com.example.military_exam'],
+        skipJailbreakOnSimulator: relaxSimulator,
       ),
     );
   }
