@@ -21,7 +21,7 @@ class EnvironmentDetector(private val context: Context, private val config: Dete
         val threats = mutableListOf<ThreatResult>()
 
         // 1. Developer mode / ADB enabled
-        if (isDeveloperModeEnabled()) {
+        if (!config.skipDeveloperMode && isDeveloperModeEnabled()) {
             val severity = if (config.treatDeveloperModeAsThreat) "medium" else "info"
             threats += ThreatResult(
                 category = "debuggerAttached",

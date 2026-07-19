@@ -4,19 +4,19 @@ import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../domain/usecases/get_current_mcq_progress_usecase.dart';
 import '../../domain/usecases/get_mcq_questions_usecase.dart';
-import '../../domain/usecases/submit_mcq_answer_usecase.dart';
+import '../../domain/usecases/save_mcq_answer_usecase.dart';
 
 class McqExamController extends GetxController {
   McqExamController({
     required GetMcqQuestionsUseCase getMcqQuestionsUseCase,
-    required SubmitMcqAnswerUseCase submitMcqAnswerUseCase,
+    required SaveMcqAnswerUseCase saveMcqAnswerUseCase,
     required GetCurrentMcqProgressUseCase getCurrentMcqProgressUseCase,
   })  : _getMcqQuestionsUseCase = getMcqQuestionsUseCase,
-        _submitMcqAnswerUseCase = submitMcqAnswerUseCase,
+        _saveMcqAnswerUseCase = saveMcqAnswerUseCase,
         _getCurrentMcqProgressUseCase = getCurrentMcqProgressUseCase;
 
   final GetMcqQuestionsUseCase _getMcqQuestionsUseCase;
-  final SubmitMcqAnswerUseCase _submitMcqAnswerUseCase;
+  final SaveMcqAnswerUseCase _saveMcqAnswerUseCase;
   final GetCurrentMcqProgressUseCase _getCurrentMcqProgressUseCase;
 
   final questions = <McqQuestion>[].obs;
@@ -74,6 +74,11 @@ class McqExamController extends GetxController {
     selectedOptionId.value = optionId;
   }
 
+  Future<void> flushPendingAnswer() async {
+    if (selectedOptionId.value == null) return;
+    await submitCurrentAnswer(advance: false);
+  }
+
   Future<void> submitCurrentAnswer({bool advance = true}) async {
     final question = currentQuestion;
     final optionId = selectedOptionId.value;
@@ -86,7 +91,7 @@ class McqExamController extends GetxController {
       isFinal: isLastQuestion,
     );
 
-    final result = await _submitMcqAnswerUseCase(answer);
+    final result = await _saveMcqAnswerUseCase(answer);
     isSubmitting.value = false;
 
     switch (result) {

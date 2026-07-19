@@ -26,6 +26,9 @@ class ErrorInterceptor extends Interceptor {
     if (statusCode == 401 || statusCode == 404) {
       return UnauthorizedException(message, code: statusCode.toString());
     }
+    if (statusCode == 400) {
+      return BadRequestException(message, code: statusCode.toString());
+    }
     if (statusCode == 403) {
       return ForbiddenException(message, code: statusCode.toString());
     }

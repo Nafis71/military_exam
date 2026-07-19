@@ -15,6 +15,7 @@ class WrittenExamQuestionCard extends StatelessWidget {
     super.key,
     required this.question,
     required this.images,
+    this.isLocked = false,
     required this.onAddImage,
     required this.onReplace,
     required this.onDelete,
@@ -22,6 +23,7 @@ class WrittenExamQuestionCard extends StatelessWidget {
 
   final WrittenQuestion question;
   final List<WrittenAnswerImage> images;
+  final bool isLocked;
   final VoidCallback onAddImage;
   final Function(String localId) onReplace;
   final Function(String localId) onDelete;
@@ -99,7 +101,7 @@ class WrittenExamQuestionCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    if (images.isEmpty)
+                    if (images.isEmpty && !isLocked)
                       GestureDetector(
                         onTap: onAddImage,
                         child: AppSvgAsset(
@@ -113,7 +115,7 @@ class WrittenExamQuestionCard extends StatelessWidget {
               ],
             ),
           ),
-          if (images.isEmpty)
+          if (images.isEmpty && !isLocked)
             Padding(
               padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
               child: WrittenExamCaptureCard(onTap: onAddImage),
@@ -128,6 +130,7 @@ class WrittenExamQuestionCard extends StatelessWidget {
                     image: entry.value,
                     pageNumber: entry.key + 1,
                     nested: true,
+                    isLocked: isLocked,
                     onReplace: () => onReplace(entry.value.localId),
                     onDelete: () => onDelete(entry.value.localId),
                   ),

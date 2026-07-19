@@ -241,6 +241,9 @@ abstract final class AppStrings {
   static const finishExamResultsLaterNote =
       'ফলাফল পরবর্তীতে আনুষ্ঠানিকভাবে জানানো হবে';
   static const finishExamDefaultName = 'সামরিক পরীক্ষা ২০২৫';
+  static const timeExpiredTitle = 'সময় শেষ';
+  static const timeExpiredMessage =
+      'পরীক্ষার নির্ধারিত সময় শেষ। আপনার দেওয়া উত্তরসমূহ স্বয়ংক্রিয়ভাবে জমা হয়েছে।';
 
   // Network & errors
   static const somethingWentWrong =
@@ -304,6 +307,22 @@ abstract final class AppStrings {
       'শূন্যস্থান উত্তর সংরক্ষণ করা যায়নি';
   static const failedToReadFillBlankAnswers =
       'শূন্যস্থান উত্তর পড়া যায়নি';
+  static const failedToSaveRollNumber = 'রোল নম্বর সংরক্ষণ করা যায়নি';
+  static const failedToReadRollNumber = 'রোল নম্বর পড়া যায়নি';
+  static const failedToSaveAnswerDraft = 'উত্তর সংরক্ষণ করা যায়নি';
+  static const failedToReadAnswerDrafts = 'উত্তর পড়া যায়নি';
+  static const failedToClearAnswerDrafts = 'স্থানীয় উত্তর মুছে ফেলা যায়নি';
+  static const writtenExamConfirmImageTitle = 'ছবি জমা দেবেন?';
+  static const writtenExamConfirmImageMessage =
+      'এই উত্তরপত্রের ছবি জমা দিতে চান? জমা দেওয়ার পর পরিবর্তন করা যাবে না।';
+  static const writtenExamRetakeImage = 'আবার তুলুন';
+  static const writtenExamSubmitImage = 'ছবি জমা দিন';
+  static const writtenExamUploading = 'ছবি আপলোড হচ্ছে...';
+  static const writtenExamImageUploaded = 'ছবি সফলভাবে জমা হয়েছে';
+  static const writtenExamImageUploadFailed =
+      'ছবি আপলোড করা যায়নি। আবার চেষ্টা করুন।';
+  static const writtenExamRequireUploadedImage =
+      'পরবর্তী প্রশ্নে যেতে আগে ছবি জমা দিন।';
   static const failedToSetLockState = 'লক অবস্থা সেট করা যায়নি';
   static const failedToReadLockState = 'লক অবস্থা পড়া যায়নি';
 

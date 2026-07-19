@@ -255,6 +255,7 @@ class SecurityService {
   SecurityConfig _buildConfig() {
     final deployment = Deployment.instance;
     final relaxSimulator = deployment.relaxSimulatorIntegrityChecks;
+    final relaxDeveloperMode = deployment.relaxDeveloperModeChecks;
     return SecurityConfig(
       scope: SecurityCheckScope.essential,
       android: AndroidConfig(
@@ -264,6 +265,7 @@ class SecurityService {
         treatDeveloperModeAsThreat: true,
         skipRootOnEmulator: relaxSimulator,
         skipDeveloperModeOnEmulator: relaxSimulator,
+        skipDeveloperMode: relaxDeveloperMode,
         allowedInstallers: const [
           AppStore.googlePlay,
           AppStore.amazonAppstore,
@@ -517,6 +519,7 @@ bool detectTestKeys(List<Threat> threats) {
 }
 
 bool detectDeveloperMode(List<Threat> threats) {
+  if (Deployment.instance.relaxDeveloperModeChecks) return false;
   for (final threat in threats) {
     final description = threat.description.toLowerCase();
     if (description.contains('developer options') ||

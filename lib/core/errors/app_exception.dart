@@ -24,6 +24,10 @@ class ValidationException extends AppException {
   const ValidationException(super.message, {super.code});
 }
 
+class BadRequestException extends AppException {
+  const BadRequestException(super.message, {super.code});
+}
+
 class ServerException extends AppException {
   const ServerException(super.message, {super.code});
 }

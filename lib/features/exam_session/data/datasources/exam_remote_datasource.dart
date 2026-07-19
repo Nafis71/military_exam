@@ -1,7 +1,11 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import '../../../../core/config/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/exam_constants.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/result.dart';
@@ -12,6 +16,7 @@ import '../models/exam_question_model.dart';
 import '../models/exam_question_option_model.dart';
 import '../models/exam_session_model.dart';
 import '../models/exam_window_model.dart';
+import '../models/written_image_upload_result_model.dart';
 import '../models/mcq_answer_model.dart';
 import '../models/mcq_option_model.dart';
 import '../models/mcq_question_model.dart';
@@ -35,6 +40,17 @@ abstract class ExamRemoteDataSource {
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId);
 
   Future<Result<SubmissionReceipt>> finishExam(String sessionId);
+
+  Future<Result<SubmissionReceipt>> finalizeCurrentExam(
+    FinalizeExamRequest request,
+  );
+
+  Future<Result<WrittenImageUploadResultModel>> uploadDescriptiveAnswerImage({
+    required String questionId,
+    required String rollNumber,
+    required String filePath,
+    void Function(int sent, int total)? onSendProgress,
+  });
 
   Future<Result<void>> reportViolation(SecurityViolation violation);
 }
@@ -129,9 +145,18 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     if (result is Success<Map<String, dynamic>>) {
       final data = result.data['data'];
       if (data is Map<String, dynamic>) {
-        return Success(CurrentExamModel.fromJson(data));
+        try {
+          return Success(CurrentExamModel.fromJson(data));
+        } catch (error, stackTrace) {
+          _logger.error(
+            'Current exam API returned invalid data',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      } else {
+        _logger.warning('Current exam API returned invalid data shape');
       }
-      _logger.warning('Current exam API returned invalid data shape');
     }
 
     _logger.warning('Current exam API failed, returning demo exam');
@@ -222,6 +247,73 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     }
 
     return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
+  }
+
+  @override
+  Future<Result<SubmissionReceipt>> finalizeCurrentExam(
+    FinalizeExamRequest request,
+  ) async {
+    if (Deployment.instance.isDemo) {
+      return Success(_demoReceipt(AppStrings.examSubmittedDemo));
+    }
+
+    final result = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.examFinalize,
+      data: request.toJson(),
+    );
+
+    if (result is Success<Map<String, dynamic>>) {
+      final data = result.data['data'] as Map<String, dynamic>? ?? result.data;
+      return Success(_receiptFromJson(data));
+    }
+
+    return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
+  }
+
+  @override
+  Future<Result<WrittenImageUploadResultModel>> uploadDescriptiveAnswerImage({
+    required String questionId,
+    required String rollNumber,
+    required String filePath,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    if (Deployment.instance.isDemo) {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      return Success(
+        WrittenImageUploadResultModel(
+          answerId: 'demo-answer-${DateTime.now().millisecondsSinceEpoch}',
+          questionId: questionId,
+          imagePath: filePath,
+          gradingStatus: 'PENDING',
+        ),
+      );
+    }
+
+    if (!File(filePath).existsSync()) {
+      return const ErrorResult(UploadFailure(AppStrings.imageFileNotFound));
+    }
+
+    final formData = FormData.fromMap({
+      'roll_number': rollNumber,
+      'file': await MultipartFile.fromFile(filePath),
+    });
+
+    final result = await _apiClient.upload<Map<String, dynamic>>(
+      ApiEndpoints.examAnswerImageUpload(questionId),
+      formData: formData,
+      onSendProgress: onSendProgress,
+    );
+
+    if (result is Success<Map<String, dynamic>>) {
+      final data = result.data['data'] as Map<String, dynamic>? ?? result.data;
+      return Success(WrittenImageUploadResultModel.fromJson(data));
+    }
+
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    return const ErrorResult(UploadFailure(AppStrings.writtenExamImageUploadFailed));
   }
 
   @override

@@ -19,6 +19,7 @@ class ErrorMapper {
       SecurityException() => SecurityFailure(exception.message),
       UploadException() => UploadFailure(exception.message),
       ValidationException() => ValidationFailure(exception.message),
+      BadRequestException() => BadRequestFailure(exception.message),
       NetworkException() ||
       TimeoutException() =>
         NetworkFailure(exception.message),
@@ -33,6 +34,7 @@ class ErrorMapper {
         AppStrings.networkRequestFailed;
 
     if (statusCode == 401 || statusCode == 404) return AuthFailure(message);
+    if (statusCode == 400) return BadRequestFailure(message);
     if (statusCode == 403) return ExamLockedFailure(message);
     if (statusCode == 422) return ValidationFailure(message);
     if (exception.type == DioExceptionType.connectionTimeout ||

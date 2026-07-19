@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config/deployment.dart';
@@ -44,14 +43,6 @@ class DioFactory {
       LoggingInterceptor(_logger),
       RetryInterceptor(dio: dio),
       ErrorInterceptor(),
-      if (env.enableNetworkLogs)
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-        ),
     ]);
 
     return dio;

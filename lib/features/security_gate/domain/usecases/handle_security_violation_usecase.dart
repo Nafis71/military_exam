@@ -7,8 +7,9 @@ import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/exam_lock_service.dart';
-import '../../../exam_session/domain/usecases/auto_submit_exam_usecase.dart';
+import '../../../../core/utils/result.dart';
 import '../../../exam_session/domain/usecases/report_security_violation_usecase.dart';
+import '../../../exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 
@@ -16,14 +17,14 @@ class HandleSecurityViolationUseCase {
   HandleSecurityViolationUseCase(
     this._lockService,
     this._reportViolationUseCase,
-    this._autoSubmitExamUseCase,
+    this._submitSavedExamAnswersUseCase,
     this._lifecycleService, {
     this.violationRoute = AppRoutes.violation,
   });
 
   final ExamLockService _lockService;
   final ReportSecurityViolationUseCase _reportViolationUseCase;
-  final AutoSubmitExamUseCase _autoSubmitExamUseCase;
+  final SubmitSavedExamAnswersUseCase _submitSavedExamAnswersUseCase;
   final AppLifecycleService _lifecycleService;
   final String violationRoute;
 
@@ -37,18 +38,29 @@ class HandleSecurityViolationUseCase {
     await _lockService.lock(reason: violation.type.displayMessage);
     await _reportViolationUseCase(violation);
 
-    final sessionId = violation.sessionId;
-    if (sessionId != null) {
-      await _autoSubmitExamUseCase(sessionId);
+    var answersSubmitted = false;
+    if (violation.sessionId != null) {
+      final submitResult =
+          await _submitSavedExamAnswersUseCase(violation.phase);
+      answersSubmitted = submitResult is Success<SubmissionReceipt>;
     }
 
-    _navigateToViolation(violation);
+    _navigateToViolation(violation, answersSubmitted: answersSubmitted);
   }
 
-  void _navigateToViolation(SecurityViolation violation) {
+  void _navigateToViolation(
+    SecurityViolation violation, {
+    required bool answersSubmitted,
+  }) {
     void navigate() {
       if (Get.currentRoute == violationRoute) return;
-      Get.offAllNamed(violationRoute, arguments: violation);
+      Get.offAllNamed(
+        violationRoute,
+        arguments: <String, dynamic>{
+          'violation': violation,
+          'answersSubmitted': answersSubmitted,
+        },
+      );
     }
 
     navigate();

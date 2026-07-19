@@ -1,19 +1,27 @@
 import '../../../../core/config/deployment.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
+import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../domain/repositories/exam_repository.dart';
+import '../../domain/utils/finalize_payload_builder.dart';
+import '../datasources/exam_answers_hive_datasource.dart';
 import '../datasources/exam_local_datasource.dart';
 import '../datasources/exam_remote_datasource.dart';
+import '../models/exam_answer_draft_model.dart';
 import '../models/exam_session_model.dart';
-import '../models/fill_blank_answer_model.dart';
-import '../models/mcq_answer_model.dart';
 import '../../domain/utils/exam_question_splitter.dart';
 
 class ExamRepositoryImpl implements ExamRepository {
-  ExamRepositoryImpl(this._remoteDataSource, this._localDataSource);
+  ExamRepositoryImpl(
+    this._remoteDataSource,
+    this._localDataSource,
+    this._answersHive,
+  );
 
   final ExamRemoteDataSource _remoteDataSource;
   final ExamLocalDataSource _localDataSource;
+  final ExamAnswersHiveDataSource _answersHive;
   CurrentExam? _cachedCurrentExam;
 
   @override
@@ -113,27 +121,19 @@ class ExamRepositoryImpl implements ExamRepository {
   }
 
   @override
-  Future<Result<McqAnswer>> submitMcqAnswer(McqAnswer answer) async {
-    final sessionResult = await _localDataSource.readExamSession();
-    final sessionId = sessionResult.dataOrNull?.sessionId ?? 'local';
-
-    final model = McqAnswerModel.fromEntity(answer);
-    final remoteResult =
-        await _remoteDataSource.submitMcqAnswer(sessionId, model);
-    if (remoteResult is ErrorResult<McqAnswerModel>) {
-      return ErrorResult(remoteResult.failure);
-    }
-
-    await _localDataSource.saveMcqAnswer(model);
-    return Success(answer);
-  }
-
-  @override
-  Future<Result<FillBlankAnswer>> saveFillBlankAnswer(
-    FillBlankAnswer answer,
-  ) async {
-    final model = FillBlankAnswerModel.fromEntity(answer);
-    final result = await _localDataSource.saveFillBlankAnswer(model);
+  Future<Result<McqAnswer>> saveMcqAnswerLocally(McqAnswer answer) async {
+    final examResult = await getCurrentExam();
+    final questionNumber = _questionNumber(
+      examResult.dataOrNull,
+      answer.questionId,
+    );
+    final draft = ExamAnswerDraftModel(
+      questionId: answer.questionId,
+      type: ExamQuestionType.mcq,
+      optionKey: answer.selectedOptionId,
+      questionNumber: questionNumber,
+    );
+    final result = await _answersHive.upsertDraft(draft);
     if (result is ErrorResult<void>) {
       return ErrorResult(result.failure);
     }
@@ -141,12 +141,146 @@ class ExamRepositoryImpl implements ExamRepository {
   }
 
   @override
-  Future<Result<Map<String, String>>> getMcqProgress(String sessionId) =>
-      _localDataSource.readMcqAnswers();
+  Future<Result<FillBlankAnswer>> saveFillBlankAnswerLocally(
+    FillBlankAnswer answer,
+  ) async {
+    final examResult = await getCurrentExam();
+    final questionNumber = _questionNumber(
+      examResult.dataOrNull,
+      answer.questionId,
+    );
+    final draft = ExamAnswerDraftModel(
+      questionId: answer.questionId,
+      type: ExamQuestionType.fillInBlank,
+      answerText: answer.text,
+      questionNumber: questionNumber,
+    );
+    final result = await _answersHive.upsertDraft(draft);
+    if (result is ErrorResult<void>) {
+      return ErrorResult(result.failure);
+    }
+    return Success(answer);
+  }
 
   @override
-  Future<Result<Map<String, String>>> getFillBlankProgress(String sessionId) =>
-      _localDataSource.readFillBlankAnswers();
+  Future<Result<void>> saveDescriptiveDraft(String questionId) async {
+    final examResult = await getCurrentExam();
+    final questionNumber = _questionNumber(examResult.dataOrNull, questionId);
+    final draft = ExamAnswerDraftModel(
+      questionId: questionId,
+      type: ExamQuestionType.descriptive,
+      questionNumber: questionNumber,
+    );
+    return _answersHive.upsertDraft(draft);
+  }
+
+  @override
+  Future<Result<Map<String, String>>> getMcqProgress(String sessionId) async {
+    final drafts = await _answersHive.readAllDrafts();
+    if (drafts is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
+      return ErrorResult(drafts.failure);
+    }
+    final map = <String, String>{};
+    for (final entry in (drafts as Success).data.entries) {
+      if (entry.value.type == ExamQuestionType.mcq &&
+          entry.value.optionKey != null) {
+        map[entry.key] = entry.value.optionKey!;
+      }
+    }
+    return Success(map);
+  }
+
+  @override
+  Future<Result<Map<String, String>>> getFillBlankProgress(String sessionId) async {
+    final drafts = await _answersHive.readAllDrafts();
+    if (drafts is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
+      return ErrorResult(drafts.failure);
+    }
+    final map = <String, String>{};
+    for (final entry in (drafts as Success).data.entries) {
+      if (entry.value.type == ExamQuestionType.fillInBlank) {
+        map[entry.key] = entry.value.answerText ?? '';
+      }
+    }
+    return Success(map);
+  }
+
+  @override
+  Future<Result<void>> saveRollNumber(String rollNumber) =>
+      _answersHive.saveRollNumber(rollNumber);
+
+  @override
+  Future<Result<String?>> getRollNumber() => _answersHive.readRollNumber();
+
+  @override
+  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
+    final rollResult = await getRollNumber();
+    if (rollResult is ErrorResult<String?>) {
+      return ErrorResult(rollResult.failure);
+    }
+
+    var rollNumber = rollResult.dataOrNull;
+    if (rollNumber == null || rollNumber.isEmpty) {
+      final sessionResult = await _localDataSource.readExamSession();
+      rollNumber = sessionResult.dataOrNull?.examineeId;
+    }
+    if (rollNumber == null || rollNumber.isEmpty) {
+      return const ErrorResult(ValidationFailure('Roll number missing'));
+    }
+
+    final draftsResult = await _answersHive.readAllDrafts();
+    if (draftsResult is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
+      return ErrorResult(draftsResult.failure);
+    }
+
+    final answers = FinalizePayloadBuilder.build(
+      drafts: (draftsResult as Success).data,
+      orderedQuestions: currentExam?.questions,
+    );
+
+    final request = FinalizeExamRequest(
+      rollNumber: rollNumber,
+      answers: answers,
+    );
+
+    return _remoteDataSource.finalizeCurrentExam(request);
+  }
+
+  @override
+  Future<Result<WrittenImageUploadResult>> uploadDescriptiveAnswerImage({
+    required String questionId,
+    required String filePath,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final rollResult = await getRollNumber();
+    if (rollResult is ErrorResult<String?>) {
+      return ErrorResult(rollResult.failure);
+    }
+    final rollNumber = rollResult.dataOrNull;
+    if (rollNumber == null || rollNumber.isEmpty) {
+      return const ErrorResult(ValidationFailure('Roll number missing'));
+    }
+
+    final result = await _remoteDataSource.uploadDescriptiveAnswerImage(
+      questionId: questionId,
+      rollNumber: rollNumber,
+      filePath: filePath,
+      onSendProgress: onSendProgress,
+    );
+
+    return switch (result) {
+      Success(:final data) => Success(data),
+      ErrorResult(:final failure) => ErrorResult(failure),
+    };
+  }
+
+  @override
+  Future<Result<void>> clearLocalExamData() async {
+    _cachedCurrentExam = null;
+    await _answersHive.clearAll();
+    await _localDataSource.clearLegacyAnswerData();
+    return const Success(null);
+  }
 
   @override
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId) =>
@@ -188,4 +322,12 @@ class ExamRepositoryImpl implements ExamRepository {
   @override
   Future<Result<void>> reportViolation(SecurityViolation violation) =>
       _remoteDataSource.reportViolation(violation);
+
+  int _questionNumber(CurrentExam? exam, String questionId) {
+    if (exam == null) return 0;
+    for (final q in exam.questions) {
+      if (q.id == questionId) return q.questionNumber;
+    }
+    return 0;
+  }
 }

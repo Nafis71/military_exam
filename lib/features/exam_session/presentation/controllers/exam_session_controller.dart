@@ -7,13 +7,16 @@ import '../../../../core/services/exam_lock_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
-import '../../domain/usecases/auto_submit_exam_usecase.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../domain/usecases/clear_exam_local_data_usecase.dart';
+import '../../domain/usecases/finalize_exam_usecase.dart';
 import '../../domain/usecases/finish_exam_usecase.dart';
 import '../../domain/usecases/get_current_exam_usecase.dart';
 import '../../domain/usecases/get_exam_timer_usecase.dart';
 import '../../domain/usecases/lock_exam_session_usecase.dart';
 import '../../domain/usecases/report_security_violation_usecase.dart';
 import '../../domain/usecases/start_exam_session_usecase.dart';
+import '../../domain/usecases/submit_saved_exam_answers_usecase.dart';
 import '../../domain/utils/exam_question_splitter.dart';
 
 class ExamSessionController extends GetxController {
@@ -21,14 +24,18 @@ class ExamSessionController extends GetxController {
     required StartExamSessionUseCase startExamSessionUseCase,
     required GetCurrentExamUseCase getCurrentExamUseCase,
     required GetExamTimerUseCase getExamTimerUseCase,
-    required AutoSubmitExamUseCase autoSubmitExamUseCase,
+    required SubmitSavedExamAnswersUseCase submitSavedExamAnswersUseCase,
+    required FinalizeExamUseCase finalizeExamUseCase,
+    required ClearExamLocalDataUseCase clearExamLocalDataUseCase,
     required FinishExamUseCase finishExamUseCase,
     required LockExamSessionUseCase lockExamSessionUseCase,
     required ReportSecurityViolationUseCase reportSecurityViolationUseCase,
   })  : _startExamSessionUseCase = startExamSessionUseCase,
         _getCurrentExamUseCase = getCurrentExamUseCase,
         _getExamTimerUseCase = getExamTimerUseCase,
-        _autoSubmitExamUseCase = autoSubmitExamUseCase,
+        _submitSavedExamAnswersUseCase = submitSavedExamAnswersUseCase,
+        _finalizeExamUseCase = finalizeExamUseCase,
+        _clearExamLocalDataUseCase = clearExamLocalDataUseCase,
         _finishExamUseCase = finishExamUseCase,
         _lockExamSessionUseCase = lockExamSessionUseCase,
         _reportSecurityViolationUseCase = reportSecurityViolationUseCase;
@@ -36,7 +43,9 @@ class ExamSessionController extends GetxController {
   final StartExamSessionUseCase _startExamSessionUseCase;
   final GetCurrentExamUseCase _getCurrentExamUseCase;
   final GetExamTimerUseCase _getExamTimerUseCase;
-  final AutoSubmitExamUseCase _autoSubmitExamUseCase;
+  final SubmitSavedExamAnswersUseCase _submitSavedExamAnswersUseCase;
+  final FinalizeExamUseCase _finalizeExamUseCase;
+  final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
   final FinishExamUseCase _finishExamUseCase;
   final LockExamSessionUseCase _lockExamSessionUseCase;
   final ReportSecurityViolationUseCase _reportSecurityViolationUseCase;
@@ -59,6 +68,7 @@ class ExamSessionController extends GetxController {
 
   Timer? _timerTicker;
   Worker? _lockWorker;
+  bool _timeExpiryHandled = false;
 
   @override
   void onInit() {
@@ -185,16 +195,33 @@ class ExamSessionController extends GetxController {
   }
 
   Future<void> autoSubmit() async {
-    final sessionId = examSession.value?.sessionId;
-    if (sessionId == null) return;
+    if (_timeExpiryHandled) return;
+    if (examSession.value?.sessionId == null) return;
 
+    _timeExpiryHandled = true;
     _timerTicker?.cancel();
-    final result = await _autoSubmitExamUseCase(sessionId);
+
+    final result = await _submitSavedExamAnswersUseCase(currentPhase.value);
     switch (result) {
       case Success(:final data):
         submissionReceipt.value = data;
         currentPhase.value = ExamPhase.finished;
+        final examName =
+            currentExam.value?.examName ?? AppStrings.finishExamDefaultName;
+        mcqQuestions.clear();
+        fillBlankQuestions.clear();
+        descriptiveQuestions.clear();
+        currentExam.value = null;
+        Get.offAllNamed(
+          AppRoutes.finishExam,
+          arguments: <String, dynamic>{
+            'examName': examName,
+            'submittedAt': data.submittedAt,
+            'submissionType': 'timeExpired',
+          },
+        );
       case ErrorResult(:final failure):
+        _timeExpiryHandled = false;
         errorMessage.value = failure.message;
     }
   }
@@ -275,5 +302,28 @@ class ExamSessionController extends GetxController {
     if (fillBlankQuestions.isNotEmpty) return AppRoutes.fillBlankExam;
     if (descriptiveQuestions.isNotEmpty) return AppRoutes.writtenExam;
     return AppRoutes.finishExam;
+  }
+
+  Future<bool> finalizeExamAndClearLocal() async {
+    isLoading.value = true;
+    errorMessage.value = null;
+
+    final result = await _finalizeExamUseCase(currentExam.value);
+    isLoading.value = false;
+
+    switch (result) {
+      case Success(:final data):
+        submissionReceipt.value = data;
+        await _clearExamLocalDataUseCase();
+        currentPhase.value = ExamPhase.finished;
+        mcqQuestions.clear();
+        fillBlankQuestions.clear();
+        descriptiveQuestions.clear();
+        currentExam.value = null;
+        return true;
+      case ErrorResult(:final failure):
+        errorMessage.value = failure.message;
+        return false;
+    }
   }
 }

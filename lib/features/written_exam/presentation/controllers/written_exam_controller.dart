@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
@@ -7,37 +9,47 @@ import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../domain/usecases/add_written_image_usecase.dart';
 import '../../domain/usecases/delete_written_image_usecase.dart';
-import '../../domain/usecases/replace_written_image_usecase.dart';
-import '../../domain/usecases/submit_written_exam_usecase.dart';
-import '../../domain/usecases/upload_written_image_usecase.dart';
+import '../../domain/usecases/get_written_images_usecase.dart';
+import '../../domain/usecases/save_descriptive_draft_usecase.dart';
+import '../../domain/usecases/upload_descriptive_answer_image_usecase.dart';
 
 class WrittenExamController extends GetxController {
   WrittenExamController({
     required ExamSessionController sessionController,
     required AddWrittenImageUseCase addWrittenImageUseCase,
-    required ReplaceWrittenImageUseCase replaceWrittenImageUseCase,
     required DeleteWrittenImageUseCase deleteWrittenImageUseCase,
-    required UploadWrittenImageUseCase uploadWrittenImageUseCase,
-    required SubmitWrittenExamUseCase submitWrittenExamUseCase,
+    required GetWrittenImagesUseCase getWrittenImagesUseCase,
+    required UploadDescriptiveAnswerImageUseCase uploadDescriptiveAnswerImageUseCase,
+    required SaveDescriptiveDraftUseCase saveDescriptiveDraftUseCase,
   })  : _sessionController = sessionController,
         _addWrittenImageUseCase = addWrittenImageUseCase,
-        _replaceWrittenImageUseCase = replaceWrittenImageUseCase,
         _deleteWrittenImageUseCase = deleteWrittenImageUseCase,
-        _uploadWrittenImageUseCase = uploadWrittenImageUseCase,
-        _submitWrittenExamUseCase = submitWrittenExamUseCase;
+        _getWrittenImagesUseCase = getWrittenImagesUseCase,
+        _uploadDescriptiveAnswerImageUseCase =
+            uploadDescriptiveAnswerImageUseCase,
+        _saveDescriptiveDraftUseCase = saveDescriptiveDraftUseCase;
 
   final ExamSessionController _sessionController;
   final AddWrittenImageUseCase _addWrittenImageUseCase;
-  final ReplaceWrittenImageUseCase _replaceWrittenImageUseCase;
   final DeleteWrittenImageUseCase _deleteWrittenImageUseCase;
-  final UploadWrittenImageUseCase _uploadWrittenImageUseCase;
-  final SubmitWrittenExamUseCase _submitWrittenExamUseCase;
+  final GetWrittenImagesUseCase _getWrittenImagesUseCase;
+  final UploadDescriptiveAnswerImageUseCase _uploadDescriptiveAnswerImageUseCase;
+  final SaveDescriptiveDraftUseCase _saveDescriptiveDraftUseCase;
 
   final images = <WrittenAnswerImage>[].obs;
   final currentIndex = 0.obs;
   final submissionStatus = SubmissionStatus.idle.obs;
-  final submissionReceipt = Rxn<SubmissionReceipt>();
+  final uploadProgress = 0.0.obs;
+  final isUploading = false.obs;
   final errorMessage = RxnString();
+
+  @override
+  void onInit() {
+    super.onInit();
+    unawaited(_loadPersistedImages());
+  }
+
+  bool get hasAnyImages => images.isNotEmpty;
 
   List<WrittenQuestion> get questions =>
       _sessionController.descriptiveQuestions;
@@ -52,92 +64,105 @@ class WrittenExamController extends GetxController {
   bool get isLastQuestion =>
       questions.isNotEmpty && currentIndex.value >= questions.length - 1;
 
-  bool get hasAnyImages => images.isNotEmpty;
-
   bool get canSubmit =>
       questions.isNotEmpty &&
-      questions.every((q) => imagesForQuestion(q.id).isNotEmpty);
+      questions.every((q) => _hasUploadedImage(q.id));
 
-  bool get currentQuestionHasImage {
+  bool get currentQuestionHasUploadedImage {
     final question = currentQuestion;
     if (question == null) return false;
-    return imagesForQuestion(question.id).isNotEmpty;
+    return _hasUploadedImage(question.id);
   }
 
   List<WrittenAnswerImage> imagesForQuestion(String questionId) =>
       images.where((img) => img.questionId == questionId).toList();
 
-  Future<void> addImage(String questionId, String localPath) async {
-    if (imagesForQuestion(questionId).isNotEmpty) {
-      errorMessage.value = AppStrings.writtenExamMaxOneImage;
-      return;
-    }
+  bool _hasUploadedImage(String questionId) {
+    final questionImages = imagesForQuestion(questionId);
+    return questionImages.any(
+      (img) => img.uploadStatus == ImageUploadStatus.uploaded,
+    );
+  }
 
+  Future<void> stageLocalImage(String questionId, String localPath) async {
     final result = await _addWrittenImageUseCase(localPath, questionId);
     _handleImageResult(result);
   }
 
-  Future<void> replaceImage(String localId, String newLocalPath) async {
-    final result = await _replaceWrittenImageUseCase(localId, newLocalPath);
-    _handleImageResult(result);
-  }
+  Future<bool> uploadStagedImage({
+    required String questionId,
+    required String localPath,
+  }) async {
+    isUploading.value = true;
+    uploadProgress.value = 0;
+    errorMessage.value = null;
 
-  Future<void> deleteImage(String localId) async {
-    final result = await _deleteWrittenImageUseCase(localId);
-    if (result is Success<void>) {
-      images.removeWhere((img) => img.localId == localId);
-    } else if (result is ErrorResult<void>) {
-      errorMessage.value = result.failure.message;
-    }
-  }
+    final result = await _uploadDescriptiveAnswerImageUseCase(
+      questionId: questionId,
+      filePath: localPath,
+      onSendProgress: (sent, total) {
+        if (total > 0) {
+          uploadProgress.value = sent / total;
+        }
+      },
+    );
 
-  Future<void> uploadImage(String localId) async {
-    final result = await _uploadWrittenImageUseCase(localId);
+    isUploading.value = false;
+
     switch (result) {
       case Success(:final data):
-        final index = images.indexWhere((img) => img.localId == localId);
+        final index = images.indexWhere(
+          (img) => img.questionId == questionId && img.localPath == localPath,
+        );
         if (index >= 0) {
           images[index] = images[index].copyWith(
-            uploadStatus: data.status,
-            uploadProgress: data.progress,
+            remoteId: data.answerId,
+            uploadStatus: ImageUploadStatus.uploaded,
+            uploadProgress: 1,
           );
         }
+        await _saveDescriptiveDraftUseCase(questionId);
+        uploadProgress.value = 1;
+        return true;
       case ErrorResult(:final failure):
         errorMessage.value = failure.message;
+        return false;
     }
   }
 
-  Future<void> submitExam(String sessionId) async {
-    submissionStatus.value = SubmissionStatus.saving;
-    errorMessage.value = null;
+  Future<void> removeLocalImage(String localId) async {
+    await _deleteWrittenImageUseCase(localId);
+    images.removeWhere((img) => img.localId == localId);
+  }
 
-    for (final image in images) {
-      if (image.uploadStatus != ImageUploadStatus.uploaded) {
-        await uploadImage(image.localId);
-      }
-    }
-
-    final result = await _submitWrittenExamUseCase(sessionId);
+  Future<void> _loadPersistedImages() async {
+    final result = await _getWrittenImagesUseCase();
     switch (result) {
       case Success(:final data):
-        submissionReceipt.value = data;
-        submissionStatus.value = SubmissionStatus.submitted;
+        images.assignAll(data);
       case ErrorResult(:final failure):
-        submissionStatus.value = SubmissionStatus.failed;
         errorMessage.value = failure.message;
     }
   }
 
-  void goToNext() {
-    if (currentIndex.value >= questions.length - 1) return;
-    currentIndex.value += 1;
-    errorMessage.value = null;
+  Future<void> flushPendingAnswer() async {
+    final question = currentQuestion;
+    if (question == null || !currentQuestionHasUploadedImage) return;
+    await _saveDescriptiveDraftUseCase(question.id);
   }
 
-  void goToPrevious() {
-    if (currentIndex.value <= 0) return;
-    currentIndex.value -= 1;
-    errorMessage.value = null;
+  Future<void> goToNext() async {
+    final question = currentQuestion;
+    if (question == null) return;
+    if (!currentQuestionHasUploadedImage) {
+      errorMessage.value = AppStrings.writtenExamRequireUploadedImage;
+      return;
+    }
+    await _saveDescriptiveDraftUseCase(question.id);
+    if (!isLastQuestion) {
+      currentIndex.value += 1;
+      errorMessage.value = null;
+    }
   }
 
   void _handleImageResult(Result<WrittenAnswerImage> result) {

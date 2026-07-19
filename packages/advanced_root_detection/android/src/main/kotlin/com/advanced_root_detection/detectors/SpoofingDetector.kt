@@ -22,7 +22,9 @@ class SpoofingDetector(
      * Used when [DetectionConfig.scope] is essential.
      */
     fun detectDeveloperModeOnly(): List<ThreatResult> {
-        if (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context)) {
+        if (config.skipDeveloperMode ||
+            (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context))
+        ) {
             return emptyList()
         }
 
@@ -50,7 +52,9 @@ class SpoofingDetector(
     }
 
     fun detect(): List<ThreatResult> {
-        if (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context)) {
+        if (config.skipDeveloperMode ||
+            (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context))
+        ) {
             return emptyList()
         }
 

@@ -37,6 +37,9 @@ class Deployment {
   /// When true, skip jailbreak/root/developer-mode checks on iOS simulator / Android emulator.
   bool get relaxSimulatorIntegrityChecks => !isProduction;
 
+  /// When true, skip developer-mode checks on all devices (not only emulators).
+  bool get relaxDeveloperModeChecks => !isProduction;
+
   /// When true, sideloaded / unknown install sources are allowed for RASP.
   bool get allowSideload => environment.allowSideload;
 

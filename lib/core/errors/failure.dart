@@ -33,6 +33,10 @@ class ValidationFailure extends Failure {
   const ValidationFailure(super.message);
 }
 
+class BadRequestFailure extends Failure {
+  const BadRequestFailure(super.message);
+}
+
 class UnexpectedFailure extends Failure {
   const UnexpectedFailure(super.message);
 }

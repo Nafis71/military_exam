@@ -27,6 +27,8 @@ abstract class ExamLocalDataSource {
   Future<Result<void>> setExamLocked(bool locked, {String? reason});
 
   Future<Result<ExamLockState>> readLockState();
+
+  Future<Result<void>> clearLegacyAnswerData();
 }
 
 class ExamLocalDataSourceImpl implements ExamLocalDataSource {
@@ -159,6 +161,21 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
     } catch (error) {
       return ErrorResult(
         UnexpectedFailure('${AppStrings.failedToSetLockState}: $error'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> clearLegacyAnswerData() async {
+    try {
+      await _storage.delete(key: _mcqAnswersKey);
+      await _storage.delete(key: _fillBlankAnswersKey);
+      await _storage.delete(key: 'written_exam_images');
+      await _storage.delete(key: _examSessionKey);
+      return const Success(null);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('${AppStrings.failedToClearAnswerDrafts}: $error'),
       );
     }
   }

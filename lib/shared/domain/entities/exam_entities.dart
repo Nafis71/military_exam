@@ -254,6 +254,77 @@ class FillBlankAnswer extends Equatable {
   List<Object?> get props => [questionId, text, isFinal];
 }
 
+class ExamAnswerDraft extends Equatable {
+  const ExamAnswerDraft({
+    required this.questionId,
+    required this.type,
+    this.optionKey,
+    this.answerText,
+    this.questionNumber = 0,
+  });
+
+  final String questionId;
+  final ExamQuestionType type;
+  final String? optionKey;
+  final String? answerText;
+  final int questionNumber;
+
+  Map<String, dynamic> toFinalizeJson() {
+    return switch (type) {
+      ExamQuestionType.mcq => {
+          'question_id': questionId,
+          'option_key': optionKey,
+        },
+      ExamQuestionType.fillInBlank => {
+          'question_id': questionId,
+          'answer_text': answerText,
+        },
+      ExamQuestionType.descriptive => {
+          'question_id': questionId,
+        },
+    };
+  }
+
+  @override
+  List<Object?> get props =>
+      [questionId, type, optionKey, answerText, questionNumber];
+}
+
+class FinalizeExamRequest extends Equatable {
+  const FinalizeExamRequest({
+    required this.rollNumber,
+    required this.answers,
+  });
+
+  final String rollNumber;
+  final List<ExamAnswerDraft> answers;
+
+  Map<String, dynamic> toJson() => {
+        'roll_number': rollNumber,
+        'answers': answers.map((a) => a.toFinalizeJson()).toList(),
+      };
+
+  @override
+  List<Object?> get props => [rollNumber, answers];
+}
+
+class WrittenImageUploadResult extends Equatable {
+  const WrittenImageUploadResult({
+    required this.answerId,
+    required this.questionId,
+    required this.imagePath,
+    required this.gradingStatus,
+  });
+
+  final String answerId;
+  final String questionId;
+  final String imagePath;
+  final String gradingStatus;
+
+  @override
+  List<Object?> get props => [answerId, questionId, imagePath, gradingStatus];
+}
+
 class McqAnswer extends Equatable {
   const McqAnswer({
     required this.questionId,

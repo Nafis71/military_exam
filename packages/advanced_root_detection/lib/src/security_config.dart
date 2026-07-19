@@ -69,6 +69,9 @@ class AndroidConfig {
   /// When true, skip developer-mode detection on Android emulators (demo/staging QA).
   final bool skipDeveloperModeOnEmulator;
 
+  /// When true, skip developer-mode detection on all Android devices.
+  final bool skipDeveloperMode;
+
   /// Creates an [AndroidConfig].
   const AndroidConfig({
     this.packageName,
@@ -83,6 +86,7 @@ class AndroidConfig {
     this.strictExamIntegrity = false,
     this.skipRootOnEmulator = false,
     this.skipDeveloperModeOnEmulator = false,
+    this.skipDeveloperMode = false,
   });
 
   /// Converts to a map for passing over the MethodChannel.
@@ -96,6 +100,7 @@ class AndroidConfig {
         'strictExamIntegrity': strictExamIntegrity,
         'skipRootOnEmulator': skipRootOnEmulator,
         'skipDeveloperModeOnEmulator': skipDeveloperModeOnEmulator,
+        'skipDeveloperMode': skipDeveloperMode,
       };
 }
 

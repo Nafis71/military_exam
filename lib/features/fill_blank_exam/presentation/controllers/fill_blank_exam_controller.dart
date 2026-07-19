@@ -74,6 +74,11 @@ class FillBlankExamController extends GetxController {
     answerText.value = text;
   }
 
+  Future<void> flushPendingAnswer() async {
+    if (answerText.value.trim().isEmpty) return;
+    await saveCurrentAnswer(advance: false);
+  }
+
   Future<void> saveCurrentAnswer({bool advance = true}) async {
     final question = currentQuestion;
     if (question == null) return;

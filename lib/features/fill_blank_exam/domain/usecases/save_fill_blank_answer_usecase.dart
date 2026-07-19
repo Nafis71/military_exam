@@ -8,5 +8,5 @@ class SaveFillBlankAnswerUseCase {
   final ExamRepository _examRepository;
 
   Future<Result<FillBlankAnswer>> call(FillBlankAnswer answer) =>
-      _examRepository.saveFillBlankAnswer(answer);
+      _examRepository.saveFillBlankAnswerLocally(answer);
 }

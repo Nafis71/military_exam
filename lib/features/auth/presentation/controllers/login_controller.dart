@@ -19,6 +19,7 @@ import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
 import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
@@ -41,6 +42,7 @@ class LoginController extends GetxController {
     this._checkConnectivity,
     this._checkDeviceIntegrity,
     this._lifecycleService,
+    this._saveRollNumberUseCase,
     this._logger,
   );
 
@@ -54,6 +56,7 @@ class LoginController extends GetxController {
   final CheckConnectivityUseCase _checkConnectivity;
   final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
   final AppLifecycleService _lifecycleService;
+  final SaveRollNumberUseCase _saveRollNumberUseCase;
   final AppLogger _logger;
 
   final examineeIdController = TextEditingController();
@@ -213,6 +216,10 @@ class LoginController extends GetxController {
     if (result is ErrorResult<AuthSession>) {
       isLoading.value = false;
       final failure = result.failure;
+      if (failure is BadRequestFailure) {
+        AppErrorToast.show(failure.message);
+        return;
+      }
       if (failure is AuthFailure) {
         errorMessage.value = failure.message;
       } else {
@@ -225,6 +232,14 @@ class LoginController extends GetxController {
 
     final authSession = (result as Success<AuthSession>).data;
     session.value = authSession;
+
+    final rollResult = await _saveRollNumberUseCase(credentials.rollNumber);
+    if (rollResult is ErrorResult<void>) {
+      isLoading.value = false;
+      _logger.error('saveRollNumber failed', error: rollResult.failure.message);
+      errorMessage.value = AppStrings.somethingWentWrong;
+      return;
+    }
 
     final eligibilityResult =
         await _validateEligibilityUseCase(authSession.sessionId);

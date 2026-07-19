@@ -6,6 +6,7 @@ import '../../../../shared/domain/enums/exam_enums.dart';
 
 class ViolationController extends GetxController {
   final violation = Rxn<SecurityViolation>();
+  final answersSubmitted = false.obs;
 
   @override
   void onInit() {
@@ -13,6 +14,17 @@ class ViolationController extends GetxController {
     final args = Get.arguments;
     if (args is SecurityViolation) {
       violation.value = args;
+      return;
+    }
+    if (args is Map) {
+      final violationArg = args['violation'];
+      if (violationArg is SecurityViolation) {
+        violation.value = violationArg;
+      }
+      final submitted = args['answersSubmitted'];
+      if (submitted is bool) {
+        answersSubmitted.value = submitted;
+      }
     }
   }
 
@@ -22,7 +34,9 @@ class ViolationController extends GetxController {
       violation.value?.type.displayMessage ??
       AppStrings.securityViolationLocked;
 
-  String get alertMessage => AppStrings.examCancelledAndRecorded;
+  String get alertMessage => answersSubmitted.value
+      ? AppStrings.examAnswersPublished
+      : AppStrings.examCancelledAndRecorded;
 
   List<String> get bullets => [
         isBackgroundViolation

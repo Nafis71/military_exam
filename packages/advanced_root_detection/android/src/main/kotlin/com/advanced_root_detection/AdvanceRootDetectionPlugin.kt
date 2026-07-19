@@ -291,6 +291,7 @@ class AdvanceRootDetectionPlugin : FlutterPlugin, MethodCallHandler, EventChanne
             strictExamIntegrity = androidArgs["strictExamIntegrity"] as? Boolean ?: false,
             skipRootOnEmulator = androidArgs["skipRootOnEmulator"] as? Boolean ?: false,
             skipDeveloperModeOnEmulator = androidArgs["skipDeveloperModeOnEmulator"] as? Boolean ?: false,
+            skipDeveloperMode = androidArgs["skipDeveloperMode"] as? Boolean ?: false,
             monitoringIntervalSeconds = (args["monitoringIntervalSeconds"] as? Int) ?: 30,
             scope = args["scope"] as? String ?: "essential",
         )
@@ -309,6 +310,7 @@ data class DetectionConfig(
     val strictExamIntegrity: Boolean = false,
     val skipRootOnEmulator: Boolean = false,
     val skipDeveloperModeOnEmulator: Boolean = false,
+    val skipDeveloperMode: Boolean = false,
     val monitoringIntervalSeconds: Int = 30,
     val scope: String = "essential",
 ) {

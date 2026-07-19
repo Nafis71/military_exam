@@ -14,13 +14,31 @@ abstract class ExamRepository {
 
   Future<Result<List<FillBlankQuestion>>> getFillBlankQuestions(String sessionId);
 
-  Future<Result<McqAnswer>> submitMcqAnswer(McqAnswer answer);
+  Future<Result<McqAnswer>> saveMcqAnswerLocally(McqAnswer answer);
 
-  Future<Result<FillBlankAnswer>> saveFillBlankAnswer(FillBlankAnswer answer);
+  Future<Result<FillBlankAnswer>> saveFillBlankAnswerLocally(
+    FillBlankAnswer answer,
+  );
+
+  Future<Result<void>> saveDescriptiveDraft(String questionId);
 
   Future<Result<Map<String, String>>> getMcqProgress(String sessionId);
 
   Future<Result<Map<String, String>>> getFillBlankProgress(String sessionId);
+
+  Future<Result<void>> saveRollNumber(String rollNumber);
+
+  Future<Result<String?>> getRollNumber();
+
+  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam);
+
+  Future<Result<WrittenImageUploadResult>> uploadDescriptiveAnswerImage({
+    required String questionId,
+    required String filePath,
+    void Function(int sent, int total)? onSendProgress,
+  });
+
+  Future<Result<void>> clearLocalExamData();
 
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId);
 

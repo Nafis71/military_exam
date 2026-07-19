@@ -60,6 +60,8 @@ alwaysApply: true
 - Use `logger` package (`^2.7.0`) for all console output.
 - Log only in debug mode (`kDebugMode`).
 - Never use `print`, `debugPrint`, or expose raw exceptions to users.
+- **Always log API responses to the console** via `LoggingInterceptor` (`lib/core/network/interceptors/logging_interceptor.dart`). Route all HTTP traffic through `ApiClient` / Dio so request and response bodies are captured centrally.
+- Sanitize secrets before logging (Authorization header, passwords, tokens). Never log raw credentials.
 
 ```dart
 // ✅ GOOD

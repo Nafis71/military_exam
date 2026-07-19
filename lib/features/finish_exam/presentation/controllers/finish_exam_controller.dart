@@ -5,22 +5,35 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/utils/bengali_digits.dart';
 import '../../../auth/domain/usecases/clear_session_usecase.dart';
+import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../domain/finish_submission_type.dart';
 import '../../../security_gate/domain/usecases/stop_security_watchdog_usecase.dart';
 
 class FinishExamController extends GetxController {
   FinishExamController(
     this._stopWatchdog,
     this._clearSession,
+    this._clearExamLocalData,
     this._logger,
   );
 
   final StopSecurityWatchdogUseCase _stopWatchdog;
   final ClearSessionUseCase _clearSession;
+  final ClearExamLocalDataUseCase _clearExamLocalData;
   final AppLogger _logger;
 
   late final String examName;
   late final String submittedAtLabel;
+  late final FinishSubmissionType submissionType;
+
+  String get title => submissionType == FinishSubmissionType.timeExpired
+      ? AppStrings.timeExpiredTitle
+      : AppStrings.submissionSuccessful;
+
+  String get message => submissionType == FinishSubmissionType.timeExpired
+      ? AppStrings.timeExpiredMessage
+      : AppStrings.submissionSuccessfulMessage;
 
   @override
   void onInit() {
@@ -43,6 +56,9 @@ class FinishExamController extends GetxController {
       if (submittedAt is DateTime) {
         argSubmittedAt = submittedAt;
       }
+      submissionType = _parseSubmissionType(args['submissionType']);
+    } else {
+      submissionType = FinishSubmissionType.manual;
     }
 
     if (argSubmittedAt == null && Get.isRegistered<ExamSessionController>()) {
@@ -52,6 +68,17 @@ class FinishExamController extends GetxController {
 
     examName = argExamName ?? AppStrings.finishExamDefaultName;
     submittedAtLabel = _formatSubmittedAt(argSubmittedAt ?? DateTime.now());
+  }
+
+  FinishSubmissionType _parseSubmissionType(Object? raw) {
+    if (raw is FinishSubmissionType) return raw;
+    if (raw is String) {
+      return FinishSubmissionType.values.firstWhere(
+        (type) => type.name == raw,
+        orElse: () => FinishSubmissionType.manual,
+      );
+    }
+    return FinishSubmissionType.manual;
   }
 
   String _formatSubmittedAt(DateTime submittedAt) {
@@ -68,6 +95,7 @@ class FinishExamController extends GetxController {
   Future<void> _cleanup() async {
     try {
       await _stopWatchdog();
+      await _clearExamLocalData();
       await _clearSession();
     } catch (e, st) {
       _logger.error('finish exam cleanup failed', error: e, stackTrace: st);

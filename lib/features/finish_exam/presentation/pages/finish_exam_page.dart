@@ -6,7 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../controllers/finish_exam_controller.dart';
-import '../widgets/finish_exam_success_icon.dart';
+import '../widgets/finish_exam_status_icon.dart';
 import '../widgets/finish_exam_summary_card.dart';
 
 class FinishExamPage extends GetView<FinishExamController> {
@@ -25,10 +25,10 @@ class FinishExamPage extends GetView<FinishExamController> {
             padding: EdgeInsets.fromLTRB(20.w, 66.h, 20.w, 24.h),
             child: Column(
               children: [
-                const FinishExamSuccessIcon(),
+                FinishExamStatusIcon(submissionType: controller.submissionType),
                 SizedBox(height: 40.h),
                 Text(
-                  AppStrings.submissionSuccessful,
+                  controller.title,
                   textAlign: TextAlign.center,
                   style: textTheme.displayLarge?.copyWith(
                     fontSize: 28.sp,
@@ -40,7 +40,7 @@ class FinishExamPage extends GetView<FinishExamController> {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  AppStrings.submissionSuccessfulMessage,
+                  controller.message,
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
                     fontSize: 15.sp,

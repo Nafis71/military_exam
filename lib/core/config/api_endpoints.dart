@@ -7,6 +7,9 @@ abstract final class ApiEndpoints {
   static const String sessionStatus = '/exam/session/status';
   static const String sessionLock = '/exam/session/lock';
   static const String currentExam = '/exams/current-exam';
+  static const String examFinalize = '/exams/current-exam/finalize';
+  static String examAnswerImageUpload(String questionId) =>
+      '/exams/current-exam/answers/$questionId/upload';
   static const String mcqQuestions = '/exam/mcq/questions';
   static const String mcqAnswer = '/exam/mcq/answer';
   static const String writtenImages = '/exam/written/images';

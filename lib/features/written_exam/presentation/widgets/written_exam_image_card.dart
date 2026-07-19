@@ -16,6 +16,7 @@ class WrittenExamImageCard extends StatelessWidget {
     required this.onReplace,
     required this.onDelete,
     this.nested = false,
+    this.isLocked = false,
   });
 
   final WrittenAnswerImage image;
@@ -23,6 +24,7 @@ class WrittenExamImageCard extends StatelessWidget {
   final VoidCallback onReplace;
   final VoidCallback onDelete;
   final bool nested;
+  final bool isLocked;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +87,8 @@ class WrittenExamImageCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
+          if (!isLocked)
+            Container(
             padding: EdgeInsets.fromLTRB(16.w, 13.h, 16.w, 12.h),
             decoration: BoxDecoration(
               border: Border(

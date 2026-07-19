@@ -1,0 +1,4 @@
+enum FinishSubmissionType {
+  manual,
+  timeExpired,
+}

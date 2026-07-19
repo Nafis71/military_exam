@@ -143,14 +143,17 @@ class _McqExamPageState extends State<McqExamPage> {
       sessionId: sessionController.examSession.value?.sessionId,
     );
     if (nextRoute == AppRoutes.finishExam) {
-      await sessionController.finishExam();
+      final examName = sessionController.currentExam.value?.examName ??
+          AppStrings.finishExamDefaultName;
+      final success = await sessionController.finalizeExamAndClearLocal();
+      if (!success) return;
       Get.offAllNamed(
         AppRoutes.finishExam,
         arguments: <String, dynamic>{
-          'examName':
-              sessionController.currentExam.value?.examName ??
-                  AppStrings.finishExamDefaultName,
-          'submittedAt': DateTime.now(),
+          'examName': examName,
+          'submittedAt':
+              sessionController.submissionReceipt.value?.submittedAt ??
+                  DateTime.now(),
         },
       );
       return;
@@ -190,27 +193,55 @@ class _McqNavigationBar extends StatelessWidget {
         final submitting = controller.isSubmitting.value;
         final hasSelection = controller.selectedOptionId.value != null;
         final isLast = controller.isLastQuestion;
-        return AppPrimaryButton(
-          label: isLast ? AppStrings.finishMcq : AppStrings.nextQuestion,
-          isLoading: submitting,
-          onPressed: !hasSelection || submitting || (isLast && !canSubmit)
-              ? null
-              : () async {
-                  if (isLast) {
-                    onFinished();
-                  } else {
-                    await controller.submitCurrentAnswer();
-                  }
-                },
-          boxShadow: hasSelection && !submitting
-              ? [
-                  BoxShadow(
-                    color: AppColors.c89D5B2.withValues(alpha: 0.4),
-                    blurRadius: 28,
-                    spreadRadius: 1,
+        final canGoBack = controller.currentIndex.value > 0;
+        return Row(
+          children: [
+            if (canGoBack)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: submitting ? null : controller.goToPrevious,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.c176B4D,
+                    side: const BorderSide(color: AppColors.cD9E5DE),
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
+                    ),
                   ),
-                ]
-              : null,
+                  child: Text(
+                    AppStrings.previousQuestion,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.c176B4D,
+                        ),
+                  ),
+                ),
+              ),
+            if (canGoBack) SizedBox(width: 12.w),
+            Expanded(
+              child: AppPrimaryButton(
+                label: isLast ? AppStrings.finishMcq : AppStrings.nextQuestion,
+                isLoading: submitting,
+                onPressed: !hasSelection || submitting || (isLast && !canSubmit)
+                    ? null
+                    : () async {
+                        if (isLast) {
+                          onFinished();
+                        } else {
+                          await controller.submitCurrentAnswer();
+                        }
+                      },
+                boxShadow: hasSelection && !submitting
+                    ? [
+                        BoxShadow(
+                          color: AppColors.c89D5B2.withValues(alpha: 0.4),
+                          blurRadius: 28,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          ],
         );
       }),
     );
