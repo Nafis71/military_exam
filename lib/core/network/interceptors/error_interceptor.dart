@@ -23,7 +23,7 @@ class ErrorInterceptor extends Interceptor {
         err.message ??
         'Network request failed';
 
-    if (statusCode == 401) {
+    if (statusCode == 401 || statusCode == 404) {
       return UnauthorizedException(message, code: statusCode.toString());
     }
     if (statusCode == 403) {

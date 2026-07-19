@@ -9,9 +9,12 @@ abstract final class AppStrings {
   static const appSubtitle = 'Bangladesh Armed Forces Examination System';
   static const signInSubtitle = 'পরীক্ষার্থীর তথ্য দিয়ে সাইন ইন করুন';
   static const loginDescription =
-      'পরীক্ষায় প্রবেশ করতে আপনার পরীক্ষার্থী আইডি এবং পাসওয়ার্ড প্রদান করুন';
+      'পরীক্ষায় প্রবেশ করতে আপনার পরীক্ষার্থী আইডি এবং জেলা প্রদান করুন';
   static const examineeId = 'পরীক্ষার্থী আইডি';
   static const examineeIdHint = 'আপনার আইডি লিখুন';
+  static const district = 'জেলা';
+  static const districtHint = 'আপনার জেলা নির্বাচন করুন';
+  static const loadingDistricts = 'জেলা তালিকা লোড হচ্ছে...';
   static const password = 'পাসওয়ার্ড';
   static const signIn = 'সাইন ইন';
   static const notEligible =
@@ -226,6 +229,8 @@ abstract final class AppStrings {
   static const finishExamDefaultName = 'সামরিক পরীক্ষা ২০২৫';
 
   // Network & errors
+  static const somethingWentWrong =
+      'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।';
   static const networkRequestFailed = 'নেটওয়ার্ক অনুরোধ ব্যর্থ';
   static const requestTimedOut = 'অনুরোধের সময় শেষ';
   static const noInternetConnection = 'ইন্টারনেট সংযোগ নেই';

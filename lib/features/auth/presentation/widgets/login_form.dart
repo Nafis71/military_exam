@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../controllers/login_controller.dart';
+import 'login_district_dropdown.dart';
 import 'login_text_field.dart';
 
 class LoginForm extends StatelessWidget {
@@ -24,21 +25,10 @@ class LoginForm extends StatelessWidget {
             label: AppStrings.examineeId,
             hint: AppStrings.examineeIdHint,
             controller: controller.examineeIdController,
-            validator: controller.validateExamineeId,
             textInputAction: TextInputAction.next,
           ),
-          // gap between field groups = 20px (Figma: 212 - 109 - 83)
           SizedBox(height: 20.h),
-          LoginTextField(
-            label: AppStrings.password,
-            hint: '••••••••',
-            controller: controller.passwordController,
-            obscureText: true,
-            showVisibilityToggle: true,
-            validator: controller.validatePassword,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => controller.login(),
-          ),
+          LoginDistrictDropdown(controller: controller),
           Obx(() {
             final error = controller.errorMessage.value;
             if (error == null) return const SizedBox.shrink();

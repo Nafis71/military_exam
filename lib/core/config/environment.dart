@@ -43,7 +43,7 @@ class Environment {
       case BuildMode.development:
         return const Environment(
           appName: AppStrings.appNameDev,
-          baseUrl: 'https://staging-api.military-exam.local',
+          baseUrl: 'http://192.168.7.173:7009',
           uploadBaseUrl: 'https://staging-upload.military-exam.local',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),
@@ -58,7 +58,7 @@ class Environment {
       case BuildMode.staging:
         return const Environment(
           appName: AppStrings.appNameStaging,
-          baseUrl: 'https://staging-api.military-exam.local',
+          baseUrl: 'http://192.168.7.173:7009',
           uploadBaseUrl: 'https://staging-upload.military-exam.local',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),

@@ -1,15 +1,18 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/config/api_endpoints.dart';
 import '../../../../core/config/deployment.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
+import '../models/candidate_model.dart';
 import '../models/login_request_model.dart';
-import '../models/login_response_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<Result<LoginResponseModel>> login(LoginRequestModel request);
+  Future<Result<CandidateModel>> login(LoginRequestModel request);
+
+  Future<Result<List<String>>> getDistricts();
 
   Future<Result<ExamEligibility>> checkEligibility(String sessionId);
 }
@@ -21,10 +24,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final AppLogger _logger;
 
   @override
-  Future<Result<LoginResponseModel>> login(LoginRequestModel request) async {
+  Future<Result<CandidateModel>> login(LoginRequestModel request) async {
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: login served from device (no API call)');
-      return Success(_demoLoginResponse(request.examineeId));
+      return Success(_demoLoginResponse(request));
     }
 
     final result = await _apiClient.post<Map<String, dynamic>>(
@@ -33,11 +36,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
 
     if (result is Success<Map<String, dynamic>>) {
-      return Success(LoginResponseModel.fromJson(result.data));
+      return Success(CandidateModel.fromJson(result.data));
     }
 
-    _logger.warning('Login API failed, returning demo session');
-    return Success(_demoLoginResponse(request.examineeId));
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
+  }
+
+  @override
+  Future<Result<List<String>>> getDistricts() async {
+    if (Deployment.instance.isDemo) {
+      _logger.info('Demo mode: districts served from device (no API call)');
+      return const Success(['DHAKA', 'PANCHAGAR']);
+    }
+
+    final result = await _apiClient.get<Map<String, dynamic>>(
+      ApiEndpoints.districts,
+    );
+
+    if (result is Success<Map<String, dynamic>>) {
+      final data = result.data['data'];
+      if (data is! List) {
+        _logger.warning('Districts API returned invalid data shape');
+        return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
+      }
+
+      return Success(
+        data.map((item) => item.toString()).toList(growable: false),
+      );
+    }
+
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
   }
 
   @override
@@ -82,13 +118,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     );
   }
 
-  LoginResponseModel _demoLoginResponse(String examineeId) {
-    return LoginResponseModel(
-      token: 'demo-token-${DateTime.now().millisecondsSinceEpoch}',
-      sessionId: 'demo-session-${DateTime.now().millisecondsSinceEpoch}',
-      examineeId: examineeId,
-      examineeName: '${AppStrings.demoExamineeNamePrefix} $examineeId',
-      expiresAt: DateTime.now().add(const Duration(hours: 4)),
+  CandidateModel _demoLoginResponse(LoginRequestModel request) {
+    return CandidateModel(
+      id: 'demo-candidate-${DateTime.now().millisecondsSinceEpoch}',
+      fullName: '${AppStrings.demoExamineeNamePrefix} ${request.rollNumber}',
+      district: request.district,
+      rollNumber: request.rollNumber,
+      status: 'attended',
     );
   }
 }

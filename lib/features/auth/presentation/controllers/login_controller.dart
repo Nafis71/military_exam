@@ -2,18 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:military_exam/core/utils/validators.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/failure.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/routing/exam_route_utils.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/camera_permission_service.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
+import '../../../../core/widgets/app_error_toast.dart';
 import '../../../../core/utils/result.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/domain/usecases/start_exam_session_usecase.dart';
@@ -22,12 +25,15 @@ import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
 import '../../../security_gate/presentation/routes/security_routes.dart';
+import '../../domain/entities/login_credentials.dart';
+import '../../domain/usecases/get_districts_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/validate_exam_eligibility_usecase.dart';
 
 class LoginController extends GetxController {
   LoginController(
     this._loginUseCase,
+    this._getDistrictsUseCase,
     this._validateEligibilityUseCase,
     this._startExamSessionUseCase,
     this._startWatchdog,
@@ -36,9 +42,11 @@ class LoginController extends GetxController {
     this._checkConnectivity,
     this._checkDeviceIntegrity,
     this._lifecycleService,
+    this._logger,
   );
 
   final LoginUseCase _loginUseCase;
+  final GetDistrictsUseCase _getDistrictsUseCase;
   final ValidateExamEligibilityUseCase _validateEligibilityUseCase;
   final StartExamSessionUseCase _startExamSessionUseCase;
   final StartSecurityWatchdogUseCase _startWatchdog;
@@ -47,15 +55,18 @@ class LoginController extends GetxController {
   final CheckConnectivityUseCase _checkConnectivity;
   final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
   final AppLifecycleService _lifecycleService;
+  final AppLogger _logger;
 
   final examineeIdController = TextEditingController();
-  final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   final isLoading = false.obs;
+  final isLoadingDistricts = false.obs;
   final errorMessage = RxnString();
   final session = Rxn<AuthSession>();
   final eligibility = Rxn<ExamEligibility>();
+  final districts = <String>[].obs;
+  final selectedDistrict = RxnString();
 
   StreamSubscription<AppLifecycleState>? _lifecycleSubscription;
   Timer? _pollTimer;
@@ -69,6 +80,7 @@ class LoginController extends GetxController {
     _listenForResume();
     _startSecurityPolling();
     unawaited(_recheckAfterReturningToForeground());
+    unawaited(fetchDistricts());
   }
 
   @override
@@ -76,7 +88,6 @@ class LoginController extends GetxController {
     _pollTimer?.cancel();
     unawaited(_lifecycleSubscription?.cancel());
     examineeIdController.dispose();
-    passwordController.dispose();
     super.onClose();
   }
 
@@ -166,20 +177,50 @@ class LoginController extends GetxController {
     Get.offNamed(SecurityRoutes.wifiModeRequired);
   }
 
+  Future<void> fetchDistricts() async {
+    isLoadingDistricts.value = true;
+    try {
+      final result = await _getDistrictsUseCase();
+      switch (result) {
+        case Success(:final data):
+          districts.assignAll(data);
+        case ErrorResult(:final failure):
+          _logger.error('fetchDistricts failed', error: failure.message);
+          errorMessage.value = AppStrings.networkRequestFailed;
+      }
+    } catch (error, stackTrace) {
+      _logger.error('fetchDistricts failed', error: error, stackTrace: stackTrace);
+      errorMessage.value = AppStrings.networkRequestFailed;
+    } finally {
+      isLoadingDistricts.value = false;
+    }
+  }
+
+  void selectDistrict(String? district) {
+    selectedDistrict.value = district;
+  }
+
   Future<void> login() async {
     errorMessage.value = null;
     if (!(formKey.currentState?.validate() ?? false)) return;
 
     isLoading.value = true;
     final credentials = LoginCredentials(
-      examineeId: examineeIdController.text.trim(),
-      password: passwordController.text,
+      district: selectedDistrict.value!,
+      rollNumber: examineeIdController.text.trim(),
     );
 
     final result = await _loginUseCase(credentials);
     if (result is ErrorResult<AuthSession>) {
       isLoading.value = false;
-      errorMessage.value = result.failure.message;
+      final failure = result.failure;
+      if (failure is AuthFailure) {
+        errorMessage.value = failure.message;
+      } else {
+        errorMessage.value = null;
+        _logger.error('login failed', error: failure.message);
+        AppErrorToast.show(AppStrings.somethingWentWrong);
+      }
       return;
     }
 
@@ -230,7 +271,5 @@ class LoginController extends GetxController {
     }
   }
 
-  String? validateExamineeId(String? value) => Validators.examineeId(value);
-
-  String? validatePassword(String? value) => Validators.password(value);
+  String? validateDistrict(String? value) => Validators.requiredField(value);
 }

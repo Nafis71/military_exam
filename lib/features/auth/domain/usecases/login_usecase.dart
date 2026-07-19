@@ -1,6 +1,7 @@
 import '../../../../core/utils/result.dart';
 import '../../../../core/services/auth_token_holder.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
+import '../entities/login_credentials.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/session_repository.dart';
 

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:military_exam/core/errors/error_mapper.dart';
 import 'package:military_exam/core/errors/app_exception.dart';
@@ -12,6 +13,26 @@ void main() {
         const UnauthorizedException('Invalid credentials'),
       );
       expect(failure, isA<AuthFailure>());
+    });
+
+    test('maps 404 dio exception to auth failure with api message', () {
+      final failure = mapper.mapException(
+        DioException(
+          requestOptions: RequestOptions(path: '/candidates/login'),
+          response: Response(
+            requestOptions: RequestOptions(path: '/candidates/login'),
+            statusCode: 404,
+            data: const {
+              'message': 'প্রার্থীর তথ্য পাওয়া যায়নি',
+              'error': 'Not Found',
+              'statusCode': 404,
+            },
+          ),
+          type: DioExceptionType.badResponse,
+        ),
+      );
+      expect(failure, isA<AuthFailure>());
+      expect(failure.message, 'প্রার্থীর তথ্য পাওয়া যায়নি');
     });
 
     test('maps security exception to security failure', () {

@@ -1,23 +1,20 @@
-import '../../../../shared/domain/entities/exam_entities.dart';
+import '../../domain/entities/login_credentials.dart';
 
-class LoginRequestModel {
+class LoginRequestModel extends LoginCredentials {
   const LoginRequestModel({
-    required this.examineeId,
-    required this.password,
+    required super.district,
+    required super.rollNumber,
   });
-
-  final String examineeId;
-  final String password;
 
   factory LoginRequestModel.fromCredentials(LoginCredentials credentials) {
     return LoginRequestModel(
-      examineeId: credentials.examineeId,
-      password: credentials.password,
+      district: credentials.district,
+      rollNumber: credentials.rollNumber,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'examinee_id': examineeId,
-        'password': password,
+        'district': district,
+        'roll_number': rollNumber,
       };
 }

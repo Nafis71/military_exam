@@ -66,6 +66,9 @@ class AndroidConfig {
   /// When true, skip root detection on Android emulators (demo/staging QA).
   final bool skipRootOnEmulator;
 
+  /// When true, skip developer-mode detection on Android emulators (demo/staging QA).
+  final bool skipDeveloperModeOnEmulator;
+
   /// Creates an [AndroidConfig].
   const AndroidConfig({
     this.packageName,
@@ -79,6 +82,7 @@ class AndroidConfig {
     this.allowSideload = false,
     this.strictExamIntegrity = false,
     this.skipRootOnEmulator = false,
+    this.skipDeveloperModeOnEmulator = false,
   });
 
   /// Converts to a map for passing over the MethodChannel.
@@ -91,6 +95,7 @@ class AndroidConfig {
         'allowSideload': allowSideload,
         'strictExamIntegrity': strictExamIntegrity,
         'skipRootOnEmulator': skipRootOnEmulator,
+        'skipDeveloperModeOnEmulator': skipDeveloperModeOnEmulator,
       };
 }
 

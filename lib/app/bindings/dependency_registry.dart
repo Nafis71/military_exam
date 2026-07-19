@@ -24,6 +24,7 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/repositories/session_repository.dart';
 import '../../features/auth/domain/usecases/clear_session_usecase.dart';
 import '../../features/auth/domain/usecases/get_current_session_usecase.dart';
+import '../../features/auth/domain/usecases/get_districts_usecase.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
 import '../../features/auth/domain/usecases/validate_exam_eligibility_usecase.dart';
 import '../../features/auth/presentation/controllers/login_controller.dart';
@@ -180,6 +181,7 @@ class DependencyRegistry {
     Get.put<SecurityWatchdogService>(watchdog, permanent: true);
 
     Get.put(LoginUseCase(authRepo, sessionRepo, tokenHolder), permanent: true);
+    Get.put(GetDistrictsUseCase(authRepo), permanent: true);
     Get.put(ValidateExamEligibilityUseCase(authRepo), permanent: true);
     Get.put(GetCurrentSessionUseCase(sessionRepo), permanent: true);
     Get.put(ClearSessionUseCase(sessionRepo, tokenHolder), permanent: true);
@@ -306,6 +308,7 @@ class LoginBinding extends Bindings {
     Get.lazyPut(
       () => LoginController(
         Get.find<LoginUseCase>(),
+        Get.find<GetDistrictsUseCase>(),
         Get.find<ValidateExamEligibilityUseCase>(),
         Get.find<StartExamSessionUseCase>(),
         Get.find<StartSecurityWatchdogUseCase>(),
@@ -314,6 +317,7 @@ class LoginBinding extends Bindings {
         Get.find<CheckConnectivityUseCase>(),
         Get.find<CheckDeviceIntegrityUseCase>(),
         Get.find<AppLifecycleService>(),
+        Get.find<AppLogger>(),
       ),
     );
   }

@@ -31,7 +31,7 @@ Future<void> main() async {
     return;
   }
 
-  await DependencyRegistry.init(demo: true);
+  await DependencyRegistry.init(demo: false);
   // Offline demo (no API calls): await DependencyRegistry.init(demo: true);
   runApp(const MilitaryExamApp());
 }

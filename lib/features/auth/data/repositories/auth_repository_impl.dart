@@ -1,5 +1,6 @@
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
+import '../../domain/entities/login_credentials.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/login_request_model.dart';
@@ -16,7 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     return switch (result) {
-      Success(:final data) => Success(data.toEntity()),
+      Success(:final data) => Success(data.toAuthSession()),
       ErrorResult(:final failure) => ErrorResult(failure),
     };
   }
@@ -26,4 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String sessionId,
   ) =>
       _remoteDataSource.checkEligibility(sessionId);
+
+  @override
+  Future<Result<List<String>>> getDistricts() => _remoteDataSource.getDistricts();
 }

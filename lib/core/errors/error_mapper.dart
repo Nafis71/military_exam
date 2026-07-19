@@ -32,7 +32,7 @@ class ErrorMapper {
         exception.message ??
         AppStrings.networkRequestFailed;
 
-    if (statusCode == 401) return AuthFailure(message);
+    if (statusCode == 401 || statusCode == 404) return AuthFailure(message);
     if (statusCode == 403) return ExamLockedFailure(message);
     if (statusCode == 422) return ValidationFailure(message);
     if (exception.type == DioExceptionType.connectionTimeout ||

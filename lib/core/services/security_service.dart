@@ -263,6 +263,7 @@ class SecurityService {
         strictExamIntegrity: deployment.strictExamIntegrity,
         treatDeveloperModeAsThreat: true,
         skipRootOnEmulator: relaxSimulator,
+        skipDeveloperModeOnEmulator: relaxSimulator,
         allowedInstallers: const [
           AppStore.googlePlay,
           AppStore.amazonAppstore,

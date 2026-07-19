@@ -22,6 +22,10 @@ class SpoofingDetector(
      * Used when [DetectionConfig.scope] is essential.
      */
     fun detectDeveloperModeOnly(): List<ThreatResult> {
+        if (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context)) {
+            return emptyList()
+        }
+
         val threats = mutableListOf<ThreatResult>()
         val strict = config.strictExamIntegrity
 
@@ -46,6 +50,10 @@ class SpoofingDetector(
     }
 
     fun detect(): List<ThreatResult> {
+        if (config.skipDeveloperModeOnEmulator && EmulatorDetector.isEmulator(context)) {
+            return emptyList()
+        }
+
         val threats = mutableListOf<ThreatResult>()
         val strict = config.strictExamIntegrity
 

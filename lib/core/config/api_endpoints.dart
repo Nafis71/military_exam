@@ -1,5 +1,6 @@
 abstract final class ApiEndpoints {
-  static const String login = '/auth/login';
+  static const String login = '/candidates/login';
+  static const String districts = '/candidates/districts';
   static const String eligibility = '/exam/eligibility';
   static const String sessionStart = '/exam/session/start';
   static const String sessionCurrent = '/exam/session/current';

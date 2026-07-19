@@ -12,6 +12,10 @@ alwaysApply: true
 - Use GetX for routing, DI, and controllers. Controllers hold UI state and call usecases; business rules belong in usecases, never widgets.
 - Screens ≤ 200 lines; extract widgets, shared components, and helper methods.
 - Never use widget methods (e.g. `Widget _buildFoo()`). Always extract reusable UI into a dedicated `StatelessWidget` or `StatefulWidget` class in its own file under the feature's `presentation/widgets/` folder.
+- Domain entities live in `domain/entities/` (feature) or `shared/domain/entities/` (cross-feature).
+- Data models in `data/models/` **extend** their matching domain entity.
+- Models add serialization only: `fromJson`, `toJson`, and `toEntity()` / `toAuthSession()` when mapping to another aggregate.
+- Presentation and usecases use entities only — never import `data/models/`.
 
 ## Colors
 

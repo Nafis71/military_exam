@@ -15,9 +15,9 @@ void main() {
       expect(Deployment.instance.relaxSimulatorIntegrityChecks, isTrue);
     });
 
-    test('development mode keeps simulator integrity checks', () {
+    test('development mode relaxes simulator integrity checks', () {
       Deployment.init(mode: BuildMode.development);
-      expect(Deployment.instance.relaxSimulatorIntegrityChecks, isFalse);
+      expect(Deployment.instance.relaxSimulatorIntegrityChecks, isTrue);
     });
 
     test('production mode keeps simulator integrity checks', () {
@@ -33,13 +33,18 @@ void main() {
 
       final config = SecurityConfig(
         ios: IOSConfig(skipJailbreakOnSimulator: relax),
-        android: AndroidConfig(skipRootOnEmulator: relax),
+        android: AndroidConfig(
+          skipRootOnEmulator: relax,
+          skipDeveloperModeOnEmulator: relax,
+        ),
       );
 
       expect(config.ios.skipJailbreakOnSimulator, isTrue);
       expect(config.android.skipRootOnEmulator, isTrue);
+      expect(config.android.skipDeveloperModeOnEmulator, isTrue);
       expect(config.toMap()['ios']['skipJailbreakOnSimulator'], isTrue);
       expect(config.toMap()['android']['skipRootOnEmulator'], isTrue);
+      expect(config.toMap()['android']['skipDeveloperModeOnEmulator'], isTrue);
     });
 
     test('production maps skip flags off', () {
@@ -48,11 +53,15 @@ void main() {
 
       final config = SecurityConfig(
         ios: IOSConfig(skipJailbreakOnSimulator: relax),
-        android: AndroidConfig(skipRootOnEmulator: relax),
+        android: AndroidConfig(
+          skipRootOnEmulator: relax,
+          skipDeveloperModeOnEmulator: relax,
+        ),
       );
 
       expect(config.ios.skipJailbreakOnSimulator, isFalse);
       expect(config.android.skipRootOnEmulator, isFalse);
+      expect(config.android.skipDeveloperModeOnEmulator, isFalse);
     });
   });
 }

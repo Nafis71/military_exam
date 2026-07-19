@@ -2,19 +2,6 @@ import 'package:equatable/equatable.dart';
 
 import '../enums/exam_enums.dart';
 
-class LoginCredentials extends Equatable {
-  const LoginCredentials({
-    required this.examineeId,
-    required this.password,
-  });
-
-  final String examineeId;
-  final String password;
-
-  @override
-  List<Object?> get props => [examineeId, password];
-}
-
 class Examinee extends Equatable {
   const Examinee({
     required this.id,

@@ -34,9 +34,8 @@ class Deployment {
   bool get isProduction => mode == BuildMode.production;
   bool get isDevelopment => mode == BuildMode.development;
 
-  /// When true, skip jailbreak/root checks on iOS simulator / Android emulator.
-  bool get relaxSimulatorIntegrityChecks =>
-      isDemo || mode == BuildMode.staging;
+  /// When true, skip jailbreak/root/developer-mode checks on iOS simulator / Android emulator.
+  bool get relaxSimulatorIntegrityChecks => !isProduction;
 
   /// When true, sideloaded / unknown install sources are allowed for RASP.
   bool get allowSideload => environment.allowSideload;
