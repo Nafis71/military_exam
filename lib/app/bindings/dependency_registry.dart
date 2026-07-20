@@ -48,7 +48,10 @@ import '../../features/exam_session/domain/usecases/lock_exam_session_usecase.da
 import '../../features/exam_session/domain/usecases/report_security_violation_usecase.dart';
 import '../../features/exam_session/domain/usecases/start_exam_session_usecase.dart';
 import '../../features/exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
+import '../../features/exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
+import '../../features/exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
 import '../../features/exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../features/exam_session/presentation/controllers/exam_waiting_controller.dart';
 import '../../features/finish_exam/presentation/controllers/finish_exam_controller.dart';
 import '../../features/instructions/presentation/controllers/instructions_controller.dart';
 import '../../features/fill_blank_exam/domain/usecases/get_fill_blank_progress_usecase.dart';
@@ -163,6 +166,18 @@ class DependencyRegistry {
     Get.put(FinishExamUseCase(examRepo), permanent: true);
     Get.put(FinalizeExamUseCase(examRepo), permanent: true);
     Get.put(ClearExamLocalDataUseCase(examRepo), permanent: true);
+    Get.put(
+      HasCachedExamAnswersUseCase(examRepo, writtenRepo),
+      permanent: true,
+    );
+    Get.put(
+      RecoverCachedExamSubmissionUseCase(
+        examRepo,
+        writtenRepo,
+        Get.find<FinalizeExamUseCase>(),
+      ),
+      permanent: true,
+    );
     Get.put<PendingExamAnswersFlusher>(
       PendingExamAnswersFlusherImpl(Get.find<AppLogger>()),
       permanent: true,
@@ -359,6 +374,9 @@ class LoginBinding extends Bindings {
         Get.find<LoginUseCase>(),
         Get.find<GetDistrictsUseCase>(),
         Get.find<ValidateExamEligibilityUseCase>(),
+        Get.find<HasCachedExamAnswersUseCase>(),
+        Get.find<RecoverCachedExamSubmissionUseCase>(),
+        Get.find<ClearExamLocalDataUseCase>(),
         Get.find<ExamSessionController>(),
         Get.find<StartSecurityWatchdogUseCase>(),
         Get.find<CameraPermissionService>(),
@@ -367,6 +385,20 @@ class LoginBinding extends Bindings {
         Get.find<CheckDeviceIntegrityUseCase>(),
         Get.find<AppLifecycleService>(),
         Get.find<SaveRollNumberUseCase>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
+class ExamWaitingBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => ExamWaitingController(
+        Get.find<ExamSessionController>(),
+        Get.find<StartSecurityWatchdogUseCase>(),
+        Get.find<AppLifecycleService>(),
         Get.find<AppLogger>(),
       ),
     );

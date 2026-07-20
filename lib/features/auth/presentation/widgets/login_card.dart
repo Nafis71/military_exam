@@ -17,6 +17,7 @@ class LoginCard extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Container(
+        margin: REdgeInsets.only(top: 16),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(10.r),

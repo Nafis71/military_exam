@@ -8,8 +8,8 @@ import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/exam_connectivity_snackbar_listener.dart';
+import '../../../../core/widgets/exam_question_navigation_bar.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
@@ -42,6 +42,10 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
       if (sessionController.currentExam.value == null) {
         await sessionController.loadCurrentExam();
       }
+      if (!sessionController.canAccessQuestions.value) {
+        Get.offNamed(AppRoutes.examWaiting, arguments: sessionId);
+        return;
+      }
       final examSessionId =
           sessionController.examSession.value?.sessionId ?? sessionId;
       if (examSessionId.isNotEmpty) {
@@ -59,9 +63,7 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
           backgroundColor: AppColors.background,
           body: Obx(() {
             if (!sessionController.canAccessQuestions.value) {
-              return _AccessBlockedView(
-                message: AppStrings.cannotAccessQuestions,
-              );
+              return const SizedBox.shrink();
             }
 
             return Column(
@@ -69,10 +71,23 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
                 Obx(() {
                   final timer = sessionController.timer.value;
                   final question = controller.currentQuestion;
+                  final saving = controller.isSaving.value;
+                  final isLast = controller.isLastQuestion;
+                  final canFinishLast =
+                      !isLast || sessionController.canSubmitExam.value;
+
                   return FillBlankExamHeader(
                     questionIndex: question?.index ?? 0,
                     questionTotal: question?.total ?? 0,
                     formattedTimer: timer?.formatted ?? '--:--',
+                    isSkipEnabled: !saving && canFinishLast,
+                    onSkip: () {
+                      if (isLast) {
+                        _onFillBlankFinished();
+                      } else {
+                        controller.skipCurrentQuestion();
+                      }
+                    },
                   );
                 }),
                 Expanded(
@@ -105,11 +120,30 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
                     );
                   }),
                 ),
-                _FillBlankNavigationBar(
-                  controller: controller,
-                  canSubmit: sessionController.canSubmitExam.value,
-                  onFinished: _onFillBlankFinished,
-                ),
+                Obx(() {
+                  final saving = controller.isSaving.value;
+                  final isLast = controller.isLastQuestion;
+                  final canGoBack = controller.currentIndex.value > 0;
+                  final canFinishLast =
+                      !isLast || sessionController.canSubmitExam.value;
+
+                  return ExamQuestionNavigationBar(
+                    canGoBack: canGoBack,
+                    onPrevious: saving ? null : controller.goToPrevious,
+                    primaryLabel: isLast
+                        ? AppStrings.finishFillBlank
+                        : AppStrings.nextQuestion,
+                    isPrimaryLoading: saving,
+                    isPrimaryEnabled: !saving && canFinishLast,
+                    onPrimary: () async {
+                      if (isLast) {
+                        _onFillBlankFinished();
+                      } else {
+                        await controller.saveCurrentAnswer();
+                      }
+                    },
+                  );
+                }),
               ],
             );
           }),
@@ -152,104 +186,5 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
       return;
     }
     Get.offNamed(nextRoute);
-  }
-}
-
-class _AccessBlockedView extends StatelessWidget {
-  const _AccessBlockedView({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: AppTypography.bodyMedium,
-        ),
-      ),
-    );
-  }
-}
-
-class _FillBlankNavigationBar extends StatelessWidget {
-  const _FillBlankNavigationBar({
-    required this.controller,
-    required this.canSubmit,
-    required this.onFinished,
-  });
-
-  final FillBlankExamController controller;
-  final bool canSubmit;
-  final VoidCallback onFinished;
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaPadding = MediaQuery.paddingOf(context);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md.w + mediaPadding.left,
-        17.h,
-        AppSpacing.md.w + mediaPadding.right,
-        16.h + mediaPadding.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.cF7FAF8,
-        border: Border(top: BorderSide(color: AppColors.cD9E5DE)),
-      ),
-      child: Obx(() {
-        final saving = controller.isSaving.value;
-        final isLast = controller.isLastQuestion;
-        final canGoBack = controller.currentIndex.value > 0;
-        return Row(
-          children: [
-            if (canGoBack)
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: saving ? null : controller.goToPrevious,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.c176B4D,
-                    side: const BorderSide(color: AppColors.cD9E5DE),
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.r),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.previousQuestion,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.c176B4D,
-                        ),
-                  ),
-                ),
-              ),
-            if (canGoBack) SizedBox(width: 12.w),
-            Expanded(
-              flex: canGoBack ? 1 : 1,
-              child: AppPrimaryButton(
-                label: isLast
-                    ? AppStrings.finishFillBlank
-                    : AppStrings.nextQuestion,
-                isLoading: saving,
-                onPressed: saving || (isLast && !canSubmit)
-                    ? null
-                    : () async {
-                        if (isLast) {
-                          onFinished();
-                        } else {
-                          await controller.saveCurrentAnswer();
-                        }
-                      },
-              ),
-            ),
-          ],
-        );
-      }),
-    );
   }
 }

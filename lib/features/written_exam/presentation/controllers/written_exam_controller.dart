@@ -64,9 +64,7 @@ class WrittenExamController extends GetxController {
   bool get isLastQuestion =>
       questions.isNotEmpty && currentIndex.value >= questions.length - 1;
 
-  bool get canSubmit =>
-      questions.isNotEmpty &&
-      questions.every((q) => _hasUploadedImage(q.id));
+  bool get canSubmit => questions.isNotEmpty;
 
   bool get currentQuestionHasUploadedImage {
     final question = currentQuestion;
@@ -163,6 +161,13 @@ class WrittenExamController extends GetxController {
       currentIndex.value += 1;
       errorMessage.value = null;
     }
+  }
+
+  void skipCurrentQuestion() {
+    if (currentQuestion == null || isLastQuestion) return;
+
+    errorMessage.value = null;
+    currentIndex.value += 1;
   }
 
   void _handleImageResult(Result<WrittenAnswerImage> result) {

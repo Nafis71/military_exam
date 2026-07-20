@@ -20,6 +20,8 @@ abstract final class FinalizePayloadBuilder {
     return entries.where(_shouldInclude).toList();
   }
 
+  static bool shouldIncludeDraft(ExamAnswerDraft draft) => _shouldInclude(draft);
+
   static bool _shouldInclude(ExamAnswerDraft draft) {
     return switch (draft.type) {
       ExamQuestionType.mcq =>

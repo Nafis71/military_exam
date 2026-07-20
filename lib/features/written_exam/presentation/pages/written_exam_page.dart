@@ -13,8 +13,8 @@ import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/exam_connectivity_snackbar_listener.dart';
+import '../../../../core/widgets/exam_question_navigation_bar.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
@@ -45,6 +45,13 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (sessionController.currentExam.value == null) {
         await sessionController.loadCurrentExam();
+      }
+      if (!sessionController.canAccessQuestions.value) {
+        final sessionId =
+            sessionController.examSession.value?.sessionId ?? '';
+        if (sessionId.isNotEmpty) {
+          Get.offNamed(AppRoutes.examWaiting, arguments: sessionId);
+        }
       }
     });
   }
@@ -109,13 +116,6 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
   }
 
   Future<void> _submitWritten() async {
-    final question = controller.currentQuestion;
-    if (question != null && !controller.currentQuestionHasUploadedImage) {
-      controller.errorMessage.value =
-          AppStrings.writtenExamRequireUploadedImage;
-      return;
-    }
-
     controller.submissionStatus.value = SubmissionStatus.saving;
     final examName = sessionController.currentExam.value?.examName ??
         AppStrings.finishExamDefaultName;
@@ -150,16 +150,7 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
           backgroundColor: AppColors.background,
           body: Obx(() {
             if (!sessionController.canAccessQuestions.value) {
-              return Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-                  child: Text(
-                    AppStrings.cannotAccessQuestions,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodyMedium,
-                  ),
-                ),
-              );
+              return const SizedBox.shrink();
             }
 
             final question = controller.currentQuestion;
@@ -174,12 +165,30 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
               children: [
                 Column(
                   children: [
-                    WrittenExamHeader(
-                      questionIndex: question?.index ?? 0,
-                      questionTotal: question?.total ?? 0,
-                      formattedTimer:
-                          sessionController.timer.value?.formatted ?? '--:--',
-                    ),
+                    Obx(() {
+                      final question = controller.currentQuestion;
+                      final isLast = controller.isLastQuestion;
+                      final isSaving = controller.submissionStatus.value ==
+                          SubmissionStatus.saving;
+                      final isBusy = isSaving || controller.isUploading.value;
+                      final canFinishLast =
+                          !isLast || sessionController.canSubmitExam.value;
+
+                      return WrittenExamHeader(
+                        questionIndex: question?.index ?? 0,
+                        questionTotal: question?.total ?? 0,
+                        formattedTimer:
+                            sessionController.timer.value?.formatted ?? '--:--',
+                        isSkipEnabled: !isBusy && canFinishLast,
+                        onSkip: () {
+                          if (isLast) {
+                            _submitWritten();
+                          } else {
+                            controller.skipCurrentQuestion();
+                          }
+                        },
+                      );
+                    }),
                     Expanded(
                       child: question == null
                           ? Center(
@@ -231,11 +240,34 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                               ),
                             ),
                     ),
-                    _WrittenNavigationBar(
-                      controller: controller,
-                      canSubmitExam: sessionController.canSubmitExam.value,
-                      onSubmit: _submitWritten,
-                    ),
+                    Obx(() {
+                      final isLast = controller.isLastQuestion;
+                      final isSaving = controller.submissionStatus.value ==
+                          SubmissionStatus.saving;
+                      final isBusy = isSaving || controller.isUploading.value;
+                      final canFinishLast =
+                          !isLast || sessionController.canSubmitExam.value;
+                      final hasUploaded = controller.currentQuestionHasUploadedImage;
+
+                      return ExamQuestionNavigationBar(
+                        canGoBack: false,
+                        onPrevious: null,
+                        primaryLabel: isLast
+                            ? AppStrings.submitWrittenExam
+                            : AppStrings.nextQuestion,
+                        isPrimaryLoading: isSaving,
+                        isPrimaryEnabled: isLast
+                            ? canFinishLast && !isBusy
+                            : hasUploaded && !isBusy,
+                        onPrimary: () async {
+                          if (isLast) {
+                            _submitWritten();
+                          } else {
+                            await controller.goToNext();
+                          }
+                        },
+                      );
+                    }),
                   ],
                 ),
                 if (controller.isUploading.value)
@@ -247,58 +279,6 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
           }),
         ),
       ),
-    );
-  }
-}
-
-class _WrittenNavigationBar extends StatelessWidget {
-  const _WrittenNavigationBar({
-    required this.controller,
-    required this.canSubmitExam,
-    required this.onSubmit,
-  });
-
-  final WrittenExamController controller;
-  final bool canSubmitExam;
-  final VoidCallback onSubmit;
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaPadding = MediaQuery.paddingOf(context);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md.w + mediaPadding.left,
-        17.h,
-        AppSpacing.md.w + mediaPadding.right,
-        16.h + mediaPadding.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.cF7FAF8,
-        border: Border(top: BorderSide(color: AppColors.cD9E5DE)),
-      ),
-      child: Obx(() {
-        final isLast = controller.isLastQuestion;
-        final isSaving =
-            controller.submissionStatus.value == SubmissionStatus.saving;
-
-        return AppPrimaryButton(
-          label: isLast
-              ? AppStrings.submitWrittenExam
-              : AppStrings.nextQuestion,
-          isLoading: isSaving,
-          onPressed: isLast
-              ? (controller.canSubmit && canSubmitExam && !isSaving
-                  ? onSubmit
-                  : null)
-              : (isSaving || controller.isUploading.value
-                  ? null
-                  : () async {
-                      await controller.goToNext();
-                    }),
-        );
-      }),
     );
   }
 }

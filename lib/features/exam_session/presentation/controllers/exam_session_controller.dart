@@ -18,6 +18,7 @@ import '../../domain/usecases/report_security_violation_usecase.dart';
 import '../../domain/usecases/start_exam_session_usecase.dart';
 import '../../domain/usecases/submit_saved_exam_answers_usecase.dart';
 import '../../domain/utils/exam_question_splitter.dart';
+import '../../domain/utils/exam_waiting_utils.dart';
 
 class ExamSessionController extends GetxController {
   ExamSessionController({
@@ -95,6 +96,15 @@ class ExamSessionController extends GetxController {
     currentPhase.value = ExamPhase.locked;
   }
 
+  bool get isWaitingForExamStart =>
+      ExamWaitingUtils.isWaitingForExamStart(currentExam.value);
+
+  Duration get timeUntilExamStart =>
+      ExamWaitingUtils.timeUntilExamStart(currentExam.value);
+
+  bool get hasCountdownTarget =>
+      ExamWaitingUtils.hasCountdownTarget(currentExam.value);
+
   Future<void> startSession(String authSessionId) async {
     isLoading.value = true;
     errorMessage.value = null;
@@ -107,18 +117,21 @@ class ExamSessionController extends GetxController {
         examSession.value = data;
         currentPhase.value = ExamPhase.mcq;
         await loadCurrentExam();
-        await _refreshTimer();
-        _startTimerTicker();
+        if (errorMessage.value != null) return;
+        if (!isWaitingForExamStart) {
+          await _refreshTimer();
+          _startTimerTicker();
+        }
       case ErrorResult(:final failure):
         errorMessage.value = failure.message;
     }
   }
 
-  Future<void> loadCurrentExam() async {
+  Future<void> loadCurrentExam({bool refresh = false}) async {
     isExamLoading.value = true;
     errorMessage.value = null;
 
-    final result = await _getCurrentExamUseCase();
+    final result = await _getCurrentExamUseCase(refresh: refresh);
     isExamLoading.value = false;
 
     switch (result) {
@@ -142,6 +155,8 @@ class ExamSessionController extends GetxController {
   }
 
   void _applyExamDuration(CurrentExam exam) {
+    if (isWaitingForExamStart) return;
+
     final remainingMinutes = exam.window.remainingExamMinutes;
     if (remainingMinutes > 0) {
       timer.value = ExamTimer(remainingSeconds: remainingMinutes * 60);
@@ -224,6 +239,17 @@ class ExamSessionController extends GetxController {
         _timeExpiryHandled = false;
         errorMessage.value = failure.message;
     }
+  }
+
+  Future<bool> beginExamAfterWaiting() async {
+    await loadCurrentExam(refresh: true);
+    if (errorMessage.value != null || isWaitingForExamStart) {
+      return false;
+    }
+
+    await _refreshTimer();
+    _startTimerTicker();
+    return true;
   }
 
   Future<void> finishExam() async {

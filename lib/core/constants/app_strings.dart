@@ -177,6 +177,7 @@ abstract final class AppStrings {
   static const finishMcq = 'বহুনির্বাচনী শেষ করুন';
   static const nextQuestion = 'পরবর্তী প্রশ্ন';
   static const previousQuestion = 'পূর্ববর্তী প্রশ্ন';
+  static const skipQuestion = 'এড়িয়ে যান';
   static const questionOf = 'প্রশ্ন'; // used as: প্রশ্ন ১ / ৫
   static const of = '/';
   static const fillInBlank = 'শূন্যস্থান পূরণ';
@@ -186,6 +187,18 @@ abstract final class AppStrings {
       'এখনও প্রশ্ন দেখার সময় হয়নি। অনুগ্রহ করে অপেক্ষা করুন।';
   static const cannotSubmitYet =
       'এখনও উত্তর জমা দেওয়ার সময় হয়নি।';
+  static const uploadingCachedAnswers = 'পূর্বের উত্তর আপলোড হচ্ছে…';
+  static const cachedSubmissionUploadFailed =
+      'উত্তর আপলোড করা যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।';
+  static const examWaitingTitle = 'পরীক্ষা শীঘ্রই শুরু হবে';
+  static const examStartsIn = 'শুরু হতে বাকি';
+  static String examDurationInfo(int minutes) =>
+      'পরীক্ষার সময়কাল: $minutes মিনিট';
+  static const examWaitingNoStartTime =
+      'পরীক্ষা শুরু হওয়ার জন্য অপেক্ষা করুন';
+  static const examWaitingSyncFailed =
+      'সার্ভারের সাথে যোগাযোগ ব্যর্থ। আবার চেষ্টা হচ্ছে…';
+  static const examWaitingRefresh = 'আবার চেষ্টা করুন';
   static const demoFillBlankQuestion1 = 'মারাডোনা ____ দিয়ে গোল দিয়েছে';
   static const demoFillBlankQuestion2 = 'কার কাছে খাওয়া পাই?';
   static const demoDescriptiveQuestion1 =

@@ -41,6 +41,38 @@ class ExamRepositoryImpl implements ExamRepository {
   }
 
   @override
+  Future<Result<CurrentExam>> refreshCurrentExam() async {
+    _cachedCurrentExam = null;
+    return getCurrentExam();
+  }
+
+  @override
+  Future<Result<bool>> hasCachedExamAnswers() async {
+    final draftsResult = await _answersHive.readAllDrafts();
+    if (draftsResult is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
+      return ErrorResult(draftsResult.failure);
+    }
+
+    final drafts = (draftsResult as Success).data;
+    final hasHiveDrafts = drafts.values.any(FinalizePayloadBuilder.shouldIncludeDraft);
+    if (hasHiveDrafts) return const Success(true);
+
+    final mcqResult = await _localDataSource.readMcqAnswers();
+    if (mcqResult is ErrorResult<Map<String, String>>) {
+      return ErrorResult(mcqResult.failure);
+    }
+    if ((mcqResult as Success).data.isNotEmpty) return const Success(true);
+
+    final fillBlankResult = await _localDataSource.readFillBlankAnswers();
+    if (fillBlankResult is ErrorResult<Map<String, String>>) {
+      return ErrorResult(fillBlankResult.failure);
+    }
+    if ((fillBlankResult as Success).data.isNotEmpty) return const Success(true);
+
+    return const Success(false);
+  }
+
+  @override
   Future<Result<ExamSession>> startSession(String authSessionId) async {
     final result = await _remoteDataSource.startSession(authSessionId);
     if (result is ErrorResult<ExamSessionModel>) {

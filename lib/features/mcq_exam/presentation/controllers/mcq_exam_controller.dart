@@ -112,6 +112,17 @@ class McqExamController extends GetxController {
     _syncSelectionForCurrent();
   }
 
+  void skipCurrentQuestion() {
+    final question = currentQuestion;
+    if (question == null || isLastQuestion) return;
+
+    if (!answers.containsKey(question.id)) {
+      selectedOptionId.value = null;
+    }
+    currentIndex.value += 1;
+    _syncSelectionForCurrent();
+  }
+
   void _syncSelectionForCurrent() {
     final question = currentQuestion;
     selectedOptionId.value =

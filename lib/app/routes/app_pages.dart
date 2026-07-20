@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/exam_session/presentation/pages/exam_waiting_page.dart';
 import '../../features/finish_exam/presentation/pages/finish_exam_page.dart';
 import '../../features/instructions/presentation/pages/instructions_page.dart';
 import '../../features/fill_blank_exam/presentation/pages/fill_blank_exam_page.dart';
@@ -65,6 +66,12 @@ class AppPages {
       name: AppRoutes.login,
       page: () => const LoginPage(),
       binding: LoginBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.examWaiting,
+      page: () => const ExamWaitingPage(),
+      binding: ExamWaitingBinding(),
+      middlewares: [ExamRouteGuard()],
     ),
     GetPage(
       name: AppRoutes.mcqExam,

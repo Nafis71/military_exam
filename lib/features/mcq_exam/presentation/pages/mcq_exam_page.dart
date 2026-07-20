@@ -8,8 +8,8 @@ import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/exam_connectivity_snackbar_listener.dart';
+import '../../../../core/widgets/exam_question_navigation_bar.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
@@ -42,6 +42,10 @@ class _McqExamPageState extends State<McqExamPage> {
       if (sessionController.currentExam.value == null) {
         await sessionController.loadCurrentExam();
       }
+      if (!sessionController.canAccessQuestions.value) {
+        Get.offNamed(AppRoutes.examWaiting, arguments: sessionId);
+        return;
+      }
       final examSessionId =
           sessionController.examSession.value?.sessionId ?? sessionId;
       if (examSessionId.isNotEmpty) {
@@ -59,16 +63,7 @@ class _McqExamPageState extends State<McqExamPage> {
           backgroundColor: AppColors.background,
           body: Obx(() {
             if (!sessionController.canAccessQuestions.value) {
-              return Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-                  child: Text(
-                    AppStrings.cannotAccessQuestions,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.bodyMedium,
-                  ),
-                ),
-              );
+              return const SizedBox.shrink();
             }
 
             return Column(
@@ -76,10 +71,23 @@ class _McqExamPageState extends State<McqExamPage> {
                 Obx(() {
                   final timer = sessionController.timer.value;
                   final question = controller.currentQuestion;
+                  final submitting = controller.isSubmitting.value;
+                  final isLast = controller.isLastQuestion;
+                  final canFinishLast =
+                      !isLast || sessionController.canSubmitExam.value;
+
                   return McqExamHeader(
                     questionIndex: question?.index ?? 0,
                     questionTotal: question?.total ?? 0,
                     formattedTimer: timer?.formatted ?? '--:--',
+                    isSkipEnabled: !submitting && canFinishLast,
+                    onSkip: () {
+                      if (isLast) {
+                        _onMcqFinished();
+                      } else {
+                        controller.skipCurrentQuestion();
+                      }
+                    },
                   );
                 }),
                 Expanded(
@@ -112,11 +120,41 @@ class _McqExamPageState extends State<McqExamPage> {
                     );
                   }),
                 ),
-                _McqNavigationBar(
-                  controller: controller,
-                  canSubmit: sessionController.canSubmitExam.value,
-                  onFinished: _onMcqFinished,
-                ),
+                Obx(() {
+                  final submitting = controller.isSubmitting.value;
+                  final hasSelection = controller.selectedOptionId.value != null;
+                  final isLast = controller.isLastQuestion;
+                  final canGoBack = controller.currentIndex.value > 0;
+                  final canFinishLast =
+                      !isLast || sessionController.canSubmitExam.value;
+
+                  return ExamQuestionNavigationBar(
+                    canGoBack: canGoBack,
+                    onPrevious: submitting ? null : controller.goToPrevious,
+                    primaryLabel: isLast
+                        ? AppStrings.finishMcq
+                        : AppStrings.nextQuestion,
+                    isPrimaryLoading: submitting,
+                    isPrimaryEnabled:
+                        hasSelection && !submitting && canFinishLast,
+                    primaryBoxShadow: hasSelection && !submitting
+                        ? [
+                            BoxShadow(
+                              color: AppColors.c89D5B2.withValues(alpha: 0.4),
+                              blurRadius: 28,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                    onPrimary: () async {
+                      if (isLast) {
+                        _onMcqFinished();
+                      } else {
+                        await controller.submitCurrentAnswer();
+                      }
+                    },
+                  );
+                }),
               ],
             );
           }),
@@ -159,91 +197,5 @@ class _McqExamPageState extends State<McqExamPage> {
       return;
     }
     Get.offNamed(nextRoute);
-  }
-}
-
-class _McqNavigationBar extends StatelessWidget {
-  const _McqNavigationBar({
-    required this.controller,
-    required this.canSubmit,
-    required this.onFinished,
-  });
-
-  final McqExamController controller;
-  final bool canSubmit;
-  final VoidCallback onFinished;
-
-  @override
-  Widget build(BuildContext context) {
-    final mediaPadding = MediaQuery.paddingOf(context);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md.w + mediaPadding.left,
-        17.h,
-        AppSpacing.md.w + mediaPadding.right,
-        16.h + mediaPadding.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.cF7FAF8,
-        border: Border(top: BorderSide(color: AppColors.cD9E5DE)),
-      ),
-      child: Obx(() {
-        final submitting = controller.isSubmitting.value;
-        final hasSelection = controller.selectedOptionId.value != null;
-        final isLast = controller.isLastQuestion;
-        final canGoBack = controller.currentIndex.value > 0;
-        return Row(
-          children: [
-            if (canGoBack)
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: submitting ? null : controller.goToPrevious,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.c176B4D,
-                    side: const BorderSide(color: AppColors.cD9E5DE),
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.r),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.previousQuestion,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.c176B4D,
-                        ),
-                  ),
-                ),
-              ),
-            if (canGoBack) SizedBox(width: 12.w),
-            Expanded(
-              child: AppPrimaryButton(
-                label: isLast ? AppStrings.finishMcq : AppStrings.nextQuestion,
-                isLoading: submitting,
-                onPressed: !hasSelection || submitting || (isLast && !canSubmit)
-                    ? null
-                    : () async {
-                        if (isLast) {
-                          onFinished();
-                        } else {
-                          await controller.submitCurrentAnswer();
-                        }
-                      },
-                boxShadow: hasSelection && !submitting
-                    ? [
-                        BoxShadow(
-                          color: AppColors.c89D5B2.withValues(alpha: 0.4),
-                          blurRadius: 28,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
-          ],
-        );
-      }),
-    );
   }
 }

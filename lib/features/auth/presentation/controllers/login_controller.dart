@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:military_exam/core/utils/validators.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -19,6 +20,9 @@ import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
+import '../../../exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
+import '../../../exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
 import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
 import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
@@ -35,6 +39,9 @@ class LoginController extends GetxController {
     this._loginUseCase,
     this._getDistrictsUseCase,
     this._validateEligibilityUseCase,
+    this._hasCachedExamAnswersUseCase,
+    this._recoverCachedExamSubmissionUseCase,
+    this._clearExamLocalDataUseCase,
     this._sessionController,
     this._startWatchdog,
     this._cameraPermissionService,
@@ -49,6 +56,9 @@ class LoginController extends GetxController {
   final LoginUseCase _loginUseCase;
   final GetDistrictsUseCase _getDistrictsUseCase;
   final ValidateExamEligibilityUseCase _validateEligibilityUseCase;
+  final HasCachedExamAnswersUseCase _hasCachedExamAnswersUseCase;
+  final RecoverCachedExamSubmissionUseCase _recoverCachedExamSubmissionUseCase;
+  final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
   final ExamSessionController _sessionController;
   final StartSecurityWatchdogUseCase _startWatchdog;
   final CameraPermissionService _cameraPermissionService;
@@ -243,19 +253,76 @@ class LoginController extends GetxController {
 
     final eligibilityResult =
         await _validateEligibilityUseCase(authSession.sessionId);
-    isLoading.value = false;
 
     switch (eligibilityResult) {
       case Success(:final data):
         eligibility.value = data;
         if (!data.isEligible || data.isLocked || !data.isExamActive) {
+          isLoading.value = false;
           errorMessage.value =
               data.message ?? AppStrings.notEligible;
           return;
         }
+        final recovered = await _tryRecoverCachedSubmission();
+        isLoading.value = false;
+        if (recovered) return;
+        isLoading.value = true;
         await _enterExam(authSession.sessionId);
+        isLoading.value = false;
       case ErrorResult(:final failure):
+        isLoading.value = false;
         errorMessage.value = failure.message;
+    }
+  }
+
+  Future<bool> _tryRecoverCachedSubmission() async {
+    try {
+      final hasCacheResult = await _hasCachedExamAnswersUseCase();
+      if (hasCacheResult is ErrorResult<bool>) {
+        _logger.error(
+          'hasCachedExamAnswers failed',
+          error: hasCacheResult.failure.message,
+        );
+        return false;
+      }
+      if (hasCacheResult.dataOrNull != true) return false;
+
+      isLoading.value = true;
+      final recoveryResult = await _recoverCachedExamSubmissionUseCase();
+      isLoading.value = false;
+
+      switch (recoveryResult) {
+        case Success(:final data):
+          Get.offAllNamed(
+            AppRoutes.finishExam,
+            arguments: <String, dynamic>{
+              'examName': data.exam.examName,
+              'submittedAt': data.receipt.submittedAt,
+              'submissionType': 'manual',
+            },
+          );
+          return true;
+        case ErrorResult(:final failure):
+          if (failure is NetworkFailure) {
+            errorMessage.value = AppStrings.cachedSubmissionUploadFailed;
+            return true;
+          }
+          _logger.error(
+            'recoverCachedExamSubmission failed',
+            error: failure.message,
+          );
+          await _clearExamLocalDataUseCase();
+          return false;
+      }
+    } catch (error, stackTrace) {
+      isLoading.value = false;
+      _logger.error(
+        '_tryRecoverCachedSubmission failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      errorMessage.value = AppStrings.somethingWentWrong;
+      return true;
     }
   }
 
@@ -273,10 +340,28 @@ class LoginController extends GetxController {
     }
     final examSession = _sessionController.examSession.value;
     if (examSession == null) return;
+    if (_sessionController.currentExam.value == null) {
+      errorMessage.value = AppStrings.somethingWentWrong;
+      return;
+    }
 
     _pollTimer?.cancel();
     _pollTimer = null;
     final sessionId = examSession.sessionId;
+
+    if (_sessionController.isWaitingForExamStart) {
+      await _startWatchdog(
+        policy: const SecurityPolicy(
+          requireAirplaneMode: true,
+          monitoredPhases: [],
+        ),
+        phase: ExamPhase.mcq,
+        sessionId: sessionId,
+      );
+      Get.offAllNamed(AppRoutes.examWaiting, arguments: sessionId);
+      return;
+    }
+
     await _startWatchdog(
       policy: const SecurityPolicy(
         requireAirplaneMode: true,

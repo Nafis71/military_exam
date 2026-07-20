@@ -31,11 +31,35 @@ class LoginTextField extends StatefulWidget {
 
 class _LoginTextFieldState extends State<LoginTextField> {
   late bool _isObscured;
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _isObscured = widget.obscureText;
+    _focusNode.addListener(_scrollIntoViewOnFocus);
+  }
+
+  @override
+  void dispose() {
+    _focusNode
+      ..removeListener(_scrollIntoViewOnFocus)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _scrollIntoViewOnFocus() {
+    if (!_focusNode.hasFocus) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.3,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   static const _inputBorderRadius = BorderRadius.all(Radius.circular(5));
@@ -81,11 +105,15 @@ class _LoginTextFieldState extends State<LoginTextField> {
         ),
         SizedBox(height: 8.h),
         TextFormField(
+          focusNode: _focusNode,
           controller: widget.controller,
           obscureText: widget.showVisibilityToggle ? _isObscured : widget.obscureText,
           validator: widget.validator,
           textInputAction: widget.textInputAction,
           onFieldSubmitted: widget.onFieldSubmitted,
+          scrollPadding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom + 120.h,
+          ),
           style: TextStyle(
             fontFamily: 'HindSiliguri',
             fontSize: 16.sp,

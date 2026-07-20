@@ -7,5 +7,10 @@ class GetCurrentExamUseCase {
 
   final ExamRepository _examRepository;
 
-  Future<Result<CurrentExam>> call() => _examRepository.getCurrentExam();
+  Future<Result<CurrentExam>> call({bool refresh = false}) {
+    if (refresh) {
+      return _examRepository.refreshCurrentExam();
+    }
+    return _examRepository.getCurrentExam();
+  }
 }

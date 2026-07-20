@@ -111,6 +111,13 @@ class FillBlankExamController extends GetxController {
     _syncAnswerForCurrent();
   }
 
+  void skipCurrentQuestion() {
+    if (currentQuestion == null || isLastQuestion) return;
+
+    currentIndex.value += 1;
+    _syncAnswerForCurrent();
+  }
+
   void _syncAnswerForCurrent() {
     final question = currentQuestion;
     answerText.value = question != null ? (answers[question.id] ?? '') : '';

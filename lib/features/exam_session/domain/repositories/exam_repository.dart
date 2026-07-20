@@ -8,6 +8,10 @@ abstract class ExamRepository {
 
   Future<Result<CurrentExam>> getCurrentExam();
 
+  Future<Result<CurrentExam>> refreshCurrentExam();
+
+  Future<Result<bool>> hasCachedExamAnswers();
+
   Future<Result<ExamTimer>> getTimer(String sessionId);
 
   Future<Result<List<McqQuestion>>> getMcqQuestions(String sessionId);
