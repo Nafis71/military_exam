@@ -43,7 +43,7 @@ class Environment {
       case BuildMode.development:
         return const Environment(
           appName: AppStrings.appNameDev,
-          baseUrl: 'http://192.168.7.173:7009',
+          baseUrl: 'https://ex-api.divergenttechbd.com',
           uploadBaseUrl: 'https://staging-upload.military-exam.local',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),
@@ -58,7 +58,7 @@ class Environment {
       case BuildMode.staging:
         return const Environment(
           appName: AppStrings.appNameStaging,
-          baseUrl: 'http://192.168.7.173:7009',
+          baseUrl: 'https://ex-api.divergenttechbd.com',
           uploadBaseUrl: 'https://staging-upload.military-exam.local',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),
@@ -73,7 +73,7 @@ class Environment {
       case BuildMode.production:
         return const Environment(
           appName: AppStrings.appName,
-          baseUrl: 'https://api.military-exam.local',
+          baseUrl: 'https://ex-api.divergenttechbd.com',
           uploadBaseUrl: 'https://upload.military-exam.local',
           connectTimeout: Duration(seconds: 15),
           receiveTimeout: Duration(seconds: 15),

@@ -5,8 +5,9 @@ import 'package:military_exam/features/exam_session/domain/ports/pending_exam_an
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/finalize_exam_usecase.dart';
-import 'package:military_exam/features/exam_session/domain/usecases/get_current_exam_usecase.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
+import 'package:military_exam/features/exam_session/domain/usecases/upload_pending_written_images_usecase.dart';
+import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
 
@@ -26,9 +27,14 @@ class _FakeExamRepository implements ExamRepository {
   final SubmissionReceipt receipt;
   int finalizeCalls = 0;
   int clearCalls = 0;
+  int refreshCalls = 0;
+  int uploadCalls = 0;
 
   @override
-  Future<Result<CurrentExam>> getCurrentExam() async => Success(currentExam);
+  Future<Result<CurrentExam>> refreshCurrentExam() async {
+    refreshCalls += 1;
+    return Success(currentExam);
+  }
 
   @override
   Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? exam) async {
@@ -43,11 +49,44 @@ class _FakeExamRepository implements ExamRepository {
   }
 
   @override
+  Future<Result<WrittenImageUploadResult>> uploadDescriptiveAnswerImage({
+    required String questionId,
+    required String filePath,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    uploadCalls += 1;
+    return Success(
+      WrittenImageUploadResult(
+        answerId: 'answer-$questionId',
+        questionId: questionId,
+        imagePath: filePath,
+        gradingStatus: 'PENDING',
+      ),
+    );
+  }
+
+  @override
+  Future<Result<void>> saveDescriptiveDraft(String questionId) async =>
+      const Success(null);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeWrittenExamRepository implements WrittenExamRepository {
+  @override
+  Future<Result<List<WrittenAnswerImage>>> getImages() async =>
+      const Success([]);
+
+  @override
+  Future<Result<void>> clearStoredImages() async => const Success(null);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
 void main() {
-  test('SubmitSavedExamAnswersUseCase flushes, finalizes, and clears local data',
+  test('SubmitSavedExamAnswersUseCase flushes, uploads, finalizes, and clears',
       () async {
     final flusher = _RecordingFlusher();
     const exam = CurrentExam(
@@ -77,18 +116,23 @@ void main() {
       message: 'ok',
     );
     final repository = _FakeExamRepository(exam, receipt);
+    final writtenRepo = _FakeWrittenExamRepository();
+    final uploadUseCase =
+        UploadPendingWrittenImagesUseCase(repository, writtenRepo);
 
     final useCase = SubmitSavedExamAnswersUseCase(
       flusher,
-      GetCurrentExamUseCase(repository),
+      repository,
+      uploadUseCase,
       FinalizeExamUseCase(repository),
-      ClearExamLocalDataUseCase(repository),
+      ClearExamLocalDataUseCase(repository, writtenRepo),
     );
 
     final result = await useCase(ExamPhase.mcq);
 
     expect(result, isA<Success<SubmissionReceipt>>());
     expect(flusher.flushedPhase, ExamPhase.mcq);
+    expect(repository.refreshCalls, 1);
     expect(repository.finalizeCalls, 1);
     expect(repository.clearCalls, 1);
   });
@@ -96,12 +140,16 @@ void main() {
   test('SubmitSavedExamAnswersUseCase returns error when finalize fails', () async {
     final flusher = _RecordingFlusher();
     final repository = _FailingFinalizeRepository();
+    final writtenRepo = _FakeWrittenExamRepository();
+    final uploadUseCase =
+        UploadPendingWrittenImagesUseCase(repository, writtenRepo);
 
     final useCase = SubmitSavedExamAnswersUseCase(
       flusher,
-      GetCurrentExamUseCase(repository),
+      repository,
+      uploadUseCase,
       FinalizeExamUseCase(repository),
-      ClearExamLocalDataUseCase(repository),
+      ClearExamLocalDataUseCase(repository, writtenRepo),
     );
 
     final result = await useCase(ExamPhase.fillBlank);
@@ -114,9 +162,11 @@ void main() {
 
 class _FailingFinalizeRepository implements ExamRepository {
   int clearCalls = 0;
+  int refreshCalls = 0;
 
   @override
-  Future<Result<CurrentExam>> getCurrentExam() async {
+  Future<Result<CurrentExam>> refreshCurrentExam() async {
+    refreshCalls += 1;
     return const Success(
       CurrentExam(
         examId: 'exam-1',

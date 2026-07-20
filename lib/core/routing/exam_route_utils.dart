@@ -9,6 +9,7 @@ abstract final class ExamRouteUtils {
     return route == AppRoutes.mcqExam ||
         route == AppRoutes.fillBlankExam ||
         route == AppRoutes.writtenExam ||
+        route == AppRoutes.examSubmitReview ||
         route == AppRoutes.examWaiting;
   }
 }

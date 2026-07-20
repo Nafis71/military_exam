@@ -2,8 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:military_exam/core/errors/failure.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
-import 'package:military_exam/features/exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
+import 'package:military_exam/features/exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/finalize_exam_usecase.dart';
+import 'package:military_exam/features/exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
+import 'package:military_exam/features/exam_session/domain/usecases/submit_exam_with_pending_uploads_usecase.dart';
+import 'package:military_exam/features/exam_session/domain/usecases/upload_pending_written_images_usecase.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
 import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
@@ -47,9 +50,12 @@ void main() {
     );
     final writtenRepo = _FakeWrittenExamRepository(images: const []);
     final useCase = RecoverCachedExamSubmissionUseCase(
-      examRepo,
-      writtenRepo,
-      FinalizeExamUseCase(examRepo),
+      SubmitExamWithPendingUploadsUseCase(
+        examRepo,
+        UploadPendingWrittenImagesUseCase(examRepo, writtenRepo),
+        FinalizeExamUseCase(examRepo),
+        ClearExamLocalDataUseCase(examRepo, writtenRepo),
+      ),
     );
 
     final result = await useCase();
@@ -179,6 +185,10 @@ class _FakeExamRepository implements ExamRepository {
   Future<Result<String?>> getRollNumber() async => const Success('123');
 
   @override
+  Future<Result<Map<String, ExamAnswerDraft>>> getAnswerDrafts() async =>
+      const Success({});
+
+  @override
   Future<Result<void>> clearLocalExamData() async => const Success(null);
 
   @override
@@ -230,4 +240,14 @@ class _FakeWrittenExamRepository implements WrittenExamRepository {
   @override
   Future<Result<SubmissionReceipt>> submitExam(String sessionId) =>
       throw UnimplementedError();
+
+  @override
+  Future<Result<void>> markImageUploaded({
+    required String localId,
+    required String remoteId,
+  }) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> clearStoredImages() async => const Success(null);
 }

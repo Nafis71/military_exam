@@ -34,6 +34,7 @@ dependencies:
   path: ^1.9.1
   advanced_root_detection:
     path: packages/advanced_root_detection
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,7 @@ flutter:
     - assets/images/
     - assets/svg/
     - assets/fonts/
+    - assets/lotties/
   fonts:
     - family: HindSiliguri
       fonts:

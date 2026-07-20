@@ -18,6 +18,7 @@ import '../../../../core/widgets/exam_question_navigation_bar.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../controllers/written_exam_controller.dart';
 import '../widgets/written_exam_header.dart';
 import '../widgets/written_exam_image_added_toast.dart';
@@ -58,7 +59,9 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
 
   Future<void> _captureImage({required String questionId}) async {
     if (controller.imagesForQuestion(questionId).any(
-      (img) => img.uploadStatus == ImageUploadStatus.uploaded,
+      (img) =>
+          img.uploadStatus == ImageUploadStatus.uploaded ||
+          img.uploadStatus == ImageUploadStatus.localOnly,
     )) {
       return;
     }
@@ -66,6 +69,7 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
     final cameraPermission = Get.find<CameraPermissionService>();
     final documentScan = Get.find<DocumentEdgeDetectionService>();
     final watchdog = Get.find<SecurityWatchdogService>();
+    final checkConnectivity = Get.find<CheckConnectivityUseCase>();
 
     if (!await cameraPermission.isGranted) {
       controller.errorMessage.value = AppStrings.cameraPermissionRequired;
@@ -97,48 +101,43 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
       await controller.stageLocalImage(questionId, filePath);
       if (!mounted) return;
 
+      final connectivityResult = await checkConnectivity();
+      final isOnline = connectivityResult.dataOrNull?.isOnline ?? false;
+
+      if (!isOnline) {
+        await controller.saveDraftForQuestion(questionId);
+        controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
+        WrittenExamImageAddedToast.show();
+        return;
+      }
+
       final uploaded = await controller.uploadStagedImage(
         questionId: questionId,
-        localPath: filePath,
       );
       if (!mounted) return;
 
       if (uploaded) {
         WrittenExamImageAddedToast.show();
       } else {
-        await controller.removeLocalImage(
-          controller.imagesForQuestion(questionId).last.localId,
-        );
+        await controller.saveDraftForQuestion(questionId);
+        controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
       }
     } finally {
       watchdog.setCameraCaptureActive(false);
     }
   }
 
-  Future<void> _submitWritten() async {
-    controller.submissionStatus.value = SubmissionStatus.saving;
-    final examName = sessionController.currentExam.value?.examName ??
-        AppStrings.finishExamDefaultName;
-    final success = await sessionController.finalizeExamAndClearLocal();
-    controller.submissionStatus.value =
-        success ? SubmissionStatus.submitted : SubmissionStatus.failed;
+  bool _isNavigatingToReview = false;
 
-    if (!success) {
-      controller.errorMessage.value =
-          sessionController.errorMessage.value ??
-              AppStrings.somethingWentWrong;
-      return;
+  Future<void> _goToSubmitReview() async {
+    if (_isNavigatingToReview) return;
+    _isNavigatingToReview = true;
+    try {
+      await controller.flushPendingAnswer();
+      await Get.offNamed(AppRoutes.examSubmitReview);
+    } finally {
+      _isNavigatingToReview = false;
     }
-
-    final submittedAt =
-        sessionController.submissionReceipt.value?.submittedAt ?? DateTime.now();
-    Get.offAllNamed(
-      AppRoutes.finishExam,
-      arguments: <String, dynamic>{
-        'examName': examName,
-        'submittedAt': submittedAt,
-      },
-    );
   }
 
   @override
@@ -157,8 +156,10 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
             final questionImages = question != null
                 ? controller.imagesForQuestion(question.id)
                 : <WrittenAnswerImage>[];
-            final hasUploaded = questionImages.any(
-              (img) => img.uploadStatus == ImageUploadStatus.uploaded,
+            final hasStagedImage = questionImages.any(
+              (img) =>
+                  img.uploadStatus == ImageUploadStatus.uploaded ||
+                  img.uploadStatus == ImageUploadStatus.localOnly,
             );
 
             return Stack(
@@ -182,7 +183,7 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                         isSkipEnabled: !isBusy && canFinishLast,
                         onSkip: () {
                           if (isLast) {
-                            _submitWritten();
+                            _goToSubmitReview();
                           } else {
                             controller.skipCurrentQuestion();
                           }
@@ -219,13 +220,23 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                                   WrittenExamQuestionCard(
                                     question: question,
                                     images: questionImages,
-                                    isLocked: hasUploaded,
+                                    isLocked: hasStagedImage,
                                     onAddImage: () => _captureImage(
                                       questionId: question.id,
                                     ),
                                     onReplace: (_) {},
                                     onDelete: (_) {},
                                   ),
+                                  if (controller.infoMessage.value != null) ...[
+                                    SizedBox(height: 12.h),
+                                    Text(
+                                      controller.infoMessage.value!,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ],
                                   if (controller.errorMessage.value != null) ...[
                                     SizedBox(height: 12.h),
                                     Text(
@@ -247,21 +258,21 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
                       final isBusy = isSaving || controller.isUploading.value;
                       final canFinishLast =
                           !isLast || sessionController.canSubmitExam.value;
-                      final hasUploaded = controller.currentQuestionHasUploadedImage;
+                      final hasStagedImage = controller.currentQuestionHasStagedImage;
 
                       return ExamQuestionNavigationBar(
                         canGoBack: false,
                         onPrevious: null,
                         primaryLabel: isLast
-                            ? AppStrings.submitWrittenExam
+                            ? AppStrings.examSubmitReviewReviewAction
                             : AppStrings.nextQuestion,
                         isPrimaryLoading: isSaving,
                         isPrimaryEnabled: isLast
                             ? canFinishLast && !isBusy
-                            : hasUploaded && !isBusy,
+                            : hasStagedImage && !isBusy,
                         onPrimary: () async {
                           if (isLast) {
-                            _submitWritten();
+                            await _goToSubmitReview();
                           } else {
                             await controller.goToNext();
                           }

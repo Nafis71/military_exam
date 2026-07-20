@@ -16,7 +16,7 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  Deployment.init(demo: true);
+  Deployment.init();
 
   final securityStatus = await SecurityService.instance.initialize();
   if (securityStatus.hasBlockingIntegrityIssue(

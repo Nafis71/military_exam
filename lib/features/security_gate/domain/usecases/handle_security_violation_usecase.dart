@@ -7,11 +7,11 @@ import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/exam_lock_service.dart';
-import '../../../../core/utils/result.dart';
 import '../../../exam_session/domain/usecases/report_security_violation_usecase.dart';
 import '../../../exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
+import '../utils/violation_submit_outcome.dart';
 
 class HandleSecurityViolationUseCase {
   HandleSecurityViolationUseCase(
@@ -38,19 +38,19 @@ class HandleSecurityViolationUseCase {
     await _lockService.lock(reason: violation.type.displayMessage);
     await _reportViolationUseCase(violation);
 
-    var answersSubmitted = false;
+    var outcome = ViolationSubmitOutcome.none;
     if (violation.sessionId != null) {
       final submitResult =
           await _submitSavedExamAnswersUseCase(violation.phase);
-      answersSubmitted = submitResult is Success<SubmissionReceipt>;
+      outcome = resolveViolationSubmitOutcome(submitResult);
     }
 
-    _navigateToViolation(violation, answersSubmitted: answersSubmitted);
+    _navigateToViolation(violation, outcome: outcome);
   }
 
   void _navigateToViolation(
     SecurityViolation violation, {
-    required bool answersSubmitted,
+    required ViolationSubmitOutcome outcome,
   }) {
     void navigate() {
       if (Get.currentRoute == violationRoute) return;
@@ -58,7 +58,9 @@ class HandleSecurityViolationUseCase {
         violationRoute,
         arguments: <String, dynamic>{
           'violation': violation,
-          'answersSubmitted': answersSubmitted,
+          'answersSubmitted': outcome.answersSubmitted,
+          'submissionPending': outcome.submissionPending,
+          'stopAutoRetry': outcome.stopAutoRetry,
         },
       );
     }

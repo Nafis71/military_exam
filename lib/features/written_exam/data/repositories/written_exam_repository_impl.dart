@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_strings.dart';
@@ -24,6 +25,7 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
   final _uuid = const Uuid();
 
   static const _imagesKey = 'written_exam_images';
+  static const _imagesDirName = 'written_exam_images';
 
   @override
   Future<Result<WrittenAnswerImage>> addImage(
@@ -44,12 +46,22 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       );
     }
 
+    final localId = _uuid.v4();
+    final persistResult = await _persistImageFile(
+      sourcePath: localPath,
+      localId: localId,
+    );
+    if (persistResult is ErrorResult<String>) {
+      return ErrorResult(persistResult.failure);
+    }
+    final persistentPath = (persistResult as Success<String>).data;
+
     final image = WrittenAnswerImage(
-      localId: _uuid.v4(),
-      localPath: localPath,
+      localId: localId,
+      localPath: persistentPath,
       questionId: questionId,
     );
-    final updated = <WrittenAnswerImage>[...(imagesResult.dataOrNull ?? []), image];
+    final updated = <WrittenAnswerImage>[...images, image];
     await _persistImages(updated);
     return Success(image);
   }
@@ -70,9 +82,21 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       return const ErrorResult(ValidationFailure(AppStrings.imageNotFound));
     }
 
+    final oldPath = images[index].localPath;
+    final persistResult = await _persistImageFile(
+      sourcePath: newLocalPath,
+      localId: localId,
+    );
+    if (persistResult is ErrorResult<String>) {
+      return ErrorResult(persistResult.failure);
+    }
+    final persistentPath = (persistResult as Success<String>).data;
+
+    await _deleteFileIfExists(oldPath);
+
     images[index] = WrittenAnswerImage(
       localId: localId,
-      localPath: newLocalPath,
+      localPath: persistentPath,
       questionId: images[index].questionId,
       remoteId: null,
       uploadStatus: ImageUploadStatus.localOnly,
@@ -90,9 +114,66 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     }
 
     final images = imagesResult.dataOrNull ?? [];
-    images.removeWhere((img) => img.localId == localId);
+    final index = images.indexWhere((img) => img.localId == localId);
+    if (index >= 0) {
+      await _deleteFileIfExists(images[index].localPath);
+      images.removeAt(index);
+    }
     await _persistImages(images);
     return const Success(null);
+  }
+
+  @override
+  Future<Result<void>> markImageUploaded({
+    required String localId,
+    required String remoteId,
+  }) async {
+    final imagesResult = await getImages();
+    if (imagesResult is ErrorResult<List<WrittenAnswerImage>>) {
+      return ErrorResult(imagesResult.failure);
+    }
+
+    final images = imagesResult.dataOrNull ?? [];
+    final index = images.indexWhere((img) => img.localId == localId);
+    if (index < 0) {
+      return const ErrorResult(ValidationFailure(AppStrings.imageNotFound));
+    }
+
+    images[index] = images[index].copyWith(
+      remoteId: remoteId,
+      uploadStatus: ImageUploadStatus.uploaded,
+      uploadProgress: 1,
+    );
+    await _persistImages(images);
+    return const Success(null);
+  }
+
+  @override
+  Future<Result<void>> clearStoredImages() async {
+    try {
+      final imagesResult = await getImages();
+      if (imagesResult is Success<List<WrittenAnswerImage>>) {
+        for (final image in imagesResult.data) {
+          await _deleteFileIfExists(image.localPath);
+        }
+      }
+
+      final dir = await _imagesDirectory();
+      if (dir.existsSync()) {
+        await for (final entity in dir.list()) {
+          if (entity is File) {
+            await entity.delete();
+          }
+        }
+      }
+
+      await _storage.delete(key: _imagesKey);
+      return const Success(null);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('${AppStrings.failedToClearWrittenImages}: $error'),
+      );
+    }
   }
 
   @override
@@ -253,6 +334,43 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       return ErrorResult(
         UnexpectedFailure('${AppStrings.failedToLoadWrittenImages}: $error'),
       );
+    }
+  }
+
+  Future<Result<String>> _persistImageFile({
+    required String sourcePath,
+    required String localId,
+  }) async {
+    try {
+      final source = File(sourcePath);
+      if (!source.existsSync()) {
+        return const ErrorResult(UploadFailure(AppStrings.imageFileNotFound));
+      }
+
+      final dir = await _imagesDirectory();
+      if (!dir.existsSync()) {
+        await dir.create(recursive: true);
+      }
+
+      final destinationPath = '${dir.path}/$localId.jpg';
+      await source.copy(destinationPath);
+      return Success(destinationPath);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('${AppStrings.failedToPersistWrittenImage}: $error'),
+      );
+    }
+  }
+
+  Future<Directory> _imagesDirectory() async {
+    final documentsDir = await getApplicationDocumentsDirectory();
+    return Directory('${documentsDir.path}/$_imagesDirName');
+  }
+
+  Future<void> _deleteFileIfExists(String path) async {
+    final file = File(path);
+    if (file.existsSync()) {
+      await file.delete();
     }
   }
 

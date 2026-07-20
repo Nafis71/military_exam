@@ -141,6 +141,10 @@ abstract final class AppStrings {
       'আপনার পরীক্ষা বাতিল করা হয়েছে এবং এই লঙ্ঘন রেকর্ড করা হয়েছে।';
   static const examAnswersPublished =
       'আপনার উত্তরসমূহ প্রকাশিত হয়েছে এবং পরীক্ষা স্বয়ংক্রিয়ভাবে জমা দেওয়া হয়েছে।';
+  static const violationSubmissionPendingMessage =
+      'উত্তরসমূহ ডিভাইসে সংরক্ষিত আছে। ইন্টারনেট ফিরে এলে স্বয়ংক্রিয়ভাবে জমা হবে।';
+  static const violationSubmissionRetryingMessage =
+      'উত্তরসমূহ জমা দেওয়া হচ্ছে...';
   static const securityViolation = 'নিরাপত্তা লঙ্ঘন';
   static const examAutoSubmittedLocked =
       'আপনার পরীক্ষা স্বয়ংক্রিয়ভাবে জমা দেওয়া হয়েছে এবং লক করা হয়েছে।';
@@ -199,6 +203,20 @@ abstract final class AppStrings {
   static const examWaitingSyncFailed =
       'সার্ভারের সাথে যোগাযোগ ব্যর্থ। আবার চেষ্টা হচ্ছে…';
   static const examWaitingRefresh = 'আবার চেষ্টা করুন';
+  static const examSubmitReviewTitle = 'পরীক্ষা পর্যালোচনা';
+  static const examSubmitReviewBatchLabel = 'ব্যাচের নাম';
+  static const examSubmitReviewTotalDurationLabel = 'মোট সময়কাল';
+  static const examSubmitReviewElapsedDurationLabel = 'অতিবাহিত সময়';
+  static const examSubmitReviewTotalQuestionsLabel = 'মোট প্রশ্ন';
+  static const examSubmitReviewAnsweredQuestionsLabel = 'উত্তর দেওয়া প্রশ্ন';
+  static const examSubmitReviewSubmit = 'পরীক্ষা জমা দিন';
+  static const examSubmitReviewReviewAction = 'পর্যালোচনা করুন';
+  static const examSubmitReviewSyncWarning =
+      'সার্ভারের সাথে সিঙ্ক করা যায়নি। স্থানীয় তথ্য দেখানো হচ্ছে।';
+  static const examSubmitReviewWaitingTitle = 'নেটওয়ার্কের জন্য অপেক্ষা';
+  static const examSubmitReviewOfflineMessage =
+      'নেটওয়ার্ক সংযোগের জন্য অপেক্ষা করা হচ্ছে। চিন্তা করবেন না, ইন্টারনেট ফিরে এলে উত্তরসমূহ স্বয়ংক্রিয়ভাবে জমা হয়ে যাবে।';
+  static const examSubmitReviewRetry = 'আবার চেষ্টা করুন';
   static const demoFillBlankQuestion1 = 'মারাডোনা ____ দিয়ে গোল দিয়েছে';
   static const demoFillBlankQuestion2 = 'কার কাছে খাওয়া পাই?';
   static const demoDescriptiveQuestion1 =
@@ -268,6 +286,10 @@ abstract final class AppStrings {
   static const imageFileNotFound = 'ছবির ফাইল পাওয়া যায়নি';
   static const failedToLoadWrittenImages =
       'লিখিত ছবি লোড করা যায়নি';
+  static const failedToPersistWrittenImage =
+      'ছবি সংরক্ষণ করা যায়নি';
+  static const failedToClearWrittenImages =
+      'লিখিত ছবি মুছে ফেলা যায়নি';
   static const deviceIntegrityCheckFailed = 'ডিভাইস অখণ্ডতা পরীক্ষা ব্যর্থ';
   static const airplaneModeCheckFailedWithError =
       'এয়ারপ্লেন মোড পরীক্ষা ব্যর্থ';
@@ -334,6 +356,8 @@ abstract final class AppStrings {
   static const writtenExamImageUploaded = 'ছবি সফলভাবে জমা হয়েছে';
   static const writtenExamImageUploadFailed =
       'ছবি আপলোড করা যায়নি। আবার চেষ্টা করুন।';
+  static const writtenExamImageSavedOffline =
+      'ছবি ডিভাইসে সংরক্ষিত হয়েছে। জমা দেওয়ার সময় আপলোড হবে।';
   static const writtenExamRequireUploadedImage =
       'পরবর্তী প্রশ্নে যেতে আগে ছবি জমা দিন।';
   static const failedToSetLockState = 'লক অবস্থা সেট করা যায়নি';

@@ -245,6 +245,15 @@ class ExamRepositoryImpl implements ExamRepository {
   Future<Result<String?>> getRollNumber() => _answersHive.readRollNumber();
 
   @override
+  Future<Result<Map<String, ExamAnswerDraft>>> getAnswerDrafts() async {
+    final draftsResult = await _answersHive.readAllDrafts();
+    if (draftsResult is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
+      return ErrorResult(draftsResult.failure);
+    }
+    return Success((draftsResult as Success).data);
+  }
+
+  @override
   Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
     final rollResult = await getRollNumber();
     if (rollResult is ErrorResult<String?>) {

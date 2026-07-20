@@ -19,4 +19,11 @@ abstract class WrittenExamRepository {
   Future<Result<SubmissionReceipt>> submitExam(String sessionId);
 
   Future<Result<List<WrittenAnswerImage>>> getImages();
+
+  Future<Result<void>> markImageUploaded({
+    required String localId,
+    required String remoteId,
+  });
+
+  Future<Result<void>> clearStoredImages();
 }

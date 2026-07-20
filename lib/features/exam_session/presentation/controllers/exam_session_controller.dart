@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../core/services/exam_lock_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../domain/usecases/finalize_exam_usecase.dart';
 import '../../domain/usecases/finish_exam_usecase.dart';
@@ -17,6 +18,7 @@ import '../../domain/usecases/lock_exam_session_usecase.dart';
 import '../../domain/usecases/report_security_violation_usecase.dart';
 import '../../domain/usecases/start_exam_session_usecase.dart';
 import '../../domain/usecases/submit_saved_exam_answers_usecase.dart';
+import '../../domain/usecases/upload_pending_written_images_usecase.dart';
 import '../../domain/utils/exam_question_splitter.dart';
 import '../../domain/utils/exam_waiting_utils.dart';
 
@@ -26,6 +28,7 @@ class ExamSessionController extends GetxController {
     required GetCurrentExamUseCase getCurrentExamUseCase,
     required GetExamTimerUseCase getExamTimerUseCase,
     required SubmitSavedExamAnswersUseCase submitSavedExamAnswersUseCase,
+    required UploadPendingWrittenImagesUseCase uploadPendingWrittenImagesUseCase,
     required FinalizeExamUseCase finalizeExamUseCase,
     required ClearExamLocalDataUseCase clearExamLocalDataUseCase,
     required FinishExamUseCase finishExamUseCase,
@@ -35,6 +38,7 @@ class ExamSessionController extends GetxController {
         _getCurrentExamUseCase = getCurrentExamUseCase,
         _getExamTimerUseCase = getExamTimerUseCase,
         _submitSavedExamAnswersUseCase = submitSavedExamAnswersUseCase,
+        _uploadPendingWrittenImagesUseCase = uploadPendingWrittenImagesUseCase,
         _finalizeExamUseCase = finalizeExamUseCase,
         _clearExamLocalDataUseCase = clearExamLocalDataUseCase,
         _finishExamUseCase = finishExamUseCase,
@@ -45,6 +49,7 @@ class ExamSessionController extends GetxController {
   final GetCurrentExamUseCase _getCurrentExamUseCase;
   final GetExamTimerUseCase _getExamTimerUseCase;
   final SubmitSavedExamAnswersUseCase _submitSavedExamAnswersUseCase;
+  final UploadPendingWrittenImagesUseCase _uploadPendingWrittenImagesUseCase;
   final FinalizeExamUseCase _finalizeExamUseCase;
   final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
   final FinishExamUseCase _finishExamUseCase;
@@ -62,6 +67,7 @@ class ExamSessionController extends GetxController {
   final errorMessage = RxnString();
   final canAccessQuestions = true.obs;
   final canSubmitExam = true.obs;
+  final needsOfflineSubmit = false.obs;
 
   final mcqQuestions = <McqQuestion>[].obs;
   final fillBlankQuestions = <FillBlankQuestion>[].obs;
@@ -159,7 +165,11 @@ class ExamSessionController extends GetxController {
 
     final remainingMinutes = exam.window.remainingExamMinutes;
     if (remainingMinutes > 0) {
-      timer.value = ExamTimer(remainingSeconds: remainingMinutes * 60);
+      final newRemaining = remainingMinutes * 60;
+      final current = timer.value?.remainingSeconds;
+      if (current == null || newRemaining < current) {
+        timer.value = ExamTimer(remainingSeconds: newRemaining);
+      }
       return;
     }
 
@@ -238,6 +248,10 @@ class ExamSessionController extends GetxController {
       case ErrorResult(:final failure):
         _timeExpiryHandled = false;
         errorMessage.value = failure.message;
+        if (failure is NetworkFailure &&
+            Get.currentRoute == AppRoutes.examSubmitReview) {
+          needsOfflineSubmit.value = true;
+        }
     }
   }
 
@@ -333,6 +347,13 @@ class ExamSessionController extends GetxController {
   Future<bool> finalizeExamAndClearLocal() async {
     isLoading.value = true;
     errorMessage.value = null;
+
+    final uploadResult = await _uploadPendingWrittenImagesUseCase();
+    if (uploadResult is ErrorResult<void>) {
+      isLoading.value = false;
+      errorMessage.value = uploadResult.failure.message;
+      return false;
+    }
 
     final result = await _finalizeExamUseCase(currentExam.value);
     isLoading.value = false;

@@ -10,6 +10,7 @@ import '../../../exam_session/presentation/controllers/exam_session_controller.d
 import '../../domain/usecases/add_written_image_usecase.dart';
 import '../../domain/usecases/delete_written_image_usecase.dart';
 import '../../domain/usecases/get_written_images_usecase.dart';
+import '../../domain/usecases/mark_written_image_uploaded_usecase.dart';
 import '../../domain/usecases/save_descriptive_draft_usecase.dart';
 import '../../domain/usecases/upload_descriptive_answer_image_usecase.dart';
 
@@ -21,13 +22,15 @@ class WrittenExamController extends GetxController {
     required GetWrittenImagesUseCase getWrittenImagesUseCase,
     required UploadDescriptiveAnswerImageUseCase uploadDescriptiveAnswerImageUseCase,
     required SaveDescriptiveDraftUseCase saveDescriptiveDraftUseCase,
+    required MarkWrittenImageUploadedUseCase markWrittenImageUploadedUseCase,
   })  : _sessionController = sessionController,
         _addWrittenImageUseCase = addWrittenImageUseCase,
         _deleteWrittenImageUseCase = deleteWrittenImageUseCase,
         _getWrittenImagesUseCase = getWrittenImagesUseCase,
         _uploadDescriptiveAnswerImageUseCase =
             uploadDescriptiveAnswerImageUseCase,
-        _saveDescriptiveDraftUseCase = saveDescriptiveDraftUseCase;
+        _saveDescriptiveDraftUseCase = saveDescriptiveDraftUseCase,
+        _markWrittenImageUploadedUseCase = markWrittenImageUploadedUseCase;
 
   final ExamSessionController _sessionController;
   final AddWrittenImageUseCase _addWrittenImageUseCase;
@@ -35,6 +38,7 @@ class WrittenExamController extends GetxController {
   final GetWrittenImagesUseCase _getWrittenImagesUseCase;
   final UploadDescriptiveAnswerImageUseCase _uploadDescriptiveAnswerImageUseCase;
   final SaveDescriptiveDraftUseCase _saveDescriptiveDraftUseCase;
+  final MarkWrittenImageUploadedUseCase _markWrittenImageUploadedUseCase;
 
   final images = <WrittenAnswerImage>[].obs;
   final currentIndex = 0.obs;
@@ -42,6 +46,7 @@ class WrittenExamController extends GetxController {
   final uploadProgress = 0.0.obs;
   final isUploading = false.obs;
   final errorMessage = RxnString();
+  final infoMessage = RxnString();
 
   @override
   void onInit() {
@@ -66,20 +71,34 @@ class WrittenExamController extends GetxController {
 
   bool get canSubmit => questions.isNotEmpty;
 
-  bool get currentQuestionHasUploadedImage {
+  bool get currentQuestionHasStagedImage {
     final question = currentQuestion;
     if (question == null) return false;
-    return _hasUploadedImage(question.id);
+    return _hasStagedImage(question.id);
   }
+
+  bool get currentQuestionHasUploadedImage => currentQuestionHasStagedImage;
 
   List<WrittenAnswerImage> imagesForQuestion(String questionId) =>
       images.where((img) => img.questionId == questionId).toList();
 
-  bool _hasUploadedImage(String questionId) {
+  bool _hasStagedImage(String questionId) {
     final questionImages = imagesForQuestion(questionId);
     return questionImages.any(
-      (img) => img.uploadStatus == ImageUploadStatus.uploaded,
+      (img) =>
+          img.uploadStatus == ImageUploadStatus.uploaded ||
+          img.uploadStatus == ImageUploadStatus.localOnly,
     );
+  }
+
+  WrittenAnswerImage? _pendingImageForQuestion(String questionId) {
+    final questionImages = imagesForQuestion(questionId);
+    for (final image in questionImages.reversed) {
+      if (image.uploadStatus != ImageUploadStatus.uploaded) {
+        return image;
+      }
+    }
+    return null;
   }
 
   Future<void> stageLocalImage(String questionId, String localPath) async {
@@ -87,17 +106,22 @@ class WrittenExamController extends GetxController {
     _handleImageResult(result);
   }
 
-  Future<bool> uploadStagedImage({
-    required String questionId,
-    required String localPath,
-  }) async {
+  Future<void> saveDraftForQuestion(String questionId) async {
+    await _saveDescriptiveDraftUseCase(questionId);
+  }
+
+  Future<bool> uploadStagedImage({required String questionId}) async {
+    final staged = _pendingImageForQuestion(questionId);
+    if (staged == null) return false;
+
     isUploading.value = true;
     uploadProgress.value = 0;
     errorMessage.value = null;
+    infoMessage.value = null;
 
     final result = await _uploadDescriptiveAnswerImageUseCase(
       questionId: questionId,
-      filePath: localPath,
+      filePath: staged.localPath,
       onSendProgress: (sent, total) {
         if (total > 0) {
           uploadProgress.value = sent / total;
@@ -109,9 +133,11 @@ class WrittenExamController extends GetxController {
 
     switch (result) {
       case Success(:final data):
-        final index = images.indexWhere(
-          (img) => img.questionId == questionId && img.localPath == localPath,
+        await _markWrittenImageUploadedUseCase(
+          localId: staged.localId,
+          remoteId: data.answerId,
         );
+        final index = images.indexWhere((img) => img.localId == staged.localId);
         if (index >= 0) {
           images[index] = images[index].copyWith(
             remoteId: data.answerId,
@@ -145,14 +171,14 @@ class WrittenExamController extends GetxController {
 
   Future<void> flushPendingAnswer() async {
     final question = currentQuestion;
-    if (question == null || !currentQuestionHasUploadedImage) return;
+    if (question == null || !currentQuestionHasStagedImage) return;
     await _saveDescriptiveDraftUseCase(question.id);
   }
 
   Future<void> goToNext() async {
     final question = currentQuestion;
     if (question == null) return;
-    if (!currentQuestionHasUploadedImage) {
+    if (!currentQuestionHasStagedImage) {
       errorMessage.value = AppStrings.writtenExamRequireUploadedImage;
       return;
     }
@@ -160,6 +186,7 @@ class WrittenExamController extends GetxController {
     if (!isLastQuestion) {
       currentIndex.value += 1;
       errorMessage.value = null;
+      infoMessage.value = null;
     }
   }
 
@@ -167,6 +194,7 @@ class WrittenExamController extends GetxController {
     if (currentQuestion == null || isLastQuestion) return;
 
     errorMessage.value = null;
+    infoMessage.value = null;
     currentIndex.value += 1;
   }
 

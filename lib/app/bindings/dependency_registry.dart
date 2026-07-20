@@ -48,9 +48,13 @@ import '../../features/exam_session/domain/usecases/lock_exam_session_usecase.da
 import '../../features/exam_session/domain/usecases/report_security_violation_usecase.dart';
 import '../../features/exam_session/domain/usecases/start_exam_session_usecase.dart';
 import '../../features/exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
+import '../../features/exam_session/domain/usecases/get_exam_submit_summary_usecase.dart';
 import '../../features/exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
 import '../../features/exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
+import '../../features/exam_session/domain/usecases/submit_exam_with_pending_uploads_usecase.dart';
+import '../../features/exam_session/domain/usecases/upload_pending_written_images_usecase.dart';
 import '../../features/exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../features/exam_session/presentation/controllers/exam_submit_review_controller.dart';
 import '../../features/exam_session/presentation/controllers/exam_waiting_controller.dart';
 import '../../features/finish_exam/presentation/controllers/finish_exam_controller.dart';
 import '../../features/instructions/presentation/controllers/instructions_controller.dart';
@@ -89,6 +93,7 @@ import '../../features/written_exam/domain/repositories/written_exam_repository.
 import '../../features/written_exam/domain/usecases/add_written_image_usecase.dart';
 import '../../features/written_exam/domain/usecases/delete_written_image_usecase.dart';
 import '../../features/written_exam/domain/usecases/get_written_images_usecase.dart';
+import '../../features/written_exam/domain/usecases/mark_written_image_uploaded_usecase.dart';
 import '../../features/written_exam/domain/usecases/save_descriptive_draft_usecase.dart';
 import '../../features/written_exam/domain/usecases/upload_descriptive_answer_image_usecase.dart';
 import '../../features/written_exam/presentation/controllers/written_exam_controller.dart';
@@ -165,16 +170,28 @@ class DependencyRegistry {
     Get.put(GetExamTimerUseCase(examRepo), permanent: true);
     Get.put(FinishExamUseCase(examRepo), permanent: true);
     Get.put(FinalizeExamUseCase(examRepo), permanent: true);
-    Get.put(ClearExamLocalDataUseCase(examRepo), permanent: true);
+    Get.put(ClearExamLocalDataUseCase(examRepo, writtenRepo), permanent: true);
+    Get.put(
+      UploadPendingWrittenImagesUseCase(examRepo, writtenRepo),
+      permanent: true,
+    );
+    Get.put(GetExamSubmitSummaryUseCase(examRepo), permanent: true);
+    Get.put(
+      SubmitExamWithPendingUploadsUseCase(
+        examRepo,
+        Get.find<UploadPendingWrittenImagesUseCase>(),
+        Get.find<FinalizeExamUseCase>(),
+        Get.find<ClearExamLocalDataUseCase>(),
+      ),
+      permanent: true,
+    );
     Get.put(
       HasCachedExamAnswersUseCase(examRepo, writtenRepo),
       permanent: true,
     );
     Get.put(
       RecoverCachedExamSubmissionUseCase(
-        examRepo,
-        writtenRepo,
-        Get.find<FinalizeExamUseCase>(),
+        Get.find<SubmitExamWithPendingUploadsUseCase>(),
       ),
       permanent: true,
     );
@@ -185,7 +202,8 @@ class DependencyRegistry {
     Get.put(
       SubmitSavedExamAnswersUseCase(
         Get.find<PendingExamAnswersFlusher>(),
-        Get.find<GetCurrentExamUseCase>(),
+        examRepo,
+        Get.find<UploadPendingWrittenImagesUseCase>(),
         Get.find<FinalizeExamUseCase>(),
         Get.find<ClearExamLocalDataUseCase>(),
       ),
@@ -201,6 +219,8 @@ class DependencyRegistry {
         getCurrentExamUseCase: Get.find<GetCurrentExamUseCase>(),
         getExamTimerUseCase: Get.find<GetExamTimerUseCase>(),
         submitSavedExamAnswersUseCase: Get.find<SubmitSavedExamAnswersUseCase>(),
+        uploadPendingWrittenImagesUseCase:
+            Get.find<UploadPendingWrittenImagesUseCase>(),
         finalizeExamUseCase: Get.find<FinalizeExamUseCase>(),
         clearExamLocalDataUseCase: Get.find<ClearExamLocalDataUseCase>(),
         finishExamUseCase: Get.find<FinishExamUseCase>(),
@@ -274,6 +294,7 @@ class DependencyRegistry {
     Get.put(DeleteWrittenImageUseCase(writtenRepo), permanent: true);
     Get.put(UploadDescriptiveAnswerImageUseCase(examRepo), permanent: true);
     Get.put(SaveDescriptiveDraftUseCase(examRepo), permanent: true);
+    Get.put(MarkWrittenImageUploadedUseCase(writtenRepo), permanent: true);
   }
 }
 
@@ -405,6 +426,23 @@ class ExamWaitingBinding extends Bindings {
   }
 }
 
+class ExamSubmitReviewBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => ExamSubmitReviewController(
+        Get.find<ExamSessionController>(),
+        Get.find<GetExamSubmitSummaryUseCase>(),
+        Get.find<SubmitExamWithPendingUploadsUseCase>(),
+        Get.find<CheckConnectivityUseCase>(),
+        Get.find<ObserveConnectivityUseCase>(),
+        Get.find<AppLifecycleService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
 class McqExamBinding extends Bindings {
   @override
   void dependencies() {
@@ -415,6 +453,7 @@ class McqExamBinding extends Bindings {
           getCurrentExamUseCase: Get.find(),
           getExamTimerUseCase: Get.find(),
           submitSavedExamAnswersUseCase: Get.find(),
+          uploadPendingWrittenImagesUseCase: Get.find(),
           finalizeExamUseCase: Get.find(),
           clearExamLocalDataUseCase: Get.find(),
           finishExamUseCase: Get.find(),
@@ -444,6 +483,7 @@ class FillBlankExamBinding extends Bindings {
           getCurrentExamUseCase: Get.find(),
           getExamTimerUseCase: Get.find(),
           submitSavedExamAnswersUseCase: Get.find(),
+          uploadPendingWrittenImagesUseCase: Get.find(),
           finalizeExamUseCase: Get.find(),
           clearExamLocalDataUseCase: Get.find(),
           finishExamUseCase: Get.find(),
@@ -474,6 +514,7 @@ class WrittenExamBinding extends Bindings {
         getWrittenImagesUseCase: Get.find(),
         uploadDescriptiveAnswerImageUseCase: Get.find(),
         saveDescriptiveDraftUseCase: Get.find(),
+        markWrittenImageUploadedUseCase: Get.find(),
       ),
     );
   }
@@ -495,5 +536,15 @@ class FinishExamBinding extends Bindings {
 
 class ViolationBinding extends Bindings {
   @override
-  void dependencies() => Get.lazyPut(ViolationController.new);
+  void dependencies() {
+    Get.lazyPut(
+      () => ViolationController(
+        Get.find<SubmitExamWithPendingUploadsUseCase>(),
+        Get.find<CheckConnectivityUseCase>(),
+        Get.find<ObserveConnectivityUseCase>(),
+        Get.find<AppLifecycleService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
 }

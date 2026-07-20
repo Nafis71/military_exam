@@ -19,6 +19,7 @@ class ViolationStatusBody extends StatelessWidget {
     required this.alertMessage,
     required this.bullets,
     this.contentKey,
+    this.isSubmitting = false,
   });
 
   final String title;
@@ -26,6 +27,7 @@ class ViolationStatusBody extends StatelessWidget {
   final String alertMessage;
   final List<String> bullets;
   final Object? contentKey;
+  final bool isSubmitting;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +72,10 @@ class ViolationStatusBody extends StatelessWidget {
                     message: message,
                     alertMessage: alertMessage,
                   ),
+                  if (isSubmitting) ...[
+                    SizedBox(height: 20.h),
+                    const Center(child: CircularProgressIndicator()),
+                  ],
                   SizedBox(height: 20.h),
                   ViolationInfoCard(bullets: bullets),
                 ],

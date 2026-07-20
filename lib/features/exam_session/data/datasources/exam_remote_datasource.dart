@@ -382,7 +382,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       batchName: 'demo-batch',
       batchStatus: 'active',
       batchId: 'demo-batch-id',
-      totalQuestions: 5,
+      totalQuestions: 9,
       durationMinutes: _demoDurationMinutes,
       window: const ExamWindowModel(
         startTime: null,
@@ -394,56 +394,59 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
         remainingExamMinutes: _demoDurationMinutes,
         remainingSubmitMinutes: _demoDurationMinutes + 5,
       ),
-      questions: [
-        ExamQuestionModel(
-          id: 'demo-mcq-1',
-          questionNumber: 1,
-          type: ExamQuestionType.mcq,
-          text: AppStrings.mcq1Question,
-          mark: 1,
-          options: [
-            ExamQuestionOptionModel(key: 'a', text: AppStrings.mcq1OptionA),
-            ExamQuestionOptionModel(key: 'b', text: AppStrings.mcq1OptionB),
-            ExamQuestionOptionModel(key: 'c', text: AppStrings.mcq1OptionC),
-            ExamQuestionOptionModel(key: 'd', text: AppStrings.mcq1OptionD),
-          ],
-        ),
-        ExamQuestionModel(
-          id: 'demo-mcq-2',
-          questionNumber: 2,
-          type: ExamQuestionType.mcq,
-          text: AppStrings.mcq2Question,
-          mark: 1,
-          options: [
-            ExamQuestionOptionModel(key: 'a', text: AppStrings.mcq2OptionA),
-            ExamQuestionOptionModel(key: 'b', text: AppStrings.mcq2OptionB),
-            ExamQuestionOptionModel(key: 'c', text: AppStrings.mcq2OptionC),
-            ExamQuestionOptionModel(key: 'd', text: AppStrings.mcq2OptionD),
-          ],
-        ),
-        ExamQuestionModel(
-          id: 'demo-fill-1',
-          questionNumber: 3,
-          type: ExamQuestionType.fillInBlank,
-          text: AppStrings.demoFillBlankQuestion1,
-          mark: 1,
-        ),
-        ExamQuestionModel(
-          id: 'demo-fill-2',
-          questionNumber: 4,
-          type: ExamQuestionType.fillInBlank,
-          text: AppStrings.demoFillBlankQuestion2,
-          mark: 1,
-        ),
-        ExamQuestionModel(
-          id: 'demo-desc-1',
-          questionNumber: 5,
-          type: ExamQuestionType.descriptive,
-          text: AppStrings.demoDescriptiveQuestion1,
-          mark: 10,
-        ),
-      ],
+      questions: _demoExamQuestions,
     );
+  }
+
+  static List<ExamQuestionModel> get _demoExamQuestions {
+    var questionNumber = 1;
+    final questions = <ExamQuestionModel>[
+      for (final mcq in _demoMcqQuestions)
+        ExamQuestionModel(
+          id: mcq.id,
+          questionNumber: questionNumber++,
+          type: ExamQuestionType.mcq,
+          text: mcq.question,
+          mark: 1,
+          options: mcq.options
+              .map(
+                (option) => ExamQuestionOptionModel(
+                  key: option.id,
+                  text: option.label,
+                ),
+              )
+              .toList(),
+        ),
+      ExamQuestionModel(
+        id: 'demo-fill-1',
+        questionNumber: questionNumber++,
+        type: ExamQuestionType.fillInBlank,
+        text: AppStrings.demoFillBlankQuestion1,
+        mark: 1,
+      ),
+      ExamQuestionModel(
+        id: 'demo-fill-2',
+        questionNumber: questionNumber++,
+        type: ExamQuestionType.fillInBlank,
+        text: AppStrings.demoFillBlankQuestion2,
+        mark: 1,
+      ),
+      ExamQuestionModel(
+        id: 'written-q1',
+        questionNumber: questionNumber++,
+        type: ExamQuestionType.descriptive,
+        text: AppStrings.demoDescriptiveQuestion1,
+        mark: 10,
+      ),
+      ExamQuestionModel(
+        id: 'written-q2',
+        questionNumber: questionNumber++,
+        type: ExamQuestionType.descriptive,
+        text: 'তোমার দেশ সম্পর্কে ৫টি বাক্য লেখ।',
+        mark: 10,
+      ),
+    ];
+    return questions;
   }
 
   static List<McqQuestionModel> get _demoMcqQuestions {

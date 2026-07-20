@@ -26,6 +26,7 @@ class ViolationPage extends GetView<ViolationController> {
                 message: controller.message,
                 alertMessage: controller.alertMessage,
                 bullets: controller.bullets,
+                isSubmitting: controller.isSubmitting.value,
               ),
             ),
           ),

@@ -21,78 +21,80 @@ class ExamWaitingPage extends GetView<ExamWaitingController> {
       child: Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Obx(() {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.lg.w),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      controller.examName,
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineSmall?.copyWith(
-                        color: AppColors.c0F3D2E,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.md.h),
-                    Text(
-                      AppStrings.examWaitingTitle,
-                      textAlign: TextAlign.center,
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: AppColors.c66736C,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.lg.h),
-                    Text(
-                      controller.hasCountdownTarget
-                          ? AppStrings.examStartsIn
-                          : AppStrings.examWaitingNoStartTime,
-                      textAlign: TextAlign.center,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: AppColors.c176B4D,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.md.h),
-                    if (controller.hasCountdownTarget)
-                      ExamCountdownDisplay(
-                        formattedCountdown: controller.formattedCountdown,
-                      ),
-                    if (controller.durationMinutes > 0) ...[
-                      SizedBox(height: AppSpacing.lg.h),
+          child: SizedBox.expand(
+            child: Obx(() {
+              return Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                       Text(
-                        AppStrings.examDurationInfo(controller.durationMinutes),
+                        controller.examName,
                         textAlign: TextAlign.center,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: AppColors.c66736C,
-                        ),
-                      ),
-                    ],
-                    if (controller.errorMessage.value != null) ...[
-                      SizedBox(height: AppSpacing.lg.h),
-                      Text(
-                        controller.errorMessage.value!,
-                        textAlign: TextAlign.center,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: AppColors.c66736C,
+                        style: textTheme.headlineSmall?.copyWith(
+                          color: AppColors.c0F3D2E,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       SizedBox(height: AppSpacing.md.h),
-                      AppPrimaryButton(
-                        label: AppStrings.examWaitingRefresh,
-                        isLoading: controller.isRefreshing.value,
-                        onPressed: controller.isRefreshing.value
-                            ? null
-                            : controller.refreshExamWindow,
+                      Text(
+                        AppStrings.examWaitingTitle,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: AppColors.c66736C,
+                        ),
                       ),
+                      SizedBox(height: AppSpacing.lg.h),
+                      Text(
+                        controller.hasCountdownTarget
+                            ? AppStrings.examStartsIn
+                            : AppStrings.examWaitingNoStartTime,
+                        textAlign: TextAlign.center,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.c176B4D,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.md.h),
+                      if (controller.hasCountdownTarget)
+                        ExamCountdownDisplay(
+                          formattedCountdown: controller.formattedCountdown,
+                        ),
+                      if (controller.durationMinutes > 0) ...[
+                        SizedBox(height: AppSpacing.lg.h),
+                        Text(
+                          AppStrings.examDurationInfo(controller.durationMinutes),
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.c66736C,
+                          ),
+                        ),
+                      ],
+                      if (controller.errorMessage.value != null) ...[
+                        SizedBox(height: AppSpacing.lg.h),
+                        Text(
+                          controller.errorMessage.value!,
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.c66736C,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.md.h),
+                        AppPrimaryButton(
+                          label: AppStrings.examWaitingRefresh,
+                          isLoading: controller.isRefreshing.value,
+                          onPressed: controller.isRefreshing.value
+                              ? null
+                              : controller.refreshExamWindow,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ),
     );

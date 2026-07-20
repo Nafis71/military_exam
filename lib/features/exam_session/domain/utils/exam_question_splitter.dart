@@ -40,6 +40,21 @@ abstract final class ExamQuestionSplitter {
     });
   }
 
+  static int totalQuestionCount(List<ExamQuestion> questions) {
+    var count = 0;
+    for (final question in questions) {
+      switch (question.type) {
+        case ExamQuestionType.mcq:
+        case ExamQuestionType.fillInBlank:
+        case ExamQuestionType.descriptive:
+          count++;
+        default:
+          break;
+      }
+    }
+    return count;
+  }
+
   static List<WrittenQuestion> toDescriptiveQuestions(
     List<ExamQuestion> questions,
   ) {

@@ -34,6 +34,8 @@ abstract class ExamRepository {
 
   Future<Result<String?>> getRollNumber();
 
+  Future<Result<Map<String, ExamAnswerDraft>>> getAnswerDrafts();
+
   Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam);
 
   Future<Result<WrittenImageUploadResult>> uploadDescriptiveAnswerImage({
