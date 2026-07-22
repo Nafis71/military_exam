@@ -10,6 +10,7 @@ import '../../core/network/dio_factory.dart';
 import '../../core/services/camera_permission_service.dart';
 import '../../core/services/document_edge_detection_service.dart';
 import '../../core/services/exam_connectivity_alert_service.dart';
+import '../../core/services/exam_vpn_lockdown_service.dart';
 import '../../core/services/platform_settings_service.dart';
 import '../../core/services/screen_security_service.dart';
 import '../../core/services/app_lifecycle_service.dart';
@@ -85,6 +86,7 @@ import '../../features/security_gate/presentation/controllers/airplane_mode_cont
 import '../../features/security_gate/presentation/controllers/camera_permission_controller.dart';
 import '../../features/security_gate/presentation/controllers/developer_mode_controller.dart';
 import '../../features/security_gate/presentation/controllers/security_gate_controller.dart';
+import '../../features/security_gate/presentation/controllers/vpn_lockdown_controller.dart';
 import '../../features/security_gate/presentation/controllers/wifi_mode_controller.dart';
 import '../../features/splash/presentation/controllers/splash_controller.dart';
 import '../../features/violation/presentation/controllers/violation_controller.dart';
@@ -249,6 +251,10 @@ class DependencyRegistry {
       permanent: true,
     );
 
+    final vpnLockdownService = ExamVpnLockdownService(logger);
+    await vpnLockdownService.initialize();
+    Get.put<ExamVpnLockdownService>(vpnLockdownService, permanent: true);
+
     final watchdog = SecurityWatchdogService(
       securityRepo,
       ObserveAirplaneModeUseCase(securityRepo),
@@ -257,6 +263,7 @@ class DependencyRegistry {
       handleViolation,
       lifecycleService,
       screenSecurityService,
+      vpnLockdownService,
       logger,
     );
     Get.put<SecurityWatchdogService>(watchdog, permanent: true);
@@ -323,6 +330,7 @@ class SecurityGateBinding extends Bindings {
         Get.find<CheckDeviceIntegrityUseCase>(),
         Get.find<CheckAirplaneModeUseCase>(),
         Get.find<CheckConnectivityUseCase>(),
+        Get.find<ExamVpnLockdownService>(),
         Get.find<CompleteSecurityPreExamUseCase>(),
         Get.find<AppLogger>(),
       ),
@@ -352,6 +360,19 @@ class WifiModeBinding extends Bindings {
         Get.find<CheckConnectivityUseCase>(),
         Get.find<ObserveConnectivityUseCase>(),
         Get.find<OpenWifiSettingsUseCase>(),
+        Get.find<AppLifecycleService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
+class VpnLockdownBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => VpnLockdownController(
+        Get.find<ExamVpnLockdownService>(),
         Get.find<AppLifecycleService>(),
         Get.find<AppLogger>(),
       ),
@@ -404,6 +425,7 @@ class LoginBinding extends Bindings {
         Get.find<CheckAirplaneModeUseCase>(),
         Get.find<CheckConnectivityUseCase>(),
         Get.find<CheckDeviceIntegrityUseCase>(),
+        Get.find<ExamVpnLockdownService>(),
         Get.find<AppLifecycleService>(),
         Get.find<SaveRollNumberUseCase>(),
         Get.find<AppLogger>(),

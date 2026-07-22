@@ -51,6 +51,10 @@ class SecurityChecklist extends StatelessWidget {
           label: AppStrings.wifiConnected,
           state: SecurityChecklistState.pending,
         ),
+        const SecurityChecklistItemData(
+          label: AppStrings.networkLockdownActive,
+          state: SecurityChecklistState.pending,
+        ),
       ];
 
   static List<SecurityChecklistItemData> fromIntegrity({
@@ -58,6 +62,7 @@ class SecurityChecklist extends StatelessWidget {
     required bool blockEmulator,
     bool? airplaneEnabled,
     bool? wifiOnline,
+    bool? vpnLockdownActive,
     SecurityChecklistState pendingTailState = SecurityChecklistState.pending,
   }) {
     SecurityChecklistState stateFor(bool passed) =>
@@ -86,6 +91,12 @@ class SecurityChecklist extends StatelessWidget {
       SecurityChecklistItemData(
         label: AppStrings.wifiConnected,
         state: wifiOnline == null ? pendingTailState : stateFor(wifiOnline),
+      ),
+      SecurityChecklistItemData(
+        label: AppStrings.networkLockdownActive,
+        state: vpnLockdownActive == null
+            ? pendingTailState
+            : stateFor(vpnLockdownActive),
       ),
     ];
   }

@@ -158,8 +158,9 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
         sessionController.completePhaseAndGetNextRoute(ExamPhase.fillBlank);
     final watchdog = Get.find<StartSecurityWatchdogUseCase>();
     await watchdog(
-      policy: SecurityPolicy(
+      policy: const SecurityPolicy(
         requireAirplaneMode: true,
+        requireVpnLockdown: true,
         monitoredPhases: [
           ExamPhase.mcq,
           ExamPhase.fillBlank,

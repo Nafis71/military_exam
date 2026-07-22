@@ -13,6 +13,7 @@ import '../../../../core/logging/app_logger.dart';
 import '../../../../core/routing/exam_route_utils.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/camera_permission_service.dart';
+import '../../../../core/services/exam_vpn_lockdown_service.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/widgets/app_error_toast.dart';
@@ -48,6 +49,7 @@ class LoginController extends GetxController {
     this._checkAirplaneMode,
     this._checkConnectivity,
     this._checkDeviceIntegrity,
+    this._vpnLockdownService,
     this._lifecycleService,
     this._saveRollNumberUseCase,
     this._logger,
@@ -65,6 +67,7 @@ class LoginController extends GetxController {
   final CheckAirplaneModeUseCase _checkAirplaneMode;
   final CheckConnectivityUseCase _checkConnectivity;
   final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
+  final ExamVpnLockdownService _vpnLockdownService;
   final AppLifecycleService _lifecycleService;
   final SaveRollNumberUseCase _saveRollNumberUseCase;
   final AppLogger _logger;
@@ -154,7 +157,21 @@ class LoginController extends GetxController {
     final connectivity = connectivityResult.dataOrNull;
     if (connectivity != null && !connectivity.isOnline) {
       await _redirectToWifiModeIfAirplaneEnabled();
+      return;
     }
+
+    if (!Deployment.instance.isDemo) {
+      final vpnActive = await _vpnLockdownService.isActiveNative();
+      if (!vpnActive) {
+        _redirectToVpnLockdown();
+      }
+    }
+  }
+
+  void _redirectToVpnLockdown() {
+    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
+    _redirecting = true;
+    Get.offNamed(SecurityRoutes.vpnLockdownRequired);
   }
 
   void _redirectToAirplaneMode() {
@@ -349,12 +366,22 @@ class LoginController extends GetxController {
     _pollTimer = null;
     final sessionId = examSession.sessionId;
 
+    if (!Deployment.instance.isDemo) {
+      final vpnReady = await _vpnLockdownService.ensureActive();
+      if (!vpnReady) {
+        errorMessage.value = AppStrings.networkLockdownMustBeEnabled;
+        return;
+      }
+    }
+
+    final vpnPolicy = SecurityPolicy(
+      requireAirplaneMode: true,
+      requireVpnLockdown: !Deployment.instance.isDemo,
+    );
+
     if (_sessionController.isWaitingForExamStart) {
       await _startWatchdog(
-        policy: const SecurityPolicy(
-          requireAirplaneMode: true,
-          monitoredPhases: [],
-        ),
+        policy: vpnPolicy.copyWith(monitoredPhases: const []),
         phase: ExamPhase.mcq,
         sessionId: sessionId,
       );
@@ -363,9 +390,8 @@ class LoginController extends GetxController {
     }
 
     await _startWatchdog(
-      policy: const SecurityPolicy(
-        requireAirplaneMode: true,
-        monitoredPhases: [
+      policy: vpnPolicy.copyWith(
+        monitoredPhases: const [
           ExamPhase.mcq,
           ExamPhase.fillBlank,
           ExamPhase.written,

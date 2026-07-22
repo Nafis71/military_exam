@@ -25,7 +25,10 @@ class CompleteSecurityPreExamUseCase {
     }
 
     await _startWatchdog(
-      policy: const SecurityPolicy(requireAirplaneMode: true),
+      policy: const SecurityPolicy(
+        requireAirplaneMode: true,
+        requireVpnLockdown: true,
+      ),
       phase: ExamPhase.securityGate,
     );
     Get.offNamed(AppRoutes.login);

@@ -12,6 +12,7 @@ import '../../features/fill_blank_exam/presentation/pages/fill_blank_exam_page.d
 import '../../features/mcq_exam/presentation/pages/mcq_exam_page.dart';
 import '../../features/security_gate/presentation/pages/airplane_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/camera_permission_required_page.dart';
+import '../../features/security_gate/presentation/pages/vpn_lockdown_required_page.dart';
 import '../../features/security_gate/presentation/pages/wifi_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/developer_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/security_error_page.dart';
@@ -52,6 +53,11 @@ class AppPages {
       name: AppRoutes.wifiModeRequired,
       page: () => const WifiModeRequiredPage(),
       binding: WifiModeBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.vpnLockdownRequired,
+      page: () => const VpnLockdownRequiredPage(),
+      binding: VpnLockdownBinding(),
     ),
     GetPage(
       name: AppRoutes.developerModeRequired,

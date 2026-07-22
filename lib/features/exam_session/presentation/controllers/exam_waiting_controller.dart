@@ -184,6 +184,7 @@ class ExamWaitingController extends GetxController {
       await _startWatchdog(
         policy: const SecurityPolicy(
           requireAirplaneMode: true,
+          requireVpnLockdown: true,
           monitoredPhases: [
             ExamPhase.mcq,
             ExamPhase.fillBlank,

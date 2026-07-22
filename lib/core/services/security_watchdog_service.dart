@@ -13,12 +13,14 @@ import '../logging/app_logger.dart';
 import '../logging/log_event.dart';
 import 'app_lifecycle_service.dart';
 import 'exam_connectivity_alert_service.dart';
+import 'exam_vpn_lockdown_service.dart';
 import 'screen_security_service.dart';
 import 'security_service.dart';
 
 class SecurityPolicy {
   const SecurityPolicy({
     this.requireAirplaneMode = true,
+    this.requireVpnLockdown = false,
     this.monitorLifecycle = true,
     this.preventScreenCapture = true,
     this.monitoredPhases = const [
@@ -32,6 +34,7 @@ class SecurityPolicy {
   });
 
   final bool requireAirplaneMode;
+  final bool requireVpnLockdown;
   final bool monitorLifecycle;
 
   /// Uses [screen_security] to block screenshots and screen recording.
@@ -45,6 +48,28 @@ class SecurityPolicy {
   final Duration lifecycleViolationGracePeriod;
 
   bool appliesTo(ExamPhase phase) => monitoredPhases.contains(phase);
+
+  SecurityPolicy copyWith({
+    bool? requireAirplaneMode,
+    bool? requireVpnLockdown,
+    bool? monitorLifecycle,
+    bool? preventScreenCapture,
+    List<ExamPhase>? monitoredPhases,
+    Duration? pollInterval,
+    Duration? lifecycleViolationGracePeriod,
+  }) {
+    return SecurityPolicy(
+      requireAirplaneMode: requireAirplaneMode ?? this.requireAirplaneMode,
+      requireVpnLockdown: requireVpnLockdown ?? this.requireVpnLockdown,
+      monitorLifecycle: monitorLifecycle ?? this.monitorLifecycle,
+      preventScreenCapture:
+          preventScreenCapture ?? this.preventScreenCapture,
+      monitoredPhases: monitoredPhases ?? this.monitoredPhases,
+      pollInterval: pollInterval ?? this.pollInterval,
+      lifecycleViolationGracePeriod: lifecycleViolationGracePeriod ??
+          this.lifecycleViolationGracePeriod,
+    );
+  }
 }
 
 class SecurityWatchdogService {
@@ -56,6 +81,7 @@ class SecurityWatchdogService {
     this._handleViolation,
     this._lifecycleService,
     this._screenSecurityService,
+    this._vpnLockdownService,
     this._logger,
   );
 
@@ -66,6 +92,7 @@ class SecurityWatchdogService {
   final HandleSecurityViolationUseCase _handleViolation;
   final AppLifecycleService _lifecycleService;
   final ScreenSecurityService _screenSecurityService;
+  final ExamVpnLockdownService _vpnLockdownService;
   final AppLogger _logger;
 
   final List<StreamSubscription<dynamic>> _subscriptions = [];
@@ -130,6 +157,10 @@ class SecurityWatchdogService {
       _startAirplaneModePolling(policy.pollInterval);
     }
 
+    if (policy.requireVpnLockdown) {
+      _listenVpnDisconnect();
+    }
+
     if (policy.monitorLifecycle) {
       _listenLifecycle();
     }
@@ -148,6 +179,7 @@ class SecurityWatchdogService {
     _subscriptions.clear();
 
     await _screenSecurityService.disable();
+    await _vpnLockdownService.stopLockdown();
     _connectivityAlertService.reset();
 
     _running = false;
@@ -213,7 +245,28 @@ class SecurityWatchdogService {
       if (connectivity != null) {
         _onConnectivityChanged(connectivity);
       }
+
+      if (_policy?.requireVpnLockdown == true) {
+        final vpnActive = await _vpnLockdownService.isActiveNative();
+        if (!vpnActive) {
+          await _onViolation(ViolationType.vpnDisconnected);
+        }
+      }
     });
+  }
+
+  void _listenVpnDisconnect() {
+    final subscription = _vpnLockdownService.events.listen(
+      (event) {
+        if (event == VpnLockdownEvent.disconnected) {
+          unawaited(_onViolation(ViolationType.vpnDisconnected));
+        }
+      },
+      onError: (Object error) {
+        _logger.error('VPN event stream error', error: error);
+      },
+    );
+    _subscriptions.add(subscription);
   }
 
   void _listenLifecycle() {

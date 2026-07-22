@@ -169,8 +169,9 @@ class _McqExamPageState extends State<McqExamPage> {
         sessionController.completePhaseAndGetNextRoute(ExamPhase.mcq);
     final watchdog = Get.find<StartSecurityWatchdogUseCase>();
     await watchdog(
-      policy: SecurityPolicy(
+      policy: const SecurityPolicy(
         requireAirplaneMode: true,
+        requireVpnLockdown: true,
         monitoredPhases: [
           ExamPhase.mcq,
           ExamPhase.fillBlank,

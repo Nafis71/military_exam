@@ -16,6 +16,7 @@ class PenaltyRepositoryImpl implements PenaltyRepository {
     ViolationType.appBackgrounded,
     ViolationType.appMinimized,
     ViolationType.airplaneModeDisabled,
+    ViolationType.vpnDisconnected,
     ViolationType.rootedDevice,
     ViolationType.jailbreakDetected,
     ViolationType.developerModeEnabled,

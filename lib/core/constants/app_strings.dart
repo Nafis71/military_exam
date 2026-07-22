@@ -152,6 +152,25 @@ abstract final class AppStrings {
       'নিরাপত্তা লঙ্ঘন ঘটেছে। আপনার পরীক্ষা লক করা হয়েছে।';
   static const airplaneModeDisabledDuringExam =
       'পরীক্ষার সময় এয়ারপ্লেন মোড বন্ধ করা হয়েছিল।';
+  static const vpnDisconnectedDuringExam =
+      'পরীক্ষার সময় নেটওয়ার্ক লকডাউন বন্ধ করা হয়েছিল।';
+  static const networkLockdownActive = 'নেটওয়ার্ক লকডাউন সক্রিয়';
+  static const networkLockdownRequired = 'নেটওয়ার্ক লকডাউন প্রয়োজন';
+  static const checkingNetworkLockdownStatus =
+      'নেটওয়ার্ক লকডাউনের অবস্থা যাচাই হচ্ছে...';
+  static const networkLockdownEnabled = 'নেটওয়ার্ক লকডাউন সক্রিয়';
+  static const networkLockdownEnabledContinue =
+      'নেটওয়ার্ক লকডাউন সক্রিয়। আপনি পরীক্ষায় যেতে পারেন।';
+  static const networkLockdownMustBeEnabled =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ করতে নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const enableNetworkLockdown = 'নেটওয়ার্ক লকডাউন চালু করুন';
+  static const networkLockdownInstruction =
+      'VPN অনুমতি দিন এবং নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const unableToVerifyNetworkLockdown =
+      'নেটওয়ার্ক লকডাউন যাচাই করা যায়নি। আবার চেষ্টা করুন।';
+  static const vpnLockdownNotificationTitle = 'পরীক্ষা নেটওয়ার্ক লকডাউন';
+  static const vpnLockdownNotificationBody =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ রাখতে লকডাউন সক্রিয়।';
   static const wifiDisabledDuringExam =
       'পরীক্ষার সময় ওয়াইফাই বা ইন্টারনেট সংযোগ বন্ধ করা হয়েছিল।';
   static const appBackgrounded =

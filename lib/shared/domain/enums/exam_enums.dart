@@ -20,6 +20,7 @@ enum ExamQuestionType {
 
 enum ViolationType {
   airplaneModeDisabled,
+  vpnDisconnected,
   wifiDisabledDuringExam,
   appBackgrounded,
   appMinimized,
@@ -49,6 +50,7 @@ extension ViolationTypeX on ViolationType {
   String get displayMessage => switch (this) {
         ViolationType.airplaneModeDisabled =>
           AppStrings.airplaneModeDisabledDuringExam,
+        ViolationType.vpnDisconnected => AppStrings.vpnDisconnectedDuringExam,
         ViolationType.wifiDisabledDuringExam =>
           AppStrings.wifiDisabledDuringExam,
         ViolationType.appBackgrounded => AppStrings.appBackgrounded,

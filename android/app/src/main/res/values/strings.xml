@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vpn_lockdown_channel_name">Exam network lockdown</string>
+    <string name="vpn_lockdown_notification_title">Exam network lockdown</string>
+    <string name="vpn_lockdown_notification_body">Blocking internet for other apps during the exam.</string>
+</resources>

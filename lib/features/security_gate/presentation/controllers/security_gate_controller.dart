@@ -4,6 +4,7 @@ import '../../../../core/config/deployment.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/services/exam_vpn_lockdown_service.dart';
 import '../../../../core/services/security_service.dart';
 
 import '../../../../shared/domain/entities/exam_entities.dart';
@@ -28,6 +29,7 @@ class SecurityGateController extends GetxController {
     this._checkDeviceIntegrity,
     this._checkAirplaneMode,
     this._checkConnectivity,
+    this._vpnLockdownService,
     this._completePreExam,
     this._logger,
   );
@@ -35,6 +37,7 @@ class SecurityGateController extends GetxController {
   final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
   final CheckAirplaneModeUseCase _checkAirplaneMode;
   final CheckConnectivityUseCase _checkConnectivity;
+  final ExamVpnLockdownService _vpnLockdownService;
   final CompleteSecurityPreExamUseCase _completePreExam;
   final AppLogger _logger;
 
@@ -131,6 +134,37 @@ class SecurityGateController extends GetxController {
       return;
     }
 
+    if (!Deployment.instance.isDemo) {
+      _setVpnChecking();
+
+      final prepared = await _vpnLockdownService.prepare();
+      if (!prepared) {
+        Get.offNamed(SecurityRoutes.vpnLockdownRequired);
+        return;
+      }
+
+      final started = await _vpnLockdownService.startLockdown();
+      final vpnActive = started && await _vpnLockdownService.isActiveNative();
+      _updateChecklistAfterVpn(
+        deviceIntegrity,
+        airplane.isEnabled,
+        connectivity.isOnline,
+        vpnActive,
+      );
+
+      if (!vpnActive) {
+        Get.offNamed(SecurityRoutes.vpnLockdownRequired);
+        return;
+      }
+    } else {
+      _updateChecklistAfterVpn(
+        deviceIntegrity,
+        airplane.isEnabled,
+        connectivity.isOnline,
+        true,
+      );
+    }
+
     await _ensureMinCheckingDuration(startedAt);
     status.value = SecurityGateStatus.passed;
   }
@@ -203,6 +237,38 @@ class SecurityGateController extends GetxController {
         blockEmulator: blockEmulator,
         airplaneEnabled: airplaneEnabled,
         wifiOnline: wifiOnline,
+        pendingTailState: SecurityChecklistState.pending,
+      ),
+    );
+  }
+
+  void _setVpnChecking() {
+    if (integrity.value == null) return;
+    final current = checklistItems.toList();
+    final vpnIndex = current.indexWhere(
+      (item) => item.label == AppStrings.networkLockdownActive,
+    );
+    if (vpnIndex == -1) return;
+    current[vpnIndex] = SecurityChecklistItemData(
+      label: AppStrings.networkLockdownActive,
+      state: SecurityChecklistState.checking,
+    );
+    checklistItems.assignAll(current);
+  }
+
+  void _updateChecklistAfterVpn(
+    DeviceIntegrityStatus deviceIntegrity,
+    bool airplaneEnabled,
+    bool wifiOnline,
+    bool vpnActive,
+  ) {
+    checklistItems.assignAll(
+      SecurityChecklist.fromIntegrity(
+        integrity: deviceIntegrity,
+        blockEmulator: blockEmulator,
+        airplaneEnabled: airplaneEnabled,
+        wifiOnline: wifiOnline,
+        vpnLockdownActive: vpnActive,
       ),
     );
   }

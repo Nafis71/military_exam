@@ -14,5 +14,9 @@
     native <methods>;
 }
 
+# Exam VPN lockdown
+-keep class com.example.military_exam.LocalVpnService { *; }
+-keep class com.example.military_exam.MainActivity { *; }
+
 # Optional Play Core references from Flutter engine (deferred components)
 -dontwarn com.google.android.play.core.**
