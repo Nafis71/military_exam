@@ -81,6 +81,7 @@ import '../../features/security_gate/domain/usecases/open_airplane_mode_settings
 import '../../features/security_gate/domain/usecases/open_developer_mode_settings_usecase.dart';
 import '../../features/security_gate/domain/usecases/open_wifi_settings_usecase.dart';
 import '../../features/security_gate/domain/usecases/start_security_watchdog_usecase.dart';
+import '../../features/security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import '../../features/security_gate/domain/usecases/stop_security_watchdog_usecase.dart';
 import '../../features/security_gate/presentation/controllers/airplane_mode_controller.dart';
 import '../../features/security_gate/presentation/controllers/camera_permission_controller.dart';
@@ -233,11 +234,19 @@ class DependencyRegistry {
       permanent: true,
     );
 
+    final vpnLockdownService = ExamVpnLockdownService(logger);
+    await vpnLockdownService.initialize();
+    Get.put<ExamVpnLockdownService>(vpnLockdownService, permanent: true);
+
+    final stopVpnLockdown = StopExamVpnLockdownUseCase(vpnLockdownService);
+    Get.put<StopExamVpnLockdownUseCase>(stopVpnLockdown, permanent: true);
+
     final handleViolation = HandleSecurityViolationUseCase(
       lockService,
       Get.find<ReportSecurityViolationUseCase>(),
       Get.find<SubmitSavedExamAnswersUseCase>(),
       lifecycleService,
+      stopVpnLockdown,
       violationRoute: AppRoutes.violation,
     );
     Get.put<HandleSecurityViolationUseCase>(handleViolation, permanent: true);
@@ -250,10 +259,6 @@ class DependencyRegistry {
       examConnectivityAlertService,
       permanent: true,
     );
-
-    final vpnLockdownService = ExamVpnLockdownService(logger);
-    await vpnLockdownService.initialize();
-    Get.put<ExamVpnLockdownService>(vpnLockdownService, permanent: true);
 
     final watchdog = SecurityWatchdogService(
       securityRepo,
@@ -548,6 +553,7 @@ class FinishExamBinding extends Bindings {
     Get.lazyPut(
       () => FinishExamController(
         Get.find<StopSecurityWatchdogUseCase>(),
+        Get.find<StopExamVpnLockdownUseCase>(),
         Get.find<ClearSessionUseCase>(),
         Get.find<ClearExamLocalDataUseCase>(),
         Get.find<AppLogger>(),
@@ -564,6 +570,7 @@ class ViolationBinding extends Bindings {
         Get.find<SubmitExamWithPendingUploadsUseCase>(),
         Get.find<CheckConnectivityUseCase>(),
         Get.find<ObserveConnectivityUseCase>(),
+        Get.find<StopExamVpnLockdownUseCase>(),
         Get.find<AppLifecycleService>(),
         Get.find<AppLogger>(),
       ),

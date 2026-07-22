@@ -12,13 +12,15 @@ import '../../../exam_session/domain/usecases/submit_saved_exam_answers_usecase.
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../utils/violation_submit_outcome.dart';
+import 'stop_exam_vpn_lockdown_usecase.dart';
 
 class HandleSecurityViolationUseCase {
   HandleSecurityViolationUseCase(
     this._lockService,
     this._reportViolationUseCase,
     this._submitSavedExamAnswersUseCase,
-    this._lifecycleService, {
+    this._lifecycleService,
+    this._stopVpnLockdown, {
     this.violationRoute = AppRoutes.violation,
   });
 
@@ -26,6 +28,7 @@ class HandleSecurityViolationUseCase {
   final ReportSecurityViolationUseCase _reportViolationUseCase;
   final SubmitSavedExamAnswersUseCase _submitSavedExamAnswersUseCase;
   final AppLifecycleService _lifecycleService;
+  final StopExamVpnLockdownUseCase _stopVpnLockdown;
   final String violationRoute;
 
   bool _handled = false;
@@ -45,7 +48,14 @@ class HandleSecurityViolationUseCase {
       outcome = resolveViolationSubmitOutcome(submitResult);
     }
 
+    await _releaseVpnIfTerminal(outcome);
+
     _navigateToViolation(violation, outcome: outcome);
+  }
+
+  Future<void> _releaseVpnIfTerminal(ViolationSubmitOutcome outcome) async {
+    if (outcome.submissionPending) return;
+    await _stopVpnLockdown();
   }
 
   void _navigateToViolation(

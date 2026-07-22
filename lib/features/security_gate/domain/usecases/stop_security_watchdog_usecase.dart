@@ -5,5 +5,6 @@ class StopSecurityWatchdogUseCase {
 
   final SecurityWatchdogService _watchdogService;
 
-  Future<void> call() => _watchdogService.stop();
+  Future<void> call({bool releaseVpn = true}) =>
+      _watchdogService.stop(releaseVpn: releaseVpn);
 }

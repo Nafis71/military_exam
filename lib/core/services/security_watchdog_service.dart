@@ -166,8 +166,13 @@ class SecurityWatchdogService {
     }
   }
 
-  Future<void> stop() async {
-    if (!_running) return;
+  Future<void> stop({bool releaseVpn = true}) async {
+    if (!_running) {
+      if (releaseVpn) {
+        await _vpnLockdownService.stopLockdown();
+      }
+      return;
+    }
 
     _pollTimer?.cancel();
     _pollTimer = null;
@@ -179,7 +184,9 @@ class SecurityWatchdogService {
     _subscriptions.clear();
 
     await _screenSecurityService.disable();
-    await _vpnLockdownService.stopLockdown();
+    if (releaseVpn) {
+      await _vpnLockdownService.stopLockdown();
+    }
     _connectivityAlertService.reset();
 
     _running = false;
@@ -342,7 +349,7 @@ class SecurityWatchdogService {
 
     _violationHandled = true;
     _cancelLifecycleGraceTimer();
-    await stop();
+    await stop(releaseVpn: false);
 
     final violation = _handleViolation.buildViolation(
       type: type,

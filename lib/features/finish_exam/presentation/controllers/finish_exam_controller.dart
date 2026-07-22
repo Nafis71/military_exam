@@ -8,17 +8,20 @@ import '../../../auth/domain/usecases/clear_session_usecase.dart';
 import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../domain/finish_submission_type.dart';
+import '../../../security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import '../../../security_gate/domain/usecases/stop_security_watchdog_usecase.dart';
 
 class FinishExamController extends GetxController {
   FinishExamController(
     this._stopWatchdog,
+    this._stopVpnLockdown,
     this._clearSession,
     this._clearExamLocalData,
     this._logger,
   );
 
   final StopSecurityWatchdogUseCase _stopWatchdog;
+  final StopExamVpnLockdownUseCase _stopVpnLockdown;
   final ClearSessionUseCase _clearSession;
   final ClearExamLocalDataUseCase _clearExamLocalData;
   final AppLogger _logger;
@@ -95,6 +98,7 @@ class FinishExamController extends GetxController {
   Future<void> _cleanup() async {
     try {
       await _stopWatchdog();
+      await _stopVpnLockdown();
       await _clearExamLocalData();
       await _clearSession();
     } catch (e, st) {
@@ -102,7 +106,12 @@ class FinishExamController extends GetxController {
     }
   }
 
-  void exitApp() {
+  Future<void> exitApp() async {
+    try {
+      await _stopVpnLockdown();
+    } catch (e, st) {
+      _logger.error('exitApp vpn stop failed', error: e, stackTrace: st);
+    }
     SystemNavigator.pop();
   }
 }
