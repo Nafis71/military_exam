@@ -8,8 +8,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/no_wifi_icon.dart';
 import '../../../../core/widgets/wifi_on_icon.dart';
 import '../controllers/wifi_mode_controller.dart';
-import '../widgets/security_instruction_box.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_instruction_box.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class WifiModeRequiredPage extends GetView<WifiModeController> {
   const WifiModeRequiredPage({super.key});

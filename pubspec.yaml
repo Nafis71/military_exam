@@ -35,6 +35,8 @@ dependencies:
   advanced_root_detection:
     path: packages/advanced_root_detection
   lottie: ^3.3.1
+  device_info_plus: ^11.3.3
+  ai_barcode_scanner: ^7.1.0
 
 dev_dependencies:
   flutter_test:

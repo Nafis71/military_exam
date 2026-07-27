@@ -1,5 +1,10 @@
 abstract final class AppRoutes {
   static const splash = '/';
+  static const getStarted = '/get-started';
+  static const candidateLogin = '/candidate-login';
+  static const candidateDashboard = '/candidate-dashboard';
+  static const examProcedure = '/exam-procedure';
+  static const identityVerification = '/identity-verification';
   static const instructions = '/instructions';
   static const securityGate = '/security/gate';
   static const securityError = '/security/error';

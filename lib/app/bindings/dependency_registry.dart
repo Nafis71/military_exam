@@ -10,7 +10,9 @@ import '../../core/network/dio_factory.dart';
 import '../../core/services/camera_permission_service.dart';
 import '../../core/services/document_edge_detection_service.dart';
 import '../../core/services/exam_connectivity_alert_service.dart';
-import '../../core/services/exam_vpn_lockdown_service.dart';
+import '../../core/services/device_id_service.dart';
+import '../../core/services/exam_run_context.dart';
+import '../../core/services/identity_verification_session.dart';
 import '../../core/services/platform_settings_service.dart';
 import '../../core/services/screen_security_service.dart';
 import '../../core/services/app_lifecycle_service.dart';
@@ -57,7 +59,27 @@ import '../../features/exam_session/domain/usecases/upload_pending_written_image
 import '../../features/exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../features/exam_session/presentation/controllers/exam_submit_review_controller.dart';
 import '../../features/exam_session/presentation/controllers/exam_waiting_controller.dart';
+import '../../core/services/exam_vpn_lockdown_service.dart';
+import '../../features/candidate_dashboard/data/repositories/candidate_profile_repository_impl.dart';
+import '../../features/candidate_dashboard/data/repositories/mock_exam_info_repository.dart';
+import '../../features/candidate_dashboard/domain/repositories/candidate_profile_repository.dart';
+import '../../features/candidate_dashboard/domain/repositories/exam_info_repository.dart';
+import '../../features/candidate_dashboard/presentation/controllers/candidate_dashboard_controller.dart';
+import '../../features/exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
+import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
+import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
+import '../../features/onboarding/domain/usecases/candidate_login_usecase.dart';
+import '../../features/onboarding/domain/usecases/get_onboarding_state_usecase.dart';
+import '../../features/onboarding/domain/usecases/set_onboarding_flag_usecase.dart';
+import '../../features/onboarding/domain/usecases/unbind_device_usecase.dart';
+import '../../features/onboarding/presentation/controllers/candidate_login_controller.dart';
+import '../../features/onboarding/presentation/controllers/get_started_controller.dart';
 import '../../features/finish_exam/presentation/controllers/finish_exam_controller.dart';
+import '../../features/identity_verification/data/repositories/identity_verification_repository_impl.dart';
+import '../../features/identity_verification/domain/repositories/identity_verification_repository.dart';
+import '../../features/identity_verification/domain/usecases/verify_candidate_qr_usecase.dart';
+import '../../features/identity_verification/presentation/controllers/identity_verification_controller.dart';
 import '../../features/instructions/presentation/controllers/instructions_controller.dart';
 import '../../features/fill_blank_exam/domain/usecases/get_fill_blank_progress_usecase.dart';
 import '../../features/fill_blank_exam/domain/usecases/get_fill_blank_questions_usecase.dart';
@@ -114,6 +136,17 @@ class DependencyRegistry {
     Get.put<AuthTokenHolder>(tokenHolder, permanent: true);
 
     const secureStorage = FlutterSecureStorage();
+    Get.put<ExamRunContext>(ExamRunContext(), permanent: true);
+    Get.put<IdentityVerificationSession>(
+      IdentityVerificationSession(),
+      permanent: true,
+    );
+    Get.put<DeviceIdService>(DeviceIdService(), permanent: true);
+
+    final onboardingLocal = OnboardingLocalDataSourceImpl(secureStorage);
+    final onboardingRepo = OnboardingRepositoryImpl(onboardingLocal);
+    Get.put<OnboardingRepository>(onboardingRepo, permanent: true);
+
     final sessionLocal = SessionLocalDataSourceImpl(secureStorage);
     final sessionRepo = SessionRepositoryImpl(sessionLocal);
     Get.put<SessionRepository>(sessionRepo, permanent: true);
@@ -132,7 +165,11 @@ class DependencyRegistry {
     final authRepo = AuthRepositoryImpl(authRemote);
     Get.put<AuthRepository>(authRepo, permanent: true);
 
-    final examRemote = ExamRemoteDataSourceImpl(apiClient, logger);
+    final examRemote = ExamRemoteDataSourceImpl(
+      apiClient,
+      logger,
+      Get.find<ExamRunContext>(),
+    );
     final examLocal = ExamLocalDataSourceImpl(secureStorage);
     final examAnswersHive = await HiveInitializer.initExamAnswers();
     Get.put<ExamAnswersHiveDataSource>(examAnswersHive, permanent: true);
@@ -150,6 +187,16 @@ class DependencyRegistry {
 
     final cameraPermissionService = CameraPermissionService();
     Get.put<CameraPermissionService>(cameraPermissionService, permanent: true);
+
+    final identityVerificationRepo = IdentityVerificationRepositoryImpl();
+    Get.put<IdentityVerificationRepository>(
+      identityVerificationRepo,
+      permanent: true,
+    );
+    Get.put(
+      VerifyCandidateQrUseCase(identityVerificationRepo),
+      permanent: true,
+    );
 
     final documentEdgeDetectionService = DocumentEdgeDetectionService();
     Get.put<DocumentEdgeDetectionService>(
@@ -214,7 +261,14 @@ class DependencyRegistry {
     );
     Get.put(SaveRollNumberUseCase(examRepo), permanent: true);
     Get.put(LockExamSessionUseCase(examRepo), permanent: true);
-    Get.put(ReportSecurityViolationUseCase(examRepo, penaltyRepo), permanent: true);
+    Get.put(
+      ReportSecurityViolationUseCase(
+        examRepo,
+        penaltyRepo,
+        Get.find<ExamRunContext>(),
+      ),
+      permanent: true,
+    );
 
     Get.put(
       ExamSessionController(
@@ -247,6 +301,7 @@ class DependencyRegistry {
       Get.find<SubmitSavedExamAnswersUseCase>(),
       lifecycleService,
       stopVpnLockdown,
+      Get.find<ExamRunContext>(),
       violationRoute: AppRoutes.violation,
     );
     Get.put<HandleSecurityViolationUseCase>(handleViolation, permanent: true);
@@ -278,6 +333,16 @@ class DependencyRegistry {
     Get.put(ValidateExamEligibilityUseCase(authRepo), permanent: true);
     Get.put(GetCurrentSessionUseCase(sessionRepo), permanent: true);
     Get.put(ClearSessionUseCase(sessionRepo, tokenHolder), permanent: true);
+
+    Get.put(GetOnboardingStateUseCase(onboardingRepo), permanent: true);
+    Get.put(SetOnboardingFlagUseCase(onboardingRepo), permanent: true);
+    Get.put(CandidateLoginUseCase(onboardingRepo), permanent: true);
+    Get.put<ExamInfoRepository>(MockExamInfoRepository(), permanent: true);
+    Get.put<CandidateProfileRepository>(
+      CandidateProfileRepositoryImpl(onboardingRepo),
+      permanent: true,
+    );
+
     Get.put(CheckDeviceIntegrityUseCase(securityRepo), permanent: true);
     Get.put(CheckAirplaneModeUseCase(securityRepo), permanent: true);
     Get.put(CheckConnectivityUseCase(securityRepo), permanent: true);
@@ -286,12 +351,46 @@ class DependencyRegistry {
     Get.put(OpenAirplaneModeSettingsUseCase(securityRepo), permanent: true);
     Get.put(OpenWifiSettingsUseCase(securityRepo), permanent: true);
     Get.put(OpenDeveloperModeSettingsUseCase(securityRepo), permanent: true);
-    Get.put(StartSecurityWatchdogUseCase(watchdog), permanent: true);
+    Get.put(
+      StartSecurityWatchdogUseCase(watchdog, Get.find<ExamRunContext>()),
+      permanent: true,
+    );
     Get.put(StopSecurityWatchdogUseCase(watchdog), permanent: true);
+    Get.put(
+      UnbindDeviceUseCase(
+        Get.find<StopSecurityWatchdogUseCase>(),
+        Get.find<StopExamVpnLockdownUseCase>(),
+        Get.find<ScreenSecurityService>(),
+        Get.find<ClearExamLocalDataUseCase>(),
+        Get.find<ClearSessionUseCase>(),
+        onboardingRepo,
+        Get.find<IdentityVerificationSession>(),
+        Get.find<ExamRunContext>(),
+      ),
+      permanent: true,
+    );
+    Get.put(
+      EnterExamAfterCredentialsUseCase(
+        Get.find<ExamSessionController>(),
+        cameraPermissionService,
+        Get.find<StartSecurityWatchdogUseCase>(),
+        vpnLockdownService,
+      ),
+      permanent: true,
+    );
+    Get.put(
+      StartOnboardingDemoExamUseCase(
+        Get.find<ExamRunContext>(),
+        Get.find<EnterExamAfterCredentialsUseCase>(),
+      ),
+      permanent: true,
+    );
     Get.put(
       CompleteSecurityPreExamUseCase(
         cameraPermissionService,
-        Get.find<StartSecurityWatchdogUseCase>(),
+        Get.find<GetCurrentSessionUseCase>(),
+        Get.find<EnterExamAfterCredentialsUseCase>(),
+        logger,
       ),
       permanent: true,
     );
@@ -318,13 +417,69 @@ class AppBinding extends Bindings {
 class SplashBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put(SplashController());
+    Get.put(SplashController(Get.find<GetOnboardingStateUseCase>()));
+  }
+}
+
+class GetStartedBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(GetStartedController.new);
+  }
+}
+
+class CandidateLoginBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => CandidateLoginController(
+        Get.find<CandidateLoginUseCase>(),
+        Get.find<DeviceIdService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
+class CandidateDashboardBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => CandidateDashboardController(
+        Get.find<CandidateProfileRepository>(),
+        Get.find<ExamInfoRepository>(),
+        Get.find<GetOnboardingStateUseCase>(),
+        Get.find<SetOnboardingFlagUseCase>(),
+        Get.find<ExamRunContext>(),
+        Get.find<IdentityVerificationSession>(),
+        Get.find<StartOnboardingDemoExamUseCase>(),
+        Get.find<UnbindDeviceUseCase>(),
+        Get.find<DeviceIdService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
   }
 }
 
 class InstructionsBinding extends Bindings {
   @override
   void dependencies() => Get.lazyPut(InstructionsController.new);
+}
+
+class IdentityVerificationBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => IdentityVerificationController(
+        Get.find<CameraPermissionService>(),
+        Get.find<VerifyCandidateQrUseCase>(),
+        Get.find<IdentityVerificationSession>(),
+        Get.find<ExamRunContext>(),
+        Get.find<AppLifecycleService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
 }
 
 class SecurityGateBinding extends Bindings {
@@ -424,15 +579,12 @@ class LoginBinding extends Bindings {
         Get.find<HasCachedExamAnswersUseCase>(),
         Get.find<RecoverCachedExamSubmissionUseCase>(),
         Get.find<ClearExamLocalDataUseCase>(),
-        Get.find<ExamSessionController>(),
-        Get.find<StartSecurityWatchdogUseCase>(),
-        Get.find<CameraPermissionService>(),
-        Get.find<CheckAirplaneModeUseCase>(),
-        Get.find<CheckConnectivityUseCase>(),
-        Get.find<CheckDeviceIntegrityUseCase>(),
-        Get.find<ExamVpnLockdownService>(),
-        Get.find<AppLifecycleService>(),
         Get.find<SaveRollNumberUseCase>(),
+        Get.find<GetOnboardingStateUseCase>(),
+        Get.find<CompleteSecurityPreExamUseCase>(),
+        Get.find<ScreenSecurityService>(),
+        Get.find<SecurityWatchdogService>(),
+        Get.find<ExamRunContext>(),
         Get.find<AppLogger>(),
       ),
     );
@@ -556,6 +708,8 @@ class FinishExamBinding extends Bindings {
         Get.find<StopExamVpnLockdownUseCase>(),
         Get.find<ClearSessionUseCase>(),
         Get.find<ClearExamLocalDataUseCase>(),
+        Get.find<ExamRunContext>(),
+        Get.find<SetOnboardingFlagUseCase>(),
         Get.find<AppLogger>(),
       ),
     );

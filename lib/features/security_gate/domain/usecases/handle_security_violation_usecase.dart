@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/exam_lock_service.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../exam_session/domain/usecases/report_security_violation_usecase.dart';
 import '../../../exam_session/domain/usecases/submit_saved_exam_answers_usecase.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
@@ -20,7 +21,8 @@ class HandleSecurityViolationUseCase {
     this._reportViolationUseCase,
     this._submitSavedExamAnswersUseCase,
     this._lifecycleService,
-    this._stopVpnLockdown, {
+    this._stopVpnLockdown,
+    this._examRunContext, {
     this.violationRoute = AppRoutes.violation,
   });
 
@@ -29,12 +31,14 @@ class HandleSecurityViolationUseCase {
   final SubmitSavedExamAnswersUseCase _submitSavedExamAnswersUseCase;
   final AppLifecycleService _lifecycleService;
   final StopExamVpnLockdownUseCase _stopVpnLockdown;
+  final ExamRunContext _examRunContext;
   final String violationRoute;
 
   bool _handled = false;
   StreamSubscription<AppLifecycleState>? _resumeSubscription;
 
   Future<void> call(SecurityViolation violation) async {
+    if (_examRunContext.isOnboardingDemo) return;
     if (_handled) return;
     _handled = true;
 

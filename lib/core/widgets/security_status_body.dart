@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/widgets/app_png_asset.dart';
-import '../../../../core/widgets/app_primary_button.dart';
-import '../../../../core/widgets/staggered_entrance.dart';
-import '../../../../core/widgets/typewriter_text.dart';
-import 'security_gate_icon_card.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import 'app_png_asset.dart';
+import 'app_primary_button.dart';
+import 'app_status_icon_card.dart';
+import 'staggered_entrance.dart';
+import 'typewriter_text.dart';
 
 class SecurityStatusBody extends StatelessWidget {
   const SecurityStatusBody({
@@ -146,7 +146,7 @@ class SecurityStatusBody extends StatelessWidget {
 
     if (!wrapIconInCard) return iconWidget;
 
-    return SecurityGateIconCard(
+    return AppStatusIconCard(
       child: SizedBox(
         width: 76.w,
         height: 76.w,

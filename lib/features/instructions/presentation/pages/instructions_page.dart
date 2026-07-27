@@ -57,10 +57,7 @@ class InstructionsPage extends GetView<InstructionsController> {
                 SizedBox(height: AppSpacing.lg.h),
                 Obx(
                   () => AppPrimaryButton(
-                    label: controller.currentPage.value <
-                            InstructionsController.totalPages - 1
-                        ? AppStrings.next
-                        : AppStrings.continueToSecurityCheck,
+                    label: controller.continueButtonLabel,
                     onPressed: controller.nextPage,
                     trailingIcon: Icons.arrow_forward,
                   ),

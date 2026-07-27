@@ -1,35 +1,26 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:military_exam/core/utils/validators.dart';
 
 import '../../../../app/routes/app_routes.dart';
-import '../../../../core/config/deployment.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
-import '../../../../core/routing/exam_route_utils.dart';
-import '../../../../core/services/app_lifecycle_service.dart';
-import '../../../../core/services/camera_permission_service.dart';
-import '../../../../core/services/exam_vpn_lockdown_service.dart';
-import '../../../../core/services/security_service.dart';
+import '../../../../core/services/exam_run_context.dart';
+import '../../../../core/services/screen_security_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/widgets/app_error_toast.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
-import '../../../../shared/domain/enums/exam_enums.dart';
-import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../../exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
 import '../../../exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
 import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
-import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
-import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
-import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
-import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
-import '../../../security_gate/presentation/routes/security_routes.dart';
+import '../../../security_gate/domain/usecases/complete_security_pre_exam_usecase.dart';
+import '../../../onboarding/domain/usecases/get_onboarding_state_usecase.dart';
 import '../../domain/entities/login_credentials.dart';
 import '../../domain/usecases/get_districts_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -43,15 +34,12 @@ class LoginController extends GetxController {
     this._hasCachedExamAnswersUseCase,
     this._recoverCachedExamSubmissionUseCase,
     this._clearExamLocalDataUseCase,
-    this._sessionController,
-    this._startWatchdog,
-    this._cameraPermissionService,
-    this._checkAirplaneMode,
-    this._checkConnectivity,
-    this._checkDeviceIntegrity,
-    this._vpnLockdownService,
-    this._lifecycleService,
     this._saveRollNumberUseCase,
+    this._getOnboardingState,
+    this._completePreExam,
+    this._screenSecurity,
+    this._watchdog,
+    this._examRunContext,
     this._logger,
   );
 
@@ -61,18 +49,16 @@ class LoginController extends GetxController {
   final HasCachedExamAnswersUseCase _hasCachedExamAnswersUseCase;
   final RecoverCachedExamSubmissionUseCase _recoverCachedExamSubmissionUseCase;
   final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
-  final ExamSessionController _sessionController;
-  final StartSecurityWatchdogUseCase _startWatchdog;
-  final CameraPermissionService _cameraPermissionService;
-  final CheckAirplaneModeUseCase _checkAirplaneMode;
-  final CheckConnectivityUseCase _checkConnectivity;
-  final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
-  final ExamVpnLockdownService _vpnLockdownService;
-  final AppLifecycleService _lifecycleService;
   final SaveRollNumberUseCase _saveRollNumberUseCase;
+  final GetOnboardingStateUseCase _getOnboardingState;
+  final CompleteSecurityPreExamUseCase _completePreExam;
+  final ScreenSecurityService _screenSecurity;
+  final SecurityWatchdogService _watchdog;
+  final ExamRunContext _examRunContext;
   final AppLogger _logger;
 
   final examineeIdController = TextEditingController();
+  final batchPasswordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   final isLoading = false.obs;
@@ -83,127 +69,69 @@ class LoginController extends GetxController {
   final districts = <String>[].obs;
   final selectedDistrict = RxnString();
 
-  StreamSubscription<AppLifecycleState>? _lifecycleSubscription;
-  Timer? _pollTimer;
-  bool _redirecting = false;
-  AppLifecycleState? _lastLifecycleState;
-
   @override
   void onInit() {
     super.onInit();
-    _lastLifecycleState = _lifecycleService.currentState;
-    _listenForResume();
-    _startSecurityPolling();
-    unawaited(_recheckAfterReturningToForeground());
+    if (!_examRunContext.isOnboardingDemo) {
+      unawaited(_enableScreenSecurity());
+    }
     unawaited(fetchDistricts());
+    unawaited(_prefillExamineeId());
   }
 
   @override
   void onClose() {
-    _pollTimer?.cancel();
-    unawaited(_lifecycleSubscription?.cancel());
+    if (!_examRunContext.isOnboardingDemo && !_watchdog.isRunning) {
+      unawaited(_disableScreenSecurity());
+    }
     examineeIdController.dispose();
+    batchPasswordController.dispose();
     super.onClose();
   }
 
-  void _listenForResume() {
-    _lifecycleSubscription = _lifecycleService.lifecycleStream.listen((state) {
-      final wasBackgrounded = _lastLifecycleState ==
-              AppLifecycleState.paused ||
-          _lastLifecycleState == AppLifecycleState.hidden ||
-          _lastLifecycleState == AppLifecycleState.inactive;
-      _lastLifecycleState = state;
-
-      if (state == AppLifecycleState.resumed && wasBackgrounded) {
-        _redirecting = false;
-        unawaited(_recheckAfterReturningToForeground());
-      }
-    });
-  }
-
-  Future<void> _recheckAfterReturningToForeground() async {
-    await Future<void>.delayed(AppConstants.settingsReturnRecheckDelay);
-    _redirecting = false;
-    await _verifySecurityRequirements();
-  }
-
-  void _startSecurityPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(
-      AppConstants.airplaneModePollInterval,
-      (_) => unawaited(_verifySecurityRequirements()),
-    );
-  }
-
-  Future<void> _verifySecurityRequirements() async {
-    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-
-    final integrityResult = await _checkDeviceIntegrity();
-    final deviceIntegrity = integrityResult.dataOrNull;
-    if (deviceIntegrity != null &&
-        _isDeveloperModeOnlyIssue(deviceIntegrity)) {
-      _redirectToDeveloperMode();
-      return;
-    }
-
-    final airplaneResult = await _checkAirplaneMode();
-    final airplane = airplaneResult.dataOrNull;
-    if (airplane != null && !airplane.isEnabled) {
-      _redirectToAirplaneMode();
-      return;
-    }
-
-    final connectivityResult = await _checkConnectivity();
-    final connectivity = connectivityResult.dataOrNull;
-    if (connectivity != null && !connectivity.isOnline) {
-      await _redirectToWifiModeIfAirplaneEnabled();
-      return;
-    }
-
-    if (!Deployment.instance.isDemo) {
-      final vpnActive = await _vpnLockdownService.isActiveNative();
-      if (!vpnActive) {
-        _redirectToVpnLockdown();
+  Future<void> _enableScreenSecurity() async {
+    try {
+      await _screenSecurity.enable();
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'login screen security enable failed',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
   }
 
-  void _redirectToVpnLockdown() {
-    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-    _redirecting = true;
-    Get.offNamed(SecurityRoutes.vpnLockdownRequired);
+  Future<void> _disableScreenSecurity() async {
+    try {
+      await _screenSecurity.disable();
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'login screen security disable failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
   }
 
-  void _redirectToAirplaneMode() {
-    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-    _redirecting = true;
-    Get.offNamed(SecurityRoutes.airplaneModeRequired);
-  }
-
-  void _redirectToDeveloperMode() {
-    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-    _redirecting = true;
-    Get.offNamed(SecurityRoutes.developerModeRequired);
-  }
-
-  bool _isDeveloperModeOnlyIssue(DeviceIntegrityStatus deviceIntegrity) {
-    final rasp = SecurityService.instance.lastStatus;
-    if (rasp == null) return deviceIntegrity.isDeveloperModeEnabled;
-    return isDeveloperModeOnlyIssue(
-      status: rasp,
-      strictExamIntegrity: Deployment.instance.strictExamIntegrity,
-    );
-  }
-
-  Future<void> _redirectToWifiModeIfAirplaneEnabled() async {
-    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-
-    final airplaneResult = await _checkAirplaneMode();
-    if (isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
-    if (airplaneResult.dataOrNull?.isEnabled != true) return;
-
-    _redirecting = true;
-    Get.offNamed(SecurityRoutes.wifiModeRequired);
+  Future<void> _prefillExamineeId() async {
+    try {
+      final stateResult = await _getOnboardingState();
+      switch (stateResult) {
+        case Success(:final data):
+          final id = data.candidate?.candidateId;
+          if (id != null && id.isNotEmpty) {
+            examineeIdController.text = id;
+          }
+        case ErrorResult():
+          break;
+      }
+    } catch (error, stackTrace) {
+      _logger.error('_prefillExamineeId failed', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<void> fetchDistricts() async {
@@ -283,9 +211,7 @@ class LoginController extends GetxController {
         final recovered = await _tryRecoverCachedSubmission();
         isLoading.value = false;
         if (recovered) return;
-        isLoading.value = true;
-        await _enterExam(authSession.sessionId);
-        isLoading.value = false;
+        await _completePreExam();
       case ErrorResult(:final failure):
         isLoading.value = false;
         errorMessage.value = failure.message;
@@ -341,69 +267,6 @@ class LoginController extends GetxController {
       errorMessage.value = AppStrings.somethingWentWrong;
       return true;
     }
-  }
-
-  Future<void> _enterExam(String authSessionId) async {
-    final cameraGranted = await _cameraPermissionService.ensureGranted();
-    if (!cameraGranted) {
-      errorMessage.value = AppStrings.cameraPermissionRequiredBeforeExam;
-      return;
-    }
-
-    await _sessionController.startSession(authSessionId);
-    if (_sessionController.errorMessage.value != null) {
-      errorMessage.value = _sessionController.errorMessage.value;
-      return;
-    }
-    final examSession = _sessionController.examSession.value;
-    if (examSession == null) return;
-    if (_sessionController.currentExam.value == null) {
-      errorMessage.value = AppStrings.somethingWentWrong;
-      return;
-    }
-
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    final sessionId = examSession.sessionId;
-
-    if (!Deployment.instance.isDemo) {
-      final vpnReady = await _vpnLockdownService.ensureActive();
-      if (!vpnReady) {
-        errorMessage.value = AppStrings.networkLockdownMustBeEnabled;
-        return;
-      }
-    }
-
-    final vpnPolicy = SecurityPolicy(
-      requireAirplaneMode: true,
-      requireVpnLockdown: !Deployment.instance.isDemo,
-    );
-
-    if (_sessionController.isWaitingForExamStart) {
-      await _startWatchdog(
-        policy: vpnPolicy.copyWith(monitoredPhases: const []),
-        phase: ExamPhase.mcq,
-        sessionId: sessionId,
-      );
-      Get.offAllNamed(AppRoutes.examWaiting, arguments: sessionId);
-      return;
-    }
-
-    await _startWatchdog(
-      policy: vpnPolicy.copyWith(
-        monitoredPhases: const [
-          ExamPhase.mcq,
-          ExamPhase.fillBlank,
-          ExamPhase.written,
-        ],
-      ),
-      phase: ExamPhase.mcq,
-      sessionId: sessionId,
-    );
-    Get.offAllNamed(
-      _sessionController.initialExamRoute,
-      arguments: sessionId,
-    );
   }
 
   String? validateDistrict(String? value) => Validators.requiredField(value);

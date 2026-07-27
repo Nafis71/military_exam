@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../controllers/login_controller.dart';
+import 'login_batch_password_field.dart';
 import 'login_district_dropdown.dart';
 import 'login_text_field.dart';
 
@@ -29,6 +30,8 @@ class LoginForm extends StatelessWidget {
           ),
           SizedBox(height: 20.h),
           LoginDistrictDropdown(controller: controller),
+          SizedBox(height: 20.h),
+          LoginBatchPasswordField(controller: controller),
           Obx(() {
             final error = controller.errorMessage.value;
             if (error == null) return const SizedBox.shrink();

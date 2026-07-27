@@ -5,7 +5,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/shield_lock_icon.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class DeviceCompromisedPage extends StatelessWidget {
   const DeviceCompromisedPage({super.key, this.reason});

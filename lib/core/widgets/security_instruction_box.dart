@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../constants/app_strings.dart';
+import '../theme/app_colors.dart';
 
 class SecurityInstructionBox extends StatelessWidget {
   const SecurityInstructionBox({

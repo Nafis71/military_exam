@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:military_exam/core/constants/app_strings.dart';
+import 'package:military_exam/core/services/exam_run_context.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/features/exam_session/domain/ports/pending_exam_answers_flusher.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
@@ -56,6 +57,7 @@ void main() {
       reportSecurityViolationUseCase: ReportSecurityViolationUseCase(
         examRepo,
         _StubPenaltyRepository(),
+        ExamRunContext(),
       ),
     );
     sessionController.descriptiveQuestions.assignAll([

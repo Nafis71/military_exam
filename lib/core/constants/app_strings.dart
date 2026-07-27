@@ -417,4 +417,192 @@ abstract final class AppStrings {
   static const mcq5OptionB = 'দায়িত্বরত চিকিৎসক';
   static const mcq5OptionC = 'নতুন নিয়োগপ্রাপ্ত';
   static const mcq5OptionD = 'সরবরাহ কর্মকর্তা';
+
+  // Onboarding — Get Started
+  static const getStartedTitle = 'স্বাগতম';
+  static const getStartedSubtitle =
+      'বাংলাদেশ সশস্ত্র বাহিনীর পরীক্ষায় আপনাকে স্বাগতম';
+  static const getStartedDescription =
+      'পরীক্ষায় অংশগ্রহণের জন্য শুরু করুন এবং আপনার তথ্য যাচাই করুন';
+  static const getStarted = 'শুরু করুন';
+
+  // Onboarding — Candidate Login
+  static const candidateId = 'প্রার্থী আইডি';
+  static const candidateIdHint = 'প্রার্থী আইডি লিখুন';
+  static const candidateIdDescription =
+      'প্রার্থী আইডি টেলিটক নিবন্ধনের সময় প্রদান করা হয়েছে';
+  static const deviceId = 'ডিভাইস আইডি';
+  static const continueLabel = 'এগিয়ে যান';
+
+  // Mock candidate & exam data
+  static const mockCandidateNamePrefix = 'প্রার্থী';
+  static const mockCandidatePhone = '০১৭০০-০০০০০০';
+  static const mockCandidateEmail = 'candidate@example.com';
+  static const mockExamTitle = 'সশস্ত্র বাহিনী নিয়োগ পরীক্ষা ২০২৬';
+  static const mockExamDate = '১৫ আগস্ট ২০২৬';
+  static const mockExamVenue = 'ঢাকা সেনানিবাস পরীক্ষা কেন্দ্র';
+  static const mockExamStatus = 'আসন্ন';
+
+  // Candidate Dashboard
+  static const candidateDashboardTitle = 'প্রার্থী ড্যাশবোর্ড';
+  static const notificationsAccessibilityLabel = 'বিজ্ঞপ্তি';
+  static const deviceBoundAccessibilityLabel = 'ডিভাইস সার্ভারের সাথে সংযুক্ত';
+  static const deviceBindingNote =
+      'পরীক্ষা দিতে অবশ্যই এই ডিভাইসটি নিয়ে আসতে হবে।';
+  static const deviceInfoTitle = 'ডিভাইস তথ্য';
+  static const deviceBrandName = 'ব্র্যান্ড';
+  static const deviceModelNumber = 'মডেল নম্বর';
+  static const deviceOsVersion = 'অপারেটিং সিস্টেম সংস্করণ';
+  static const deviceInfoUnavailable =
+      'ডিভাইস তথ্য লোড করা যায়নি। পরে আবার চেষ্টা করুন।';
+  static const deviceBindingShowDetails = 'ডিভাইস বিস্তারিত দেখুন';
+  static const deviceBindingHideDetails = 'ডিভাইস বিস্তারিত লুকান';
+  static const unbindDevice = 'আনবাইন্ড করুন';
+  static const unbindDeviceDialogTitle = 'ডিভাইস আনবাইন্ড করবেন?';
+  static const unbindDeviceDialogMessage =
+      'আপনি কি নিশ্চিত যে এই ডিভাইসটি আনবাইন্ড করতে চান? অন্য ডিভাইসে পরবর্তী লগইনের আগে প্রশাসকের অনুমতিতে পুনরায় বাইন্ড করতে হবে।';
+  static const unbindDeviceConfirm = 'হ্যাঁ, আনবাইন্ড করুন';
+  static const cancelAction = 'বাতিল';
+  static const examinationInfo = 'পরীক্ষার তথ্য';
+  static const examDate = 'তারিখ';
+  static const examVenue = 'ভেন্যু';
+  static const examStatus = 'অবস্থা';
+  static const startExamination = 'পরীক্ষা শুরু করুন';
+  static const startDemo = 'ডেমো পরীক্ষা শুরু করুন';
+  static const viewExaminationProcedure = 'পরীক্ষা পদ্ধতি দেখুন';
+  static const phoneNumber = 'ফোন নম্বর';
+  static const emailAddress = 'ইমেইল';
+
+  // Demo dialogs
+  static const demoQuizTitle = 'স্বাগতম!';
+  static const demoQuizMessage =
+      'আপনি কি একটি ডেমো পরীক্ষা দিতে চান?';
+  static const skip = 'এড়িয়ে যান';
+  static const startDemoButton = 'ডেমো শুরু করুন';
+  static const congratulationsTitle = 'অভিনন্দন!';
+  static const congratulationsMessage =
+      'আপনি সফলভাবে ডেমো পরীক্ষা সম্পন্ন করেছেন। প্রকৃত পরীক্ষায় অংশগ্রহণের আগে পরীক্ষা পদ্ধতি ও নিরাপত্তা নিয়মাবলী সাবধানে পড়ুন।';
+
+  // Batch password
+  static const batchPassword = 'ব্যাচ পাসওয়ার্ড';
+  static const batchPasswordHint = 'ব্যাচ পাসওয়ার্ড লিখুন';
+  static const batchPasswordNote =
+      'পরীক্ষা শুরু করার আগে পরিদর্শকের কাছ থেকে ব্যাচ পাসওয়ার্ড সংগ্রহ করুন।';
+
+  // Instructions (real exam flow)
+  static const continueToLogin = 'লগইনে যান';
+  static const continueToDemoExam = 'ডেমো পরীক্ষা শুরু করুন';
+
+  // Onboarding demo exam
+  static const onboardingDemoExamName = 'ডেমো পরীক্ষা';
+  static const onboardingDemoSubmitted = 'ডেমো পরীক্ষা জমা হয়েছে';
+  static const finishExamination = 'পরীক্ষা শেষ করুন';
+  static const onboardingDemoFillBlank1 =
+      'বাংলাদেশের রাজধানীর নাম _____।';
+  static const onboardingDemoFillBlank2 =
+      'আমাদের জাতীয় ফুল _____।';
+  static const onboardingDemoWritten1 =
+      'আপনার দেশ সম্পর্কে ৩টি বাক্য লিখুন।';
+  static const onboardingDemoWritten2 =
+      'সামরিক শৃঙ্খলার গুরুত্ব ব্যাখ্যা করুন।';
+
+  static const onboardingDemoMcq1 =
+      'বাংলাদেশের জাতীয় ক্রীড়া কোনটি?';
+  static const onboardingDemoMcq1A = 'কাবাডি';
+  static const onboardingDemoMcq1B = 'ফুটবল';
+  static const onboardingDemoMcq1C = 'ক্রিকেট';
+  static const onboardingDemoMcq1D = 'হকি';
+
+  static const onboardingDemoMcq2 =
+      'বাংলাদেশের স্বাধীনতা দিবস কবে?';
+  static const onboardingDemoMcq2A = '২৬ মার্চ';
+  static const onboardingDemoMcq2B = '২১ ফেব্রুয়ারি';
+  static const onboardingDemoMcq2C = '১৬ ডিসেম্বর';
+  static const onboardingDemoMcq2D = '১৪ এপ্রিল';
+
+  static const onboardingDemoMcq3 =
+      'বাংলাদেশের জাতীয় পাখির নাম কী?';
+  static const onboardingDemoMcq3A = 'দোয়েল';
+  static const onboardingDemoMcq3B = 'ময়ূর';
+  static const onboardingDemoMcq3C = 'কাক';
+  static const onboardingDemoMcq3D = 'টিয়া';
+
+  static const onboardingDemoMcq4 =
+      'বাংলাদেশের জাতীয় ফুল কোনটি?';
+  static const onboardingDemoMcq4A = 'গোলাপ';
+  static const onboardingDemoMcq4B = 'শাপলা';
+  static const onboardingDemoMcq4C = 'গাঁদা';
+  static const onboardingDemoMcq4D = 'বেলি';
+
+  static const onboardingDemoMcq5 =
+      'বাংলাদেশের জাতীয় সঙ্গীতের রচয়িতা কে?';
+  static const onboardingDemoMcq5A = 'কাজী নজরুল ইসলাম';
+  static const onboardingDemoMcq5B = 'রবীন্দ্রনাথ ঠাকুর';
+  static const onboardingDemoMcq5C = 'জীবনানন্দ দাশ';
+  static const onboardingDemoMcq5D = 'মাইকেল মধুসূদন দত্ত';
+
+  static const onboardingDemoMcq6 =
+      'বাংলাদেশের মুদ্রার নাম কী?';
+  static const onboardingDemoMcq6A = 'রুপি';
+  static const onboardingDemoMcq6B = 'টাকা';
+  static const onboardingDemoMcq6C = 'পয়সা';
+  static const onboardingDemoMcq6D = 'ডলার';
+
+  // Examination procedure timeline
+  static const examProcedureTitle = 'পরীক্ষা পদ্ধতি ও নিরাপত্তা';
+  static const securityPenaltiesTitle = 'নিরাপত্তা লঙ্ঘনের পরিণতি';
+  static const securityPenaltiesDescription =
+      'নিচের নিয়ম লঙ্ঘন করলে পরীক্ষা বাতিল বা অযোগ্য ঘোষণা হতে পারে।';
+
+  static const procedureStep1Title = 'পরীক্ষা কক্ষে প্রবেশ';
+  static const procedureStep1Description =
+      'পরীক্ষার্থী নির্ধারিত সময়ের আগে নির্ধারিত পরীক্ষা হলে প্রবেশ করবেন।';
+
+  static const procedureStep2Title = 'কিউআর স্ব-যাচাই';
+  static const procedureStep2Description =
+      'পরীক্ষা হলে প্রদর্শিত সরকারি কিউআর কোড স্ক্যান করে নিবন্ধিত ডিভাইস যাচাই করুন। সফল স্ক্যান নিশ্চিত করে আপনি সঠিক কেন্দ্রে উপস্থিত আছেন।';
+
+  static const scanQrCode = 'কিউআর কোড স্ক্যান করুন';
+  static const identityVerifiedTitle = 'পরিচয় যাচাই সম্পন্ন';
+  static const identityVerifiedMessage =
+      'আপনি পরীক্ষার জন্য যোগ্য। নির্দেশনা পৃষ্ঠায় এগিয়ে যান।';
+  static const continueToInstructions = 'নির্দেশনায় যান';
+  static const identityVerificationFailed =
+      'কিউআর যাচাই ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+  static const qrScannerError = 'এই ডিভাইসে কোনো ক্যামেরা নেই।';
+
+  static const procedureStep3Title = 'ডিভাইস নিরাপত্তা নির্দেশনা';
+  static const procedureStep3Description =
+      'পরীক্ষা চলাকালীন অ্যাপ খোলা রাখুন, নিরাপদ ভিপিএন সংযোগ বন্ধ করবেন না, নেটওয়ার্ক বিচ্ছিন্ন করবেন না এবং নিরাপত্তা যাচাই এড়িয়ে যাবেন না।';
+
+  static const procedureStep4Title = 'ব্যাচ পাসওয়ার্ড গ্রহণ';
+  static const procedureStep4Description =
+      'পরিদর্শক পরীক্ষার ব্যাচের জন্য নির্ধারিত ব্যাচ পাসওয়ার্ড প্রদান করবেন।';
+
+  static const procedureStep5Title = 'ব্যাচ পাসওয়ার্ড প্রবেশ';
+  static const procedureStep5Description =
+      'প্রাপ্ত ব্যাচ পাসওয়ার্ড অ্যাপে প্রবেশ করান।';
+
+  static const procedureStep6Title = 'নিরাপত্তা যাচাই';
+  static const procedureStep6Description =
+      'পরীক্ষা শুরুর আগে ডিভাইস যাচাই, ভিপিএন যাচাই, স্ক্রিন নিরাপত্তা, অ্যাপ অখণ্ডতা ও নেটওয়ার্ক যাচাই সম্পন্ন হবে।';
+
+  static const procedureStep7Title = 'পরীক্ষা শুরু';
+  static const procedureStep7Description =
+      'সকল নিরাপত্তা যাচাই সফল হলে প্রকৃত পরীক্ষা শুরু করুন।';
+
+  static const procedureStep8Title = 'পরীক্ষা জমা';
+  static const procedureStep8Description =
+      'সকল প্রশ্নের উত্তর দিয়ে পরীক্ষা জমা দিন এবং প্রক্রিয়া সম্পন্ন করুন।';
+
+  static const penaltyLeaveApp =
+      'পরীক্ষার অ্যাপ ছেড়ে গেলে পরীক্ষা তাৎক্ষণিক বাতিল হতে পারে।';
+  static const penaltyDisableVpn =
+      'নিরাপদ ভিপিএন সংযোগ বন্ধ করলে আর প্রবেশাধিকার পাওয়া যাবে না।';
+  static const penaltyUnregisteredDevice =
+      'অনিবন্ধিত ডিভাইস ব্যবহার করলে পরীক্ষায় প্রবেশ বন্ধ হতে পারে।';
+  static const penaltyFailedVerification =
+      'বাধ্যতামূলক নিরাপত্তা যাচাই ব্যর্থ হলে অযোগ্য ঘোষণা হতে পারে।';
+  static const penaltyBypassSecurity =
+      'নিরাপত্তা ব্যবস্থা এড়িয়ে যাওয়ার চেষ্টা করলে পরীক্ষা বাতিল হতে পারে।';
 }

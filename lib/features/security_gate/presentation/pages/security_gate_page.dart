@@ -9,7 +9,7 @@ import '../../../../core/widgets/shield_lock_icon.dart';
 import '../../../../core/widgets/verified_user_icon.dart';
 import '../controllers/security_gate_controller.dart';
 import '../widgets/security_checklist.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class SecurityGatePage extends GetView<SecurityGateController> {
   const SecurityGatePage({super.key});

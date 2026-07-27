@@ -8,8 +8,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/developer_options_icon.dart';
 import '../../../../core/widgets/violation_icon.dart';
 import '../controllers/developer_mode_controller.dart';
-import '../widgets/security_instruction_box.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_instruction_box.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class DeveloperModeRequiredPage extends GetView<DeveloperModeController> {
   const DeveloperModeRequiredPage({super.key});

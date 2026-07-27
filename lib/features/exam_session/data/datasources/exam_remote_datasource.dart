@@ -8,6 +8,7 @@ import '../../../../core/constants/exam_constants.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
@@ -21,6 +22,7 @@ import '../models/written_image_upload_result_model.dart';
 import '../models/mcq_answer_model.dart';
 import '../models/mcq_option_model.dart';
 import '../models/mcq_question_model.dart';
+import '../../../onboarding_demo/data/datasources/onboarding_demo_exam_datasource.dart';
 
 abstract class ExamRemoteDataSource {
   Future<Result<ExamSessionModel>> startSession(String authSessionId);
@@ -57,15 +59,26 @@ abstract class ExamRemoteDataSource {
 }
 
 class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
-  ExamRemoteDataSourceImpl(this._apiClient, this._logger);
+  ExamRemoteDataSourceImpl(
+    this._apiClient,
+    this._logger,
+    this._examRunContext,
+  );
 
   final ApiClient _apiClient;
   final AppLogger _logger;
+  final ExamRunContext _examRunContext;
+
+  bool get _isOnboardingDemo => _examRunContext.isOnboardingDemo;
 
   static const _demoDurationMinutes = 90;
 
   @override
   Future<Result<ExamSessionModel>> startSession(String authSessionId) async {
+    if (_isOnboardingDemo) {
+      _logger.info('Onboarding demo: exam session served locally');
+      return Success(OnboardingDemoExamDataSource.session(authSessionId));
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: exam session served from device (no API call)');
       return Success(_demoSession(authSessionId));
@@ -115,6 +128,9 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<int>> fetchRemainingSeconds(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(OnboardingDemoExamDataSource.durationMinutes * 60);
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoDurationMinutes * 60);
     }
@@ -134,6 +150,10 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<CurrentExamModel>> fetchCurrentExam() async {
+    if (_isOnboardingDemo) {
+      _logger.info('Onboarding demo: current exam served locally');
+      return Success(OnboardingDemoExamDataSource.currentExam);
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: current exam served from device (no API call)');
       return Success(_demoCurrentExam);
@@ -168,6 +188,9 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
   Future<Result<List<McqQuestionModel>>> fetchMcqQuestions(
     String sessionId,
   ) async {
+    if (_isOnboardingDemo) {
+      return Success(OnboardingDemoExamDataSource.mcqQuestions);
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: MCQ questions served from device (no API call)');
       return Success(_demoMcqQuestions);
@@ -194,7 +217,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     String sessionId,
     McqAnswerModel answer,
   ) async {
-    if (Deployment.instance.isDemo) {
+    if (_isOnboardingDemo || Deployment.instance.isDemo) {
       return Success(answer);
     }
 
@@ -216,6 +239,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.autoSubmittedDemo));
     }
@@ -237,6 +265,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<SubmissionReceipt>> finishExam(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.examSubmittedDemo));
     }
@@ -260,6 +293,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
   Future<Result<SubmissionReceipt>> finalizeCurrentExam(
     FinalizeExamRequest request,
   ) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.examSubmittedDemo));
     }
@@ -287,7 +325,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     required String filePath,
     void Function(int sent, int total)? onSendProgress,
   }) async {
-    if (Deployment.instance.isDemo) {
+    if (_isOnboardingDemo || Deployment.instance.isDemo) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       return Success(
         WrittenImageUploadResultModel(
