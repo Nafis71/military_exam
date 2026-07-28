@@ -3,14 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/png_asset.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_png_asset.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/staggered_entrance.dart';
 import '../controllers/candidate_dashboard_controller.dart';
 import '../widgets/dashboard_exam_banner.dart';
 import '../widgets/dashboard_notification_icon_button.dart';
 import '../widgets/dashboard_profile_card.dart';
+import '../widgets/dashboard_settings_icon_button.dart';
 
 class CandidateDashboardPage extends GetView<CandidateDashboardController> {
   const CandidateDashboardPage({super.key});
@@ -25,6 +28,18 @@ class CandidateDashboardPage extends GetView<CandidateDashboardController> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: EdgeInsets.only(left: AppSpacing.lg.w),
+          child: Center(
+            child: AppPngAsset(
+              assetPath: PngAsset.appLogo,
+              width: 36.w,
+              height: 36.w,
+            ),
+          ),
+        ),
+        leadingWidth: 36.w + AppSpacing.lg.w + AppSpacing.sm.w,
         title: Text(
           AppStrings.candidateDashboardTitle,
           style: textTheme.titleLarge?.copyWith(
@@ -33,6 +48,9 @@ class CandidateDashboardPage extends GetView<CandidateDashboardController> {
           ),
         ),
         actions: [
+          DashboardSettingsIconButton(
+            onPressed: controller.onOpenSecuritySettings,
+          ),
           DashboardNotificationIconButton(
             onPressed: controller.onOpenNotifications,
           ),

@@ -20,6 +20,6 @@ void main() {
     );
     final active = containers.firstWhere((c) => (c.constraints?.maxWidth ?? 0) > 20);
     final decoration = active.decoration! as BoxDecoration;
-    expect(decoration.color, AppColors.primary);
+    expect(decoration.color, AppColors.instructionDotActive);
   });
 }

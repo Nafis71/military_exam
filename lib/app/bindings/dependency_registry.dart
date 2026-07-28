@@ -45,6 +45,7 @@ import '../../features/exam_session/domain/usecases/finish_exam_usecase.dart';
 import '../../features/exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../features/exam_session/domain/usecases/finalize_exam_usecase.dart';
 import '../../features/exam_session/domain/usecases/get_current_exam_usecase.dart';
+import '../../features/exam_session/domain/usecases/get_roll_number_usecase.dart';
 import '../../features/exam_session/domain/usecases/save_roll_number_usecase.dart';
 import '../../features/exam_session/domain/usecases/get_exam_timer_usecase.dart';
 import '../../features/exam_session/domain/usecases/lock_exam_session_usecase.dart';
@@ -65,6 +66,7 @@ import '../../features/candidate_dashboard/data/repositories/mock_exam_info_repo
 import '../../features/candidate_dashboard/domain/repositories/candidate_profile_repository.dart';
 import '../../features/candidate_dashboard/domain/repositories/exam_info_repository.dart';
 import '../../features/candidate_dashboard/presentation/controllers/candidate_dashboard_controller.dart';
+import '../../features/candidate_dashboard/presentation/controllers/dashboard_security_settings_controller.dart';
 import '../../features/exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
 import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
@@ -260,6 +262,7 @@ class DependencyRegistry {
       permanent: true,
     );
     Get.put(SaveRollNumberUseCase(examRepo), permanent: true);
+    Get.put(GetRollNumberUseCase(examRepo), permanent: true);
     Get.put(LockExamSessionUseCase(examRepo), permanent: true);
     Get.put(
       ReportSecurityViolationUseCase(
@@ -336,7 +339,13 @@ class DependencyRegistry {
 
     Get.put(GetOnboardingStateUseCase(onboardingRepo), permanent: true);
     Get.put(SetOnboardingFlagUseCase(onboardingRepo), permanent: true);
-    Get.put(CandidateLoginUseCase(onboardingRepo), permanent: true);
+    Get.put(
+      CandidateLoginUseCase(
+        onboardingRepo,
+        Get.find<SaveRollNumberUseCase>(),
+      ),
+      permanent: true,
+    );
     Get.put<ExamInfoRepository>(MockExamInfoRepository(), permanent: true);
     Get.put<CandidateProfileRepository>(
       CandidateProfileRepositoryImpl(onboardingRepo),
@@ -386,12 +395,7 @@ class DependencyRegistry {
       permanent: true,
     );
     Get.put(
-      CompleteSecurityPreExamUseCase(
-        cameraPermissionService,
-        Get.find<GetCurrentSessionUseCase>(),
-        Get.find<EnterExamAfterCredentialsUseCase>(),
-        logger,
-      ),
+      CompleteSecurityPreExamUseCase(cameraPermissionService),
       permanent: true,
     );
     Get.put(GetMcqQuestionsUseCase(examRepo), permanent: true);
@@ -455,6 +459,25 @@ class CandidateDashboardBinding extends Bindings {
         Get.find<StartOnboardingDemoExamUseCase>(),
         Get.find<UnbindDeviceUseCase>(),
         Get.find<DeviceIdService>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
+class DashboardSecuritySettingsBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => DashboardSecuritySettingsController(
+        Get.find<CheckAirplaneModeUseCase>(),
+        Get.find<CheckConnectivityUseCase>(),
+        Get.find<OpenAirplaneModeSettingsUseCase>(),
+        Get.find<OpenWifiSettingsUseCase>(),
+        Get.find<ExamVpnLockdownService>(),
+        Get.find<CameraPermissionService>(),
+        Get.find<SecurityWatchdogService>(),
+        Get.find<AppLifecycleService>(),
         Get.find<AppLogger>(),
       ),
     );
@@ -574,14 +597,20 @@ class LoginBinding extends Bindings {
     Get.lazyPut(
       () => LoginController(
         Get.find<LoginUseCase>(),
-        Get.find<GetDistrictsUseCase>(),
         Get.find<ValidateExamEligibilityUseCase>(),
         Get.find<HasCachedExamAnswersUseCase>(),
         Get.find<RecoverCachedExamSubmissionUseCase>(),
         Get.find<ClearExamLocalDataUseCase>(),
-        Get.find<SaveRollNumberUseCase>(),
         Get.find<GetOnboardingStateUseCase>(),
-        Get.find<CompleteSecurityPreExamUseCase>(),
+        Get.find<GetRollNumberUseCase>(),
+        Get.find<EnterExamAfterCredentialsUseCase>(),
+        Get.find<CheckAirplaneModeUseCase>(),
+        Get.find<CheckConnectivityUseCase>(),
+        Get.find<CheckDeviceIntegrityUseCase>(),
+        Get.find<ExamVpnLockdownService>(),
+        Get.find<StopSecurityWatchdogUseCase>(),
+        Get.find<StopExamVpnLockdownUseCase>(),
+        Get.find<AppLifecycleService>(),
         Get.find<ScreenSecurityService>(),
         Get.find<SecurityWatchdogService>(),
         Get.find<ExamRunContext>(),

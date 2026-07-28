@@ -36,7 +36,7 @@ class LocalVpnService : VpnService() {
             else -> {
                 if (setupSinkhole()) {
                     isRunning = true
-                    return START_STICKY
+                    return START_NOT_STICKY
                 }
                 stopSelf()
                 return START_NOT_STICKY

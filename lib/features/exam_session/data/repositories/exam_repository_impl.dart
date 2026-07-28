@@ -255,19 +255,11 @@ class ExamRepositoryImpl implements ExamRepository {
 
   @override
   Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
-    final rollResult = await getRollNumber();
-    if (rollResult is ErrorResult<String?>) {
-      return ErrorResult(rollResult.failure);
+    final rollNumberResult = await _resolveRollNumber();
+    if (rollNumberResult is ErrorResult<String>) {
+      return ErrorResult(rollNumberResult.failure);
     }
-
-    var rollNumber = rollResult.dataOrNull;
-    if (rollNumber == null || rollNumber.isEmpty) {
-      final sessionResult = await _localDataSource.readExamSession();
-      rollNumber = sessionResult.dataOrNull?.examineeId;
-    }
-    if (rollNumber == null || rollNumber.isEmpty) {
-      return const ErrorResult(ValidationFailure('Roll number missing'));
-    }
+    final rollNumber = (rollNumberResult as Success<String>).data;
 
     final draftsResult = await _answersHive.readAllDrafts();
     if (draftsResult is ErrorResult<Map<String, ExamAnswerDraftModel>>) {
@@ -293,14 +285,11 @@ class ExamRepositoryImpl implements ExamRepository {
     required String filePath,
     void Function(int sent, int total)? onSendProgress,
   }) async {
-    final rollResult = await getRollNumber();
-    if (rollResult is ErrorResult<String?>) {
-      return ErrorResult(rollResult.failure);
+    final rollNumberResult = await _resolveRollNumber();
+    if (rollNumberResult is ErrorResult<String>) {
+      return ErrorResult(rollNumberResult.failure);
     }
-    final rollNumber = rollResult.dataOrNull;
-    if (rollNumber == null || rollNumber.isEmpty) {
-      return const ErrorResult(ValidationFailure('Roll number missing'));
-    }
+    final rollNumber = (rollNumberResult as Success<String>).data;
 
     final result = await _remoteDataSource.uploadDescriptiveAnswerImage(
       questionId: questionId,
@@ -363,6 +352,23 @@ class ExamRepositoryImpl implements ExamRepository {
   @override
   Future<Result<void>> reportViolation(SecurityViolation violation) =>
       _remoteDataSource.reportViolation(violation);
+
+  Future<Result<String>> _resolveRollNumber() async {
+    final rollResult = await getRollNumber();
+    if (rollResult is ErrorResult<String?>) {
+      return ErrorResult(rollResult.failure);
+    }
+
+    var rollNumber = rollResult.dataOrNull;
+    if (rollNumber == null || rollNumber.isEmpty) {
+      final sessionResult = await _localDataSource.readExamSession();
+      rollNumber = sessionResult.dataOrNull?.examineeId;
+    }
+    if (rollNumber == null || rollNumber.isEmpty) {
+      return const ErrorResult(ValidationFailure('Roll number missing'));
+    }
+    return Success(rollNumber);
+  }
 
   int _questionNumber(CurrentExam? exam, String questionId) {
     if (exam == null) return 0;

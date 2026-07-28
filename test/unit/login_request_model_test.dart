@@ -4,30 +4,25 @@ import 'package:military_exam/features/auth/domain/entities/login_credentials.da
 
 void main() {
   group('LoginRequestModel', () {
-    test('toJson emits district and roll_number', () {
+    test('toJson emits roll_number only', () {
       const model = LoginRequestModel(
-        district: 'Dhaka',
         rollNumber: '8',
       );
 
       expect(model.toJson(), {
-        'district': 'Dhaka',
         'roll_number': '8',
       });
     });
 
     test('fromCredentials copies entity fields', () {
       const credentials = LoginCredentials(
-        district: 'DHAKA',
         rollNumber: '1',
       );
 
       final model = LoginRequestModel.fromCredentials(credentials);
 
-      expect(model.district, 'DHAKA');
       expect(model.rollNumber, '1');
       expect(model.toJson(), {
-        'district': 'DHAKA',
         'roll_number': '1',
       });
     });

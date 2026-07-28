@@ -120,7 +120,9 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
         WrittenExamImageAddedToast.show();
       } else {
         await controller.saveDraftForQuestion(questionId);
-        controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
+        if (!isOnline) {
+          controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
+        }
       }
     } finally {
       watchdog.setCameraCaptureActive(false);

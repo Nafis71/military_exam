@@ -65,19 +65,27 @@ class ExamQuestionHeader extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ExamSkipButton(
-                        onPressed: onSkip,
-                        isEnabled: isSkipEnabled,
-                      ),
-                      SizedBox(width: (4.w).clamp(2.0, 4.0)),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.38,
+                      if (onSkip != null) ...[
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: ExamSkipButton(
+                              onPressed: onSkip,
+                              isEnabled: isSkipEnabled,
+                            ),
+                          ),
                         ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
+                        SizedBox(width: (4.w).clamp(2.0, 4.0)),
+                      ],
+                      Flexible(
+                        child: Align(
                           alignment: Alignment.centerRight,
-                          child: _TimerPill(formattedTimer: formattedTimer),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: _TimerPill(formattedTimer: formattedTimer),
+                          ),
                         ),
                       ),
                     ],

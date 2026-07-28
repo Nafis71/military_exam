@@ -12,6 +12,7 @@ import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/camera_permission_service.dart';
 import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/services/identity_verification_session.dart';
+import '../../../../core/services/system_ui_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/widgets/app_error_toast.dart';
 import '../../domain/usecases/verify_candidate_qr_usecase.dart';
@@ -168,6 +169,8 @@ class IdentityVerificationController extends GetxController {
       if (!isClosed) {
         isScannerOpen.value = false;
       }
+      unawaited(SystemUiService.applyPortraitLock());
+      unawaited(SystemUiService.applyFullscreenMode());
     }
   }
 

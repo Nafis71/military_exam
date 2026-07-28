@@ -343,8 +343,22 @@ class SecurityWatchdogService {
     }
   }
 
+  bool _shouldPenalizeViolation(ViolationType type) {
+    final policy = _policy;
+    if (policy == null) return false;
+
+    switch (type) {
+      case ViolationType.vpnDisconnected:
+        return policy.requireVpnLockdown;
+      case ViolationType.airplaneModeDisabled:
+        return policy.requireAirplaneMode;
+      default:
+        return _shouldMonitorCurrentPhase();
+    }
+  }
+
   Future<void> _onViolation(ViolationType type) async {
-    if (_violationHandled || !_shouldMonitorCurrentPhase()) return;
+    if (_violationHandled || !_shouldPenalizeViolation(type)) return;
     if (_cameraCaptureActive) return;
 
     _violationHandled = true;

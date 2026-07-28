@@ -122,7 +122,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return CandidateModel(
       id: 'demo-candidate-${DateTime.now().millisecondsSinceEpoch}',
       fullName: '${AppStrings.demoExamineeNamePrefix} ${request.rollNumber}',
-      district: request.district,
+      district: '',
       rollNumber: request.rollNumber,
       status: 'attended',
     );

@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/services/system_ui_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 
@@ -74,6 +75,10 @@ class _IdentityQrScannerPageState extends State<IdentityQrScannerPage> {
     return AiBarcodeScanner(
       controller: _controller,
       galleryButtonType: GalleryButtonType.none,
+      setPortraitOrientation: false,
+      onDispose: () {
+        unawaited(SystemUiService.applyPortraitLock());
+      },
       useAppLifecycleState: true,
       overlayConfig: ScannerOverlayConfig(
         animationColor: AppColors.c89D5B2,

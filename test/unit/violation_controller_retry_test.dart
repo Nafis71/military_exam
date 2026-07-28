@@ -7,6 +7,8 @@ import 'package:military_exam/core/config/deployment.dart';
 import 'package:military_exam/core/constants/app_strings.dart';
 import 'package:military_exam/core/errors/failure.dart';
 import 'package:military_exam/core/logging/app_logger.dart';
+import 'package:military_exam/core/services/exam_vpn_lockdown_service.dart';
+import 'package:military_exam/features/security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/core/services/app_lifecycle_service.dart';
 import 'package:military_exam/features/exam_session/domain/entities/cached_exam_recovery_result.dart';
@@ -61,6 +63,7 @@ void main() {
       buildSubmitUseCase(),
       CheckConnectivityUseCase(securityRepository),
       ObserveConnectivityUseCase(securityRepository),
+      StopExamVpnLockdownUseCase(_FakeVpnLockdownService()),
       _FakeLifecycleService(),
       AppLogger(),
       initialArgs: ViolationScreenArgs(
@@ -205,4 +208,11 @@ class _FakeSecurityRepository implements SecurityRepository {
 class _FakeLifecycleService extends AppLifecycleService {
   @override
   Stream<AppLifecycleState> get lifecycleStream => const Stream.empty();
+}
+
+class _FakeVpnLockdownService extends ExamVpnLockdownService {
+  _FakeVpnLockdownService() : super(AppLogger());
+
+  @override
+  Future<void> stopLockdown() async {}
 }

@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/bindings/dependency_registry.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/services/device_id_service.dart';
 import '../../../../core/services/exam_run_context.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/identity_verification_session.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/widgets/app_error_toast.dart';
@@ -21,8 +24,10 @@ import '../../../onboarding/domain/usecases/get_onboarding_state_usecase.dart';
 import '../../../onboarding/domain/usecases/set_onboarding_flag_usecase.dart';
 import '../../../onboarding/domain/usecases/unbind_device_usecase.dart';
 import '../widgets/congratulations_dialog.dart';
+import '../widgets/dashboard_security_settings_sheet.dart';
 import '../widgets/demo_quiz_dialog.dart';
 import '../widgets/unbind_device_dialog.dart';
+import 'dashboard_security_settings_controller.dart';
 
 class CandidateDashboardController extends GetxController {
   CandidateDashboardController(
@@ -206,6 +211,24 @@ class CandidateDashboardController extends GetxController {
   }
 
   void onOpenNotifications() {}
+
+  void onOpenSecuritySettings() {
+    if (Get.isBottomSheetOpen ?? false) return;
+
+    DashboardSecuritySettingsBinding().dependencies();
+    Get.bottomSheet<void>(
+      const DashboardSecuritySettingsSheet(),
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+    ).whenComplete(() {
+      if (Get.isRegistered<DashboardSecuritySettingsController>()) {
+        Get.delete<DashboardSecuritySettingsController>();
+      }
+    });
+  }
 
   Future<void> onUnbind() async {
     if (isUnbinding.value || isStartingDemo.value) return;

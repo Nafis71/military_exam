@@ -9,7 +9,7 @@ abstract final class AppStrings {
   static const appSubtitle = 'Bangladesh Armed Forces Examination System';
   static const signInSubtitle = 'পরীক্ষার্থীর তথ্য দিয়ে সাইন ইন করুন';
   static const loginDescription =
-      'পরীক্ষায় প্রবেশ করতে আপনার পরীক্ষার্থী আইডি এবং জেলা প্রদান করুন';
+      'পরীক্ষায় প্রবেশ করতে পরিদর্শকের প্রদত্ত ব্যাচ পাসওয়ার্ড লিখুন';
   static const examineeId = 'পরীক্ষার্থী আইডি';
   static const examineeIdHint = 'আপনার আইডি লিখুন';
   static const district = 'জেলা';
@@ -17,6 +17,9 @@ abstract final class AppStrings {
   static const loadingDistricts = 'জেলা তালিকা লোড হচ্ছে...';
   static const password = 'পাসওয়ার্ড';
   static const signIn = 'সাইন ইন';
+  static const goBack = 'ফিরে যান';
+  static const candidateIdNotFound =
+      'প্রার্থী আইডি পাওয়া যায়নি। অনুগ্রহ করে আবার লগইন করুন।';
   static const notEligible =
       'আপনি এই পরীক্ষার জন্য যোগ্য নন।';
 
@@ -446,9 +449,29 @@ abstract final class AppStrings {
   // Candidate Dashboard
   static const candidateDashboardTitle = 'প্রার্থী ড্যাশবোর্ড';
   static const notificationsAccessibilityLabel = 'বিজ্ঞপ্তি';
+  static const securitySettingsAccessibilityLabel = 'নিরাপত্তা সেটিংস';
+  static const securitySettingsTitle = 'নিরাপত্তা সেটিংস';
+  static const securityVpnTitle = 'লকডাউন VPN';
+  static const securityVpnDescription =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ করতে VPN অনুমতি দিন এবং নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const securityAirplaneTitle = 'এয়ারপ্লেন মোড';
+  static const securityAirplaneDescription =
+      'পরীক্ষার সময় কল গ্রহণ রোধ করতে এয়ারপ্লেন মোড চালু করুন। সুইচ ট্যাপ করলে সেটিংস খুলবে।';
+  static const securityWifiTitle = 'ওয়াই-ফাই মোড';
+  static const securityWifiDescription =
+      'এয়ারপ্লেন মোড চালু থাকলে পরীক্ষা চালিয়ে যেতে ওয়াই-ফাই চালু করুন। সুইচ ট্যাপ করলে সেটিংস খুলবে।';
+  static const securityCameraTitle = 'ক্যামেরার অনুমতি';
+  static const securityCameraDescription =
+      'লিখিত পরীক্ষার উত্তর ক্যাপচার করতে ক্যামেরার অনুমতি প্রয়োজন।';
+  static const securitySettingCheckFailed =
+      'অবস্থা যাচাই করা যায়নি। আবার চেষ্টা করুন।';
+  static const securityVpnCannotDisableDuringExam =
+      'পরীক্ষা চলাকালীন নেটওয়ার্ক লকডাউন বন্ধ করা যাবে না।';
   static const deviceBoundAccessibilityLabel = 'ডিভাইস সার্ভারের সাথে সংযুক্ত';
   static const deviceBindingNote =
       'পরীক্ষা দিতে অবশ্যই এই ডিভাইসটি নিয়ে আসতে হবে।';
+  static const deviceBindingResetNote =
+      'ডিভাইস রিসেট করলে পরীক্ষার আগে আবার এই ডিভাইসটি বাইন্ড করতে হতে পারে।';
   static const deviceInfoTitle = 'ডিভাইস তথ্য';
   static const deviceBrandName = 'ব্র্যান্ড';
   static const deviceModelNumber = 'মডেল নম্বর';

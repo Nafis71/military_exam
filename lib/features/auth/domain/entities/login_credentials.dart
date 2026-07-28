@@ -2,13 +2,12 @@ import 'package:equatable/equatable.dart';
 
 class LoginCredentials extends Equatable {
   const LoginCredentials({
-    required this.district,
     required this.rollNumber,
+    // TODO(backend): add batchPassword when login endpoint supports it.
   });
 
-  final String district;
   final String rollNumber;
 
   @override
-  List<Object?> get props => [district, rollNumber];
+  List<Object?> get props => [rollNumber];
 }

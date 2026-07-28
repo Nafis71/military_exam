@@ -69,11 +69,23 @@ class _DashboardDeviceBindingSectionState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        AppStrings.deviceBindingNote,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.c000000,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppStrings.deviceBindingNote,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.c000000,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.xs.h),
+                          Text(
+                            AppStrings.deviceBindingResetNote,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.c000000,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: AppSpacing.sm.w),
