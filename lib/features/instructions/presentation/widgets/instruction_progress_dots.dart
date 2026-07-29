@@ -8,10 +8,12 @@ class InstructionProgressDots extends StatelessWidget {
     super.key,
     required this.count,
     required this.currentIndex,
+    this.useLightText = false,
   });
 
   final int count;
   final int currentIndex;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,13 @@ class InstructionProgressDots extends StatelessWidget {
           width: isActive ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? AppColors.instructionDotActive : AppColors.instructionDotInactive,
+            color: useLightText
+                ? (isActive
+                    ? AppColors.cFFFFFF
+                    : AppColors.cFFFFFF.withValues(alpha: 0.4))
+                : (isActive
+                    ? AppColors.instructionDotActive
+                    : AppColors.instructionDotInactive),
             borderRadius: BorderRadius.circular(4),
           ),
         );

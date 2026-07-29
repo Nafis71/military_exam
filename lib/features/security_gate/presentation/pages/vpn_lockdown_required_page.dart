@@ -16,40 +16,46 @@ class VpnLockdownRequiredPage extends GetView<VpnLockdownController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg.w),
-          child: Obx(() {
-            final gateStatus = controller.status.value;
-            final isChecking = gateStatus == VpnLockdownGateStatus.checking;
-            final isEnabled = gateStatus == VpnLockdownGateStatus.enabled;
-            final isDisabled = gateStatus == VpnLockdownGateStatus.disabled;
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: AppColors.brandHeaderGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Obx(() {
+              final gateStatus = controller.status.value;
+              final isChecking = gateStatus == VpnLockdownGateStatus.checking;
+              final isEnabled = gateStatus == VpnLockdownGateStatus.enabled;
+              final isDisabled = gateStatus == VpnLockdownGateStatus.disabled;
 
-            return SecurityStatusBody(
-              contentKey: gateStatus,
-              title: _titleFor(gateStatus),
-              message: _messageFor(gateStatus),
-              isLoading: isChecking || controller.isActivating.value,
-              icon: const ViolationIcon(),
-              iconColor: isEnabled ? AppColors.primary : AppColors.c000000,
-              footer: isDisabled
-                  ? const SecurityInstructionBox(
-                      instruction: AppStrings.networkLockdownInstruction,
-                    )
-                  : null,
-              actionLabel: isEnabled
-                  ? AppStrings.continueAction
-                  : AppStrings.enableNetworkLockdown,
-              onAction: isEnabled
-                  ? controller.continueWhenReady
-                  : controller.activateLockdown,
-              secondaryActionLabel: AppStrings.refresh,
-              onSecondaryAction: controller.refreshStatus,
-              secondaryActionColor:
-                  isEnabled ? AppColors.primary : AppColors.cBDBDBD,
-            );
-          }),
+              return SecurityStatusBody(
+                contentKey: gateStatus,
+                useLightText: true,
+                title: _titleFor(gateStatus),
+                message: _messageFor(gateStatus),
+                isLoading: isChecking || controller.isActivating.value,
+                icon: const ViolationIcon(),
+                iconColor: isEnabled ? AppColors.primary : AppColors.c000000,
+                footer: isDisabled
+                    ? const SecurityInstructionBox(
+                        instruction: AppStrings.networkLockdownInstruction,
+                        useLightText: true,
+                      )
+                    : null,
+                actionLabel: isEnabled
+                    ? AppStrings.continueAction
+                    : AppStrings.enableNetworkLockdown,
+                onAction: isEnabled
+                    ? controller.continueWhenReady
+                    : controller.activateLockdown,
+                secondaryActionLabel: AppStrings.refresh,
+                onSecondaryAction: controller.refreshStatus,
+                secondaryActionColor:
+                    isEnabled ? AppColors.primary : AppColors.cBDBDBD,
+              );
+            }),
+          ),
         ),
       ),
     );

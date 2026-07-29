@@ -18,6 +18,7 @@ import 'dashboard_exam_banner.dart';
 import 'dashboard_notification_icon_button.dart';
 import 'dashboard_profile_card.dart';
 import 'dashboard_settings_icon_button.dart';
+import 'dashboard_showcase_target.dart';
 
 class CandidateDashboardShowcaseHost extends StatefulWidget {
   const CandidateDashboardShowcaseHost({
@@ -35,11 +36,15 @@ class CandidateDashboardShowcaseHost extends StatefulWidget {
 class _CandidateDashboardShowcaseHostState
     extends State<CandidateDashboardShowcaseHost> {
   CandidateDashboardController get controller => widget.controller;
+  late final ShowcaseView _showcaseView;
+  late final int _registrationGeneration;
+  bool _isShowcaseRegistered = false;
 
   @override
   void initState() {
     super.initState();
-    ShowcaseView.register(
+    _registrationGeneration = ++DashboardShowcaseScope.registrationGeneration;
+    _showcaseView = ShowcaseView.register(
       scope: DashboardShowcaseScope.scope,
       enableAutoScroll: true,
       skipIfTargetNotPresent: true,
@@ -47,36 +52,95 @@ class _CandidateDashboardShowcaseHostState
       onStart: _onShowcaseStart,
       onFinish: _onShowcaseFinish,
       onDismiss: _onShowcaseDismiss,
-      globalFloatingActionWidget: (context) => FloatingActionWidget(
-        bottom: 24.h,
-        right: AppSpacing.lg.w,
-        child: TextButton(
-          onPressed: () =>
-              ShowcaseView.getNamed(DashboardShowcaseScope.scope).dismiss(),
-          child: Text(
-            AppStrings.dashboardTutorialSkip,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.cFFFFFF,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-      ),
+      globalFloatingActionWidget: _buildGlobalFloatingActions,
     );
+    DashboardShowcaseScope.activeRegistrationGeneration = _registrationGeneration;
+    _isShowcaseRegistered = true;
     controller.registerShowcaseStarter(_startShowcase);
   }
 
-  void _startShowcase() {
-    ShowcaseView.getNamed(DashboardShowcaseScope.scope).startShowCase(
-      controller.showcaseKeys,
-      delay: const Duration(milliseconds: 400),
+  FloatingActionWidget _buildGlobalFloatingActions(BuildContext context) {
+    if (!mounted || !_isShowcaseRegistered) {
+      return FloatingActionWidget(
+        bottom: 24.h,
+        right: AppSpacing.lg.w,
+        child: const SizedBox.shrink(),
+      );
+    }
+
+    final textTheme = Theme.of(context).textTheme;
+
+    return FloatingActionWidget(
+      bottom: 24.h,
+      right: AppSpacing.lg.w,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            onPressed: _dismissShowcase,
+            child: Text(
+              AppStrings.dashboardTutorialSkip,
+              style: textTheme.labelLarge?.copyWith(
+                color: AppColors.cFFFFFF,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          SizedBox(width: AppSpacing.sm.w),
+          FilledButton(
+            onPressed: _advanceShowcase,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.c0A5943,
+            ),
+            child: Text(
+              AppStrings.next,
+              style: textTheme.labelLarge?.copyWith(
+                color: AppColors.cFFFFFF,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  void _dismissShowcase() {
+    if (!mounted || !_isShowcaseRegistered) return;
+    _showcaseView.dismiss();
+  }
+
+  void _advanceShowcase() {
+    if (!mounted || !_isShowcaseRegistered) return;
+    _showcaseView.next();
+  }
+
+  void _startShowcase() {
+    if (!mounted || !_isShowcaseRegistered) {
+      controller.resetTutorialRunningState();
+      return;
+    }
+
+    controller.isDeviceBindingExpanded.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isShowcaseRegistered) {
+        controller.resetTutorialRunningState();
+        return;
+      }
+
+      _showcaseView.startShowCase(
+        controller.showcaseKeys,
+        delay: const Duration(milliseconds: 400),
+      );
+    });
+  }
+
   void _onShowcaseStart(int? index, GlobalKey key) {
+    if (!mounted || controller.isClosed) return;
+
     if (key == controller.deviceInfoShowcaseKey) {
-      controller.isDeviceBindingExpanded.value = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || controller.isClosed) return;
         if (!controller.scrollController.hasClients) return;
         unawaited(
           controller.scrollController.animateTo(
@@ -90,17 +154,24 @@ class _CandidateDashboardShowcaseHostState
   }
 
   void _onShowcaseFinish() {
-    unawaited(controller.markDashboardTutorialSeen());
+    if (!mounted) return;
+    unawaited(controller.onDashboardTutorialCompleted());
   }
 
   void _onShowcaseDismiss(GlobalKey? dismissedAt) {
-    unawaited(controller.markDashboardTutorialSeen());
+    if (!mounted) return;
+    unawaited(controller.onDashboardTutorialCompleted());
   }
 
   @override
   void dispose() {
     controller.unregisterShowcaseStarter();
-    ShowcaseView.getNamed(DashboardShowcaseScope.scope).unregister();
+    if (_isShowcaseRegistered &&
+        _registrationGeneration == DashboardShowcaseScope.registrationGeneration) {
+      _showcaseView.unregister();
+      DashboardShowcaseScope.activeRegistrationGeneration = 0;
+      _isShowcaseRegistered = false;
+    }
     super.dispose();
   }
 
@@ -110,21 +181,10 @@ class _CandidateDashboardShowcaseHostState
     required String description,
     required Widget child,
   }) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Showcase(
-      key: showcaseKey,
-      scope: DashboardShowcaseScope.scope,
+    return DashboardShowcaseTarget(
+      showcaseKey: showcaseKey,
       title: title,
       description: description,
-      tooltipBackgroundColor: AppColors.cFFFFFF,
-      textColor: AppColors.c0F3D2E,
-      titleTextStyle: textTheme.titleMedium?.copyWith(
-        color: AppColors.c0F3D2E,
-        fontWeight: FontWeight.w700,
-      ),
-      descTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.c66736C),
-      targetBorderRadius: BorderRadius.circular(12.r),
       child: child,
     );
   }

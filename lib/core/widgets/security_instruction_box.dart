@@ -8,9 +8,11 @@ class SecurityInstructionBox extends StatelessWidget {
   const SecurityInstructionBox({
     super.key,
     required this.instruction,
+    this.useLightText = false,
   });
 
   final String instruction;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +20,15 @@ class SecurityInstructionBox extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: AppColors.cFCFFFE,
+        color: useLightText
+            ? AppColors.cFFFFFF.withValues(alpha: 0.15)
+            : AppColors.cFCFFFE,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: AppColors.c0A5943),
+        border: Border.all(
+          color: useLightText
+              ? AppColors.cFFFFFF.withValues(alpha: 0.35)
+              : AppColors.c0A5943,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,7 +49,8 @@ class SecurityInstructionBox extends StatelessWidget {
                   AppStrings.importantInstruction,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontSize: 14.sp,
-                        color: AppColors.c0A5943,
+                        color:
+                            useLightText ? AppColors.cFFFFFF : AppColors.c0A5943,
                         height: 21 / 14,
                       ),
                 ),
@@ -50,7 +59,8 @@ class SecurityInstructionBox extends StatelessWidget {
                   instruction,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontSize: 11.sp,
-                        color: AppColors.c474E5A,
+                        color:
+                            useLightText ? AppColors.cFFFFFF : AppColors.c474E5A,
                         height: 20.8 / 11,
                       ),
                 ),

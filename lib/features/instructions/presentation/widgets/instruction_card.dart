@@ -11,12 +11,14 @@ class InstructionCard extends StatelessWidget {
     this.svgAssetPath,
     required this.title,
     required this.description,
+    this.useLightText = false,
   }) : assert(icon != null || svgAssetPath != null);
 
   final IconData? icon;
   final String? svgAssetPath;
   final String title;
   final String description;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +65,7 @@ class InstructionCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.c094C3C,
+                  color: useLightText ? AppColors.cFFFFFF : AppColors.c094C3C,
                   height: 28 / 20,
                 ),
             textAlign: TextAlign.center,
@@ -72,7 +74,7 @@ class InstructionCard extends StatelessWidget {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.c474E5A,
+                  color: useLightText ? AppColors.cFFFFFF : AppColors.c474E5A,
                   height: 22 / 14,
                 ),
             textAlign: TextAlign.center,

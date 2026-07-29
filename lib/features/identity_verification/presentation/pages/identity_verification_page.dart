@@ -17,25 +17,30 @@ class IdentityVerificationPage extends GetView<IdentityVerificationController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg.w),
-          child: Obx(() {
-            if (controller.showPermissionGate) {
-              return CameraPermissionGateView(
-                status: controller.permissionStatus.value,
-                isRequestingPermission:
-                    controller.isRequestingPermission.value,
-                onRequest: controller.requestPermission,
-                onOpenSettings: controller.openSettings,
-                onContinue: controller.onPermissionContinue,
-                onRefresh: controller.refreshStatus,
-              );
-            }
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: AppColors.brandHeaderGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Obx(() {
+              if (controller.showPermissionGate) {
+                return CameraPermissionGateView(
+                  useLightText: true,
+                  status: controller.permissionStatus.value,
+                  isRequestingPermission:
+                      controller.isRequestingPermission.value,
+                  onRequest: controller.requestPermission,
+                  onOpenSettings: controller.openSettings,
+                  onContinue: controller.onPermissionContinue,
+                  onRefresh: controller.refreshStatus,
+                );
+              }
 
-            return _ScanFlowBody(controller: controller);
-          }),
+              return _ScanFlowBody(controller: controller);
+            }),
+          ),
         ),
       ),
     );
@@ -60,6 +65,7 @@ class _ScanFlowBody extends StatelessWidget {
 
     return SecurityStatusBody(
       contentKey: flowStatus,
+      useLightText: true,
       title: isVerified
           ? AppStrings.identityVerifiedTitle
           : AppStrings.procedureStep2Title,

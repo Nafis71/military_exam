@@ -26,6 +26,7 @@ class SecurityStatusBody extends StatelessWidget {
     this.contentKey,
     this.typewriterMessage = false,
     this.wrapIconInCard = true,
+    this.useLightText = false,
   });
 
   final String title;
@@ -44,6 +45,7 @@ class SecurityStatusBody extends StatelessWidget {
   final Object? contentKey;
   final bool typewriterMessage;
   final bool wrapIconInCard;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -51,14 +53,16 @@ class SecurityStatusBody extends StatelessWidget {
     final titleStyle = textTheme.titleMedium?.copyWith(
       fontSize: 20.sp,
       fontWeight: FontWeight.w700,
-      color: AppColors.c094C3C,
+      color: useLightText ? AppColors.cFFFFFF : AppColors.c094C3C,
       height: 28 / 20,
     );
     final messageStyle = textTheme.bodyMedium?.copyWith(
-      color: AppColors.c474E5A,
+      color: useLightText ? AppColors.cFFFFFF : AppColors.c474E5A,
       height: 22 / 14,
     );
-    final resolvedSecondaryColor = secondaryActionColor ?? AppColors.cBDBDBD;
+    final resolvedSecondaryColor = useLightText
+        ? AppColors.cFFFFFF
+        : secondaryActionColor ?? AppColors.cBDBDBD;
     final resolvedPrimaryColor = iconColor ?? AppColors.primary;
 
     return Column(
@@ -112,9 +116,11 @@ class SecurityStatusBody extends StatelessWidget {
                 OutlinedButton(
                   onPressed: isLoading ? null : onSecondaryAction,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: resolvedSecondaryColor == AppColors.cBDBDBD
-                        ? AppColors.c000000
-                        : resolvedSecondaryColor,
+                    foregroundColor: useLightText
+                        ? AppColors.cFFFFFF
+                        : resolvedSecondaryColor == AppColors.cBDBDBD
+                            ? AppColors.c000000
+                            : resolvedSecondaryColor,
                     side: BorderSide(color: resolvedSecondaryColor),
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
                     shape: RoundedRectangleBorder(
@@ -123,9 +129,11 @@ class SecurityStatusBody extends StatelessWidget {
                     textStyle: textTheme.labelLarge?.copyWith(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w400,
-                      color: resolvedSecondaryColor == AppColors.cBDBDBD
-                          ? AppColors.c000000
-                          : resolvedSecondaryColor,
+                      color: useLightText
+                          ? AppColors.cFFFFFF
+                          : resolvedSecondaryColor == AppColors.cBDBDBD
+                              ? AppColors.c000000
+                              : resolvedSecondaryColor,
                     ),
                   ),
                   child: Text(secondaryActionLabel!),

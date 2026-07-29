@@ -147,7 +147,9 @@ class CandidateDashboardController extends GetxController {
       }
     } finally {
       isLoading.value = false;
-      await _maybeShowDialogs();
+      if (!isClosed) {
+        await _maybeShowDialogs();
+      }
     }
   }
 
@@ -170,17 +172,26 @@ class CandidateDashboardController extends GetxController {
   }
 
   Future<void> _maybeShowDialogs() async {
+    if (_pendingCongratulations) {
+      await _showCongratulationsDialog();
+      return;
+    }
+
+    if (!hasSeenDashboardTutorial) {
+      await tryStartDashboardTutorial();
+      return;
+    }
+
+    await _maybeShowDemoDialogIfNeeded();
+  }
+
+  Future<void> _maybeShowDemoDialogIfNeeded() async {
     final stateResult = await _getOnboardingState();
     final state = switch (stateResult) {
       Success(:final data) => data,
       ErrorResult() => null,
     };
     if (state == null) return;
-
-    if (_pendingCongratulations) {
-      await _showCongratulationsDialog();
-      return;
-    }
 
     if (!state.hasCompletedDemo && !state.hasSeenDemoDialog) {
       await _showDemoQuizDialog();
@@ -195,9 +206,12 @@ class CandidateDashboardController extends GetxController {
     await _setOnboardingFlag.setHasSeenDemoDialog(true);
     if (startDemo == true) {
       unawaited(onStartDemo());
-    } else {
-      await tryStartDashboardTutorial();
     }
+  }
+
+  Future<void> onDashboardTutorialCompleted() async {
+    await markDashboardTutorialSeen();
+    await _maybeShowDemoDialogIfNeeded();
   }
 
   Future<void> _showCongratulationsDialog() async {
@@ -219,6 +233,10 @@ class CandidateDashboardController extends GetxController {
     _showcaseStarter = null;
   }
 
+  void resetTutorialRunningState() {
+    _isTutorialRunning = false;
+  }
+
   Future<void> tryStartDashboardTutorial() async {
     if (isClosed ||
         isLoading.value ||
@@ -232,12 +250,28 @@ class CandidateDashboardController extends GetxController {
     }
 
     final starter = _showcaseStarter;
-    if (starter == null) return;
+    if (starter == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!isClosed && !hasSeenDashboardTutorial && !_isTutorialRunning) {
+          unawaited(tryStartDashboardTutorial());
+        }
+      });
+      return;
+    }
 
     _isTutorialRunning = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (isClosed) return;
-      starter();
+      if (isClosed) {
+        _isTutorialRunning = false;
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isClosed) {
+          _isTutorialRunning = false;
+          return;
+        }
+        starter();
+      });
     });
   }
 

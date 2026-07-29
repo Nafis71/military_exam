@@ -17,6 +17,7 @@ class CameraPermissionGateView extends StatelessWidget {
     required this.onOpenSettings,
     required this.onContinue,
     required this.onRefresh,
+    this.useLightText = false,
   });
 
   final CameraPermissionGateStatus status;
@@ -25,6 +26,7 @@ class CameraPermissionGateView extends StatelessWidget {
   final VoidCallback onOpenSettings;
   final VoidCallback onContinue;
   final VoidCallback onRefresh;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,7 @@ class CameraPermissionGateView extends StatelessWidget {
 
     return SecurityStatusBody(
       contentKey: status,
+      useLightText: useLightText,
       title: isGranted
           ? AppStrings.cameraPermissionGrantedTitle
           : AppStrings.enableCameraPermission,
@@ -45,8 +48,9 @@ class CameraPermissionGateView extends StatelessWidget {
       icon: isGranted ? const CameraGrantedIcon() : const CameraDeniedIcon(),
       iconColor: isGranted ? AppColors.primary : AppColors.c000000,
       footer: needsInstruction
-          ? const SecurityInstructionBox(
+          ? SecurityInstructionBox(
               instruction: AppStrings.cameraInstruction,
+              useLightText: useLightText,
             )
           : null,
       actionLabel: isGranted

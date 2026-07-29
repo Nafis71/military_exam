@@ -13,18 +13,23 @@ class CameraPermissionRequiredPage extends GetView<CameraPermissionController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg.w),
-          child: Obx(
-            () => CameraPermissionGateView(
-              status: controller.status.value,
-              isRequestingPermission: controller.isRequestingPermission.value,
-              onRequest: controller.requestPermission,
-              onOpenSettings: controller.openSettings,
-              onContinue: controller.continueWhenReady,
-              onRefresh: controller.refreshStatus,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: AppColors.brandHeaderGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Obx(
+              () => CameraPermissionGateView(
+                useLightText: true,
+                status: controller.status.value,
+                isRequestingPermission: controller.isRequestingPermission.value,
+                onRequest: controller.requestPermission,
+                onOpenSettings: controller.openSettings,
+                onContinue: controller.continueWhenReady,
+                onRefresh: controller.refreshStatus,
+              ),
             ),
           ),
         ),

@@ -3,13 +3,12 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../constants/dashboard_showcase_scope.dart';
 import 'dashboard_device_info_section.dart';
+import 'dashboard_showcase_target.dart';
 import 'dashboard_unbind_button.dart';
 
 class DashboardDeviceBindingSection extends StatefulWidget {
@@ -81,20 +80,10 @@ class _DashboardDeviceBindingSectionState
     );
 
     final showcasedDeviceInfo = widget.deviceInfoShowcaseKey != null
-        ? Showcase(
-            key: widget.deviceInfoShowcaseKey!,
-            scope: DashboardShowcaseScope.scope,
+        ? DashboardShowcaseTarget(
+            showcaseKey: widget.deviceInfoShowcaseKey!,
             title: AppStrings.dashboardTutorialDeviceInfoTitle,
             description: AppStrings.dashboardTutorialDeviceInfoDescription,
-            tooltipBackgroundColor: AppColors.cFFFFFF,
-            textColor: AppColors.c0F3D2E,
-            titleTextStyle: textTheme.titleMedium?.copyWith(
-              color: AppColors.c0F3D2E,
-              fontWeight: FontWeight.w700,
-            ),
-            descTextStyle: textTheme.bodyMedium?.copyWith(
-              color: AppColors.c66736C,
-            ),
             targetBorderRadius: BorderRadius.circular(8.r),
             child: deviceInfoSection,
           )
@@ -165,23 +154,24 @@ class _DashboardDeviceBindingSectionState
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeInOut,
             alignment: Alignment.topCenter,
-            child: _isExpanded
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(height: AppSpacing.md.h),
-                      showcasedDeviceInfo,
-                      SizedBox(height: AppSpacing.md.h),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: DashboardUnbindButton(
-                          onPressed: widget.onUnbind,
-                          isLoading: widget.isUnbinding,
-                        ),
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_isExpanded) ...[
+                  SizedBox(height: AppSpacing.md.h),
+                  showcasedDeviceInfo,
+                  SizedBox(height: AppSpacing.md.h),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: DashboardUnbindButton(
+                      onPressed: widget.onUnbind,
+                      isLoading: widget.isUnbinding,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
