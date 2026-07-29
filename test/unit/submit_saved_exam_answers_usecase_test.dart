@@ -11,6 +11,8 @@ import 'package:military_exam/features/written_exam/domain/repositories/written_
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
 
+import '../helpers/demo_exam_test_support.dart';
+
 class _RecordingFlusher implements PendingExamAnswersFlusher {
   ExamPhase? flushedPhase;
 
@@ -37,7 +39,10 @@ class _FakeExamRepository implements ExamRepository {
   }
 
   @override
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? exam) async {
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? exam, {
+    Set<String> questionIdsWithImages = const {},
+  }) async {
     finalizeCalls += 1;
     return Success(receipt);
   }
@@ -117,14 +122,17 @@ void main() {
     );
     final repository = _FakeExamRepository(exam, receipt);
     final writtenRepo = _FakeWrittenExamRepository();
-    final uploadUseCase =
-        UploadPendingWrittenImagesUseCase(repository, writtenRepo);
+    final uploadUseCase = UploadPendingWrittenImagesUseCase(
+      repository,
+      writtenRepo,
+      createExamRunContext(),
+    );
 
     final useCase = SubmitSavedExamAnswersUseCase(
       flusher,
       repository,
       uploadUseCase,
-      FinalizeExamUseCase(repository),
+      FinalizeExamUseCase(repository, writtenRepo),
       ClearExamLocalDataUseCase(repository, writtenRepo),
     );
 
@@ -141,14 +149,17 @@ void main() {
     final flusher = _RecordingFlusher();
     final repository = _FailingFinalizeRepository();
     final writtenRepo = _FakeWrittenExamRepository();
-    final uploadUseCase =
-        UploadPendingWrittenImagesUseCase(repository, writtenRepo);
+    final uploadUseCase = UploadPendingWrittenImagesUseCase(
+      repository,
+      writtenRepo,
+      createExamRunContext(),
+    );
 
     final useCase = SubmitSavedExamAnswersUseCase(
       flusher,
       repository,
       uploadUseCase,
-      FinalizeExamUseCase(repository),
+      FinalizeExamUseCase(repository, writtenRepo),
       ClearExamLocalDataUseCase(repository, writtenRepo),
     );
 
@@ -192,7 +203,10 @@ class _FailingFinalizeRepository implements ExamRepository {
   }
 
   @override
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? exam) async {
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? exam, {
+    Set<String> questionIdsWithImages = const {},
+  }) async {
     return const ErrorResult(ValidationFailure('finalize failed'));
   }
 

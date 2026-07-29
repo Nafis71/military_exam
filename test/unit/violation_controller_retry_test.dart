@@ -7,9 +7,10 @@ import 'package:military_exam/core/config/deployment.dart';
 import 'package:military_exam/core/constants/app_strings.dart';
 import 'package:military_exam/core/errors/failure.dart';
 import 'package:military_exam/core/logging/app_logger.dart';
+import 'package:military_exam/core/services/exam_vpn_lockdown_service.dart';
+import 'package:military_exam/features/security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/core/services/app_lifecycle_service.dart';
-import 'package:military_exam/features/exam_session/domain/entities/cached_exam_recovery_result.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/finalize_exam_usecase.dart';
@@ -23,6 +24,8 @@ import 'package:military_exam/features/violation/presentation/controllers/violat
 import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
+
+import '../helpers/demo_exam_test_support.dart';
 
 void main() {
   setUpAll(() {
@@ -39,11 +42,12 @@ void main() {
     final uploadUseCase = UploadPendingWrittenImagesUseCase(
       examRepo,
       writtenRepo,
+      createExamRunContext(),
     );
     return SubmitExamWithPendingUploadsUseCase(
       examRepo,
       uploadUseCase,
-      FinalizeExamUseCase(examRepo),
+      FinalizeExamUseCase(examRepo, writtenRepo),
       ClearExamLocalDataUseCase(examRepo, writtenRepo),
     );
   }
@@ -61,6 +65,7 @@ void main() {
       buildSubmitUseCase(),
       CheckConnectivityUseCase(securityRepository),
       ObserveConnectivityUseCase(securityRepository),
+      StopExamVpnLockdownUseCase(_FakeVpnLockdownService()),
       _FakeLifecycleService(),
       AppLogger(),
       initialArgs: ViolationScreenArgs(
@@ -152,7 +157,10 @@ class _FakeExamRepository implements ExamRepository {
   }
 
   @override
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? currentExam, {
+    Set<String> questionIdsWithImages = const {},
+  }) async {
     if (shouldFailFinalize) {
       return const ErrorResult(NetworkFailure('offline'));
     }
@@ -205,4 +213,11 @@ class _FakeSecurityRepository implements SecurityRepository {
 class _FakeLifecycleService extends AppLifecycleService {
   @override
   Stream<AppLifecycleState> get lifecycleStream => const Stream.empty();
+}
+
+class _FakeVpnLockdownService extends ExamVpnLockdownService {
+  _FakeVpnLockdownService() : super(AppLogger());
+
+  @override
+  Future<void> stopLockdown() async {}
 }

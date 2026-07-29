@@ -1,0 +1,4 @@
+enum ExamRunMode {
+  real,
+  onboardingDemo,
+}

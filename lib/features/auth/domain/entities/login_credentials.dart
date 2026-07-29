@@ -2,13 +2,13 @@ import 'package:equatable/equatable.dart';
 
 class LoginCredentials extends Equatable {
   const LoginCredentials({
-    required this.district,
     required this.rollNumber,
+    required this.batchPassword,
   });
 
-  final String district;
   final String rollNumber;
+  final String batchPassword;
 
   @override
-  List<Object?> get props => [district, rollNumber];
+  List<Object?> get props => [rollNumber, batchPassword];
 }

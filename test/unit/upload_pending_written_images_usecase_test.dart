@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:military_exam/core/errors/failure.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/upload_pending_written_images_usecase.dart';
 import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
+
+import '../helpers/demo_exam_test_support.dart';
 
 void main() {
   test('UploadPendingWrittenImagesUseCase skips already uploaded images',
@@ -24,7 +25,11 @@ void main() {
         ),
       ],
     );
-    final useCase = UploadPendingWrittenImagesUseCase(examRepo, writtenRepo);
+    final useCase = UploadPendingWrittenImagesUseCase(
+      examRepo,
+      writtenRepo,
+      createExamRunContext(),
+    );
 
     final result = await useCase();
 
@@ -51,7 +56,11 @@ void main() {
         ),
       ],
     );
-    final useCase = UploadPendingWrittenImagesUseCase(examRepo, writtenRepo);
+    final useCase = UploadPendingWrittenImagesUseCase(
+      examRepo,
+      writtenRepo,
+      createExamRunContext(),
+    );
 
     final result = await useCase();
 
@@ -75,12 +84,44 @@ void main() {
         ),
       ],
     );
-    final useCase = UploadPendingWrittenImagesUseCase(examRepo, writtenRepo);
+    final useCase = UploadPendingWrittenImagesUseCase(
+      examRepo,
+      writtenRepo,
+      createExamRunContext(),
+    );
 
     final result = await useCase();
 
     expect(result, isA<ErrorResult<void>>());
     expect(examRepo.uploadCalls, 0);
+  });
+
+  test('UploadPendingWrittenImagesUseCase skips upload pipeline for onboarding demo',
+      () async {
+    final examRepo = _FakeExamRepository();
+    final writtenRepo = _FakeWrittenExamRepository(
+      images: const [
+        WrittenAnswerImage(
+          localId: '1',
+          localPath: '/tmp/pending.jpg',
+          questionId: 'q1',
+        ),
+      ],
+    );
+    final examRunContext = createExamRunContext();
+    examRunContext.setOnboardingDemo();
+    final useCase = UploadPendingWrittenImagesUseCase(
+      examRepo,
+      writtenRepo,
+      examRunContext,
+    );
+
+    final result = await useCase();
+
+    expect(result, isA<Success<void>>());
+    expect(examRepo.uploadCalls, 0);
+    expect(writtenRepo.markCalls, 0);
+    expect(examRepo.draftCalls, 0);
   });
 }
 

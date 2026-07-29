@@ -90,30 +90,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
     }
 
-    final result = await _apiClient.get<Map<String, dynamic>>(
-      ApiEndpoints.eligibility,
-      queryParameters: {'session_id': sessionId},
-    );
-
-    if (result is Success<Map<String, dynamic>>) {
-      final json = result.data;
-      return Success(
-        ExamEligibility(
-          isEligible: json['is_eligible'] as bool? ?? true,
-          isExamActive: json['is_exam_active'] as bool? ?? true,
-          isLocked: json['is_locked'] as bool? ?? false,
-          message: json['message'] as String?,
-        ),
-      );
-    }
-
-    _logger.warning('Eligibility API failed, returning demo eligibility');
     return const Success(
       ExamEligibility(
         isEligible: true,
         isExamActive: true,
         isLocked: false,
-        message: AppStrings.demoEligibleForExam,
       ),
     );
   }
@@ -122,7 +103,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return CandidateModel(
       id: 'demo-candidate-${DateTime.now().millisecondsSinceEpoch}',
       fullName: '${AppStrings.demoExamineeNamePrefix} ${request.rollNumber}',
-      district: request.district,
+      district: '',
       rollNumber: request.rollNumber,
       status: 'attended',
     );

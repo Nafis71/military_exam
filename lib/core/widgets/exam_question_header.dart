@@ -49,40 +49,34 @@ class ExamQuestionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  return Row(
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${AppStrings.questionOf} $questionIndex${AppStrings.of}$questionTotal',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall.copyWith(
+                        fontSize: 13.sp,
+                        color: AppColors.cFFFFFF.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Text(
-                          '${AppStrings.questionOf} $questionIndex${AppStrings.of}$questionTotal',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmall.copyWith(
-                            fontSize: 13.sp,
-                            color: AppColors.cFFFFFF.withValues(alpha: 0.7),
-                            fontWeight: FontWeight.w400,
-                          ),
+                      if (onSkip != null) ...[
+                        ExamSkipButton(
+                          onPressed: onSkip,
+                          isEnabled: isSkipEnabled,
                         ),
-                      ),
-                      ExamSkipButton(
-                        onPressed: onSkip,
-                        isEnabled: isSkipEnabled,
-                      ),
-                      SizedBox(width: (4.w).clamp(2.0, 4.0)),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.38,
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: _TimerPill(formattedTimer: formattedTimer),
-                        ),
-                      ),
+                        SizedBox(width: (8.w).clamp(4.0, 8.0)),
+                      ],
+                      _TimerPill(formattedTimer: formattedTimer),
                     ],
-                  );
-                },
+                  ),
+                ],
               ),
               SizedBox(height: (10.h).clamp(6.0, 10.0)),
               _ProgressBar(progress: progress),

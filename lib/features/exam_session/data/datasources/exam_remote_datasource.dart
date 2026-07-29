@@ -8,6 +8,7 @@ import '../../../../core/constants/exam_constants.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
@@ -21,6 +22,7 @@ import '../models/written_image_upload_result_model.dart';
 import '../models/mcq_answer_model.dart';
 import '../models/mcq_option_model.dart';
 import '../models/mcq_question_model.dart';
+import '../../../onboarding_demo/data/datasources/onboarding_demo_exam_datasource.dart';
 
 abstract class ExamRemoteDataSource {
   Future<Result<ExamSessionModel>> startSession(String authSessionId);
@@ -57,39 +59,41 @@ abstract class ExamRemoteDataSource {
 }
 
 class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
-  ExamRemoteDataSourceImpl(this._apiClient, this._logger);
+  ExamRemoteDataSourceImpl(
+    this._apiClient,
+    this._logger,
+    this._examRunContext,
+  );
 
   final ApiClient _apiClient;
   final AppLogger _logger;
+  final ExamRunContext _examRunContext;
+
+  bool get _isOnboardingDemo => _examRunContext.isOnboardingDemo;
 
   static const _demoDurationMinutes = 90;
 
   @override
   Future<Result<ExamSessionModel>> startSession(String authSessionId) async {
+    if (_isOnboardingDemo) {
+      _logger.info('Onboarding demo: exam session served locally');
+      return Success(OnboardingDemoExamDataSource.session(authSessionId));
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: exam session served from device (no API call)');
-      return Success(_demoSession(authSessionId));
+      return Success(_localSession(authSessionId));
     }
 
-    final result = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.sessionStart,
-      data: {'auth_session_id': authSessionId},
-    );
-
-    if (result is Success<Map<String, dynamic>>) {
-      return Success(ExamSessionModel.fromJson(result.data));
-    }
-
-    _logger.warning('Start session API failed, returning demo session');
-    return Success(_demoSession(authSessionId));
+    _logger.info('Building local exam session from auth credentials');
+    return Success(_localSession(authSessionId));
   }
 
-  ExamSessionModel _demoSession(String authSessionId) {
+  ExamSessionModel _localSession(String authSessionId) {
     return ExamSessionModel(
-      sessionId: 'exam-${DateTime.now().millisecondsSinceEpoch}',
+      sessionId: authSessionId,
       examineeId: authSessionId,
       startedAt: DateTime.now(),
-      durationMinutes: _demoDurationMinutes,
+      durationMinutes: 0,
       isLocked: false,
       currentPhase: ExamPhase.mcq.name,
     );
@@ -115,25 +119,33 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<int>> fetchRemainingSeconds(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(OnboardingDemoExamDataSource.durationMinutes * 60);
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoDurationMinutes * 60);
     }
 
-    final result = await _apiClient.get<Map<String, dynamic>>(
-      ApiEndpoints.sessionStatus,
-      queryParameters: {'session_id': sessionId},
-    );
-
-    if (result is Success<Map<String, dynamic>>) {
-      return Success(result.data['remaining_seconds'] as int? ?? 0);
+    final examResult = await fetchCurrentExam();
+    if (examResult is Success<CurrentExamModel>) {
+      final remainingMinutes = examResult.data.window.remainingExamMinutes;
+      if (remainingMinutes > 0) {
+        return Success(remainingMinutes * 60);
+      }
+      if (examResult.data.durationMinutes > 0) {
+        return Success(examResult.data.durationMinutes * 60);
+      }
     }
 
-    _logger.warning('Timer API failed, returning demo remaining time');
-    return Success(_demoDurationMinutes * 60);
+    return const Success(0);
   }
 
   @override
   Future<Result<CurrentExamModel>> fetchCurrentExam() async {
+    if (_isOnboardingDemo) {
+      _logger.info('Onboarding demo: current exam served locally');
+      return Success(OnboardingDemoExamDataSource.currentExam);
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: current exam served from device (no API call)');
       return Success(_demoCurrentExam);
@@ -154,20 +166,32 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
             error: error,
             stackTrace: stackTrace,
           );
+          return const ErrorResult(
+            UnexpectedFailure(AppStrings.networkRequestFailed),
+          );
         }
-      } else {
-        _logger.warning('Current exam API returned invalid data shape');
       }
+      _logger.warning('Current exam API returned invalid data shape');
+      return const ErrorResult(
+        UnexpectedFailure(AppStrings.networkRequestFailed),
+      );
     }
 
-    _logger.warning('Current exam API failed, returning demo exam');
-    return Success(_demoCurrentExam);
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    _logger.warning('Current exam API failed');
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
   }
 
   @override
   Future<Result<List<McqQuestionModel>>> fetchMcqQuestions(
     String sessionId,
   ) async {
+    if (_isOnboardingDemo) {
+      return Success(OnboardingDemoExamDataSource.mcqQuestions);
+    }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: MCQ questions served from device (no API call)');
       return Success(_demoMcqQuestions);
@@ -194,7 +218,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     String sessionId,
     McqAnswerModel answer,
   ) async {
-    if (Deployment.instance.isDemo) {
+    if (_isOnboardingDemo || Deployment.instance.isDemo) {
       return Success(answer);
     }
 
@@ -216,6 +240,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<SubmissionReceipt>> autoSubmit(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.autoSubmittedDemo));
     }
@@ -237,6 +266,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
 
   @override
   Future<Result<SubmissionReceipt>> finishExam(String sessionId) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.examSubmittedDemo));
     }
@@ -260,6 +294,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
   Future<Result<SubmissionReceipt>> finalizeCurrentExam(
     FinalizeExamRequest request,
   ) async {
+    if (_isOnboardingDemo) {
+      return Success(
+        OnboardingDemoExamDataSource.receipt(AppStrings.onboardingDemoSubmitted),
+      );
+    }
     if (Deployment.instance.isDemo) {
       return Success(_demoReceipt(AppStrings.examSubmittedDemo));
     }
@@ -277,7 +316,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       ));
     }
 
-    return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
   }
 
   @override
@@ -287,7 +330,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     required String filePath,
     void Function(int sent, int total)? onSendProgress,
   }) async {
-    if (Deployment.instance.isDemo) {
+    if (_isOnboardingDemo || Deployment.instance.isDemo) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       return Success(
         WrittenImageUploadResultModel(

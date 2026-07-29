@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:military_exam/core/utils/validators.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/config/deployment.dart';
@@ -12,95 +12,142 @@ import '../../../../core/errors/failure.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/routing/exam_route_utils.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
-import '../../../../core/services/camera_permission_service.dart';
+import '../../../../core/services/exam_run_context.dart';
+import '../../../../core/services/exam_vpn_lockdown_service.dart';
+import '../../../../core/services/screen_security_service.dart';
 import '../../../../core/services/security_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/widgets/app_error_toast.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
-import '../../../../shared/domain/enums/exam_enums.dart';
-import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
 import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
+import '../../../exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
+import '../../../exam_session/domain/usecases/get_roll_number_usecase.dart';
+import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
 import '../../../exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
 import '../../../exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
-import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
+import '../../../onboarding/domain/usecases/get_onboarding_state_usecase.dart';
 import '../../../security_gate/domain/usecases/check_airplane_mode_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../../../security_gate/domain/usecases/check_device_integrity_usecase.dart';
-import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
+import '../../../security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
+import '../../../security_gate/domain/usecases/stop_security_watchdog_usecase.dart';
 import '../../../security_gate/presentation/routes/security_routes.dart';
 import '../../domain/entities/login_credentials.dart';
-import '../../domain/usecases/get_districts_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/validate_exam_eligibility_usecase.dart';
 
 class LoginController extends GetxController {
   LoginController(
     this._loginUseCase,
-    this._getDistrictsUseCase,
     this._validateEligibilityUseCase,
     this._hasCachedExamAnswersUseCase,
     this._recoverCachedExamSubmissionUseCase,
     this._clearExamLocalDataUseCase,
-    this._sessionController,
-    this._startWatchdog,
-    this._cameraPermissionService,
+    this._getOnboardingState,
+    this._getRollNumber,
+    this._saveRollNumber,
+    this._enterExamAfterCredentials,
     this._checkAirplaneMode,
     this._checkConnectivity,
     this._checkDeviceIntegrity,
+    this._vpnLockdownService,
+    this._stopWatchdog,
+    this._stopVpnLockdown,
     this._lifecycleService,
-    this._saveRollNumberUseCase,
+    this._screenSecurity,
+    this._watchdog,
+    this._examRunContext,
     this._logger,
   );
 
   final LoginUseCase _loginUseCase;
-  final GetDistrictsUseCase _getDistrictsUseCase;
   final ValidateExamEligibilityUseCase _validateEligibilityUseCase;
   final HasCachedExamAnswersUseCase _hasCachedExamAnswersUseCase;
   final RecoverCachedExamSubmissionUseCase _recoverCachedExamSubmissionUseCase;
   final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
-  final ExamSessionController _sessionController;
-  final StartSecurityWatchdogUseCase _startWatchdog;
-  final CameraPermissionService _cameraPermissionService;
+  final GetOnboardingStateUseCase _getOnboardingState;
+  final GetRollNumberUseCase _getRollNumber;
+  final SaveRollNumberUseCase _saveRollNumber;
+  final EnterExamAfterCredentialsUseCase _enterExamAfterCredentials;
   final CheckAirplaneModeUseCase _checkAirplaneMode;
   final CheckConnectivityUseCase _checkConnectivity;
   final CheckDeviceIntegrityUseCase _checkDeviceIntegrity;
+  final ExamVpnLockdownService _vpnLockdownService;
+  final StopSecurityWatchdogUseCase _stopWatchdog;
+  final StopExamVpnLockdownUseCase _stopVpnLockdown;
   final AppLifecycleService _lifecycleService;
-  final SaveRollNumberUseCase _saveRollNumberUseCase;
+  final ScreenSecurityService _screenSecurity;
+  final SecurityWatchdogService _watchdog;
+  final ExamRunContext _examRunContext;
   final AppLogger _logger;
 
-  final examineeIdController = TextEditingController();
+  final batchPasswordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   final isLoading = false.obs;
-  final isLoadingDistricts = false.obs;
   final errorMessage = RxnString();
   final session = Rxn<AuthSession>();
   final eligibility = Rxn<ExamEligibility>();
-  final districts = <String>[].obs;
-  final selectedDistrict = RxnString();
+
+  String _storedCandidateId = '';
 
   StreamSubscription<AppLifecycleState>? _lifecycleSubscription;
   Timer? _pollTimer;
   bool _redirecting = false;
+  bool _isEnteringExam = false;
   AppLifecycleState? _lastLifecycleState;
 
   @override
   void onInit() {
     super.onInit();
-    _lastLifecycleState = _lifecycleService.currentState;
-    _listenForResume();
-    _startSecurityPolling();
-    unawaited(_recheckAfterReturningToForeground());
-    unawaited(fetchDistricts());
+    if (!_examRunContext.isOnboardingDemo) {
+      unawaited(_enableScreenSecurity());
+      _lastLifecycleState = _lifecycleService.currentState;
+      _listenForResume();
+      _startSecurityPolling();
+      unawaited(_recheckAfterReturningToForeground());
+    }
+    unawaited(_loadStoredCandidateId());
   }
 
   @override
   void onClose() {
     _pollTimer?.cancel();
     unawaited(_lifecycleSubscription?.cancel());
-    examineeIdController.dispose();
+    unawaited(_releasePreExamSecurityIfNeeded());
+    batchPasswordController.dispose();
     super.onClose();
+  }
+
+  Future<void> goBack() async {
+    if (_examRunContext.isOnboardingDemo) {
+      Get.offAllNamed(AppRoutes.candidateDashboard);
+      return;
+    }
+
+    await _releasePreExamSecurityIfNeeded();
+    Get.offAllNamed(AppRoutes.candidateDashboard);
+  }
+
+  Future<void> _releasePreExamSecurityIfNeeded() async {
+    if (_examRunContext.isOnboardingDemo) return;
+    if (_isEnteringExam || _watchdog.isRunning) return;
+
+    _stopSecurityPolling();
+    try {
+      await _stopWatchdog();
+      await _stopVpnLockdown();
+      await _disableScreenSecurity();
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'pre-exam security release failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
   }
 
   void _listenForResume() {
@@ -114,6 +161,10 @@ class LoginController extends GetxController {
       if (state == AppLifecycleState.resumed && wasBackgrounded) {
         _redirecting = false;
         unawaited(_recheckAfterReturningToForeground());
+      }
+
+      if (state == AppLifecycleState.detached) {
+        unawaited(_releasePreExamSecurityIfNeeded());
       }
     });
   }
@@ -132,7 +183,13 @@ class LoginController extends GetxController {
     );
   }
 
+  void _stopSecurityPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
   Future<void> _verifySecurityRequirements() async {
+    if (_examRunContext.isOnboardingDemo) return;
     if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
 
     final integrityResult = await _checkDeviceIntegrity();
@@ -154,7 +211,21 @@ class LoginController extends GetxController {
     final connectivity = connectivityResult.dataOrNull;
     if (connectivity != null && !connectivity.isOnline) {
       await _redirectToWifiModeIfAirplaneEnabled();
+      return;
     }
+
+    if (!Deployment.instance.isDemo) {
+      final vpnActive = await _vpnLockdownService.isActiveNative();
+      if (!vpnActive) {
+        _redirectToVpnLockdown();
+      }
+    }
+  }
+
+  void _redirectToVpnLockdown() {
+    if (_redirecting || isClosed || ExamRouteUtils.isOnActiveExamRoute) return;
+    _redirecting = true;
+    Get.offNamed(SecurityRoutes.vpnLockdownRequired);
   }
 
   void _redirectToAirplaneMode() {
@@ -189,37 +260,79 @@ class LoginController extends GetxController {
     Get.offNamed(SecurityRoutes.wifiModeRequired);
   }
 
-  Future<void> fetchDistricts() async {
-    isLoadingDistricts.value = true;
+  Future<void> _enableScreenSecurity() async {
     try {
-      final result = await _getDistrictsUseCase();
-      switch (result) {
-        case Success(:final data):
-          districts.assignAll(data);
-        case ErrorResult(:final failure):
-          _logger.error('fetchDistricts failed', error: failure.message);
-          errorMessage.value = AppStrings.networkRequestFailed;
+      await _screenSecurity.enable();
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'login screen security enable failed',
+          error: e,
+          stackTrace: st,
+        );
       }
-    } catch (error, stackTrace) {
-      _logger.error('fetchDistricts failed', error: error, stackTrace: stackTrace);
-      errorMessage.value = AppStrings.networkRequestFailed;
-    } finally {
-      isLoadingDistricts.value = false;
     }
   }
 
-  void selectDistrict(String? district) {
-    selectedDistrict.value = district;
+  Future<void> _disableScreenSecurity() async {
+    try {
+      await _screenSecurity.disable();
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'login screen security disable failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+  }
+
+  Future<void> _loadStoredCandidateId() async {
+    try {
+      final stateResult = await _getOnboardingState();
+      switch (stateResult) {
+        case Success(:final data):
+          final id = data.candidate?.candidateId;
+          if (id != null && id.isNotEmpty) {
+            _storedCandidateId = id;
+            return;
+          }
+        case ErrorResult():
+          break;
+      }
+
+      final rollResult = await _getRollNumber();
+      switch (rollResult) {
+        case Success(:final data):
+          if (data != null && data.isNotEmpty) {
+            _storedCandidateId = data;
+            return;
+          }
+        case ErrorResult():
+          break;
+      }
+
+      errorMessage.value = AppStrings.candidateIdNotFound;
+    } catch (error, stackTrace) {
+      _logger.error('_loadStoredCandidateId failed', error: error, stackTrace: stackTrace);
+      errorMessage.value = AppStrings.candidateIdNotFound;
+    }
   }
 
   Future<void> login() async {
     errorMessage.value = null;
     if (!(formKey.currentState?.validate() ?? false)) return;
 
+    if (_storedCandidateId.isEmpty) {
+      errorMessage.value = AppStrings.candidateIdNotFound;
+      return;
+    }
+
     isLoading.value = true;
     final credentials = LoginCredentials(
-      district: selectedDistrict.value!,
-      rollNumber: examineeIdController.text.trim(),
+      rollNumber: _storedCandidateId,
+      batchPassword: batchPasswordController.text.trim(),
     );
 
     final result = await _loginUseCase(credentials);
@@ -243,14 +356,6 @@ class LoginController extends GetxController {
     final authSession = (result as Success<AuthSession>).data;
     session.value = authSession;
 
-    final rollResult = await _saveRollNumberUseCase(credentials.rollNumber);
-    if (rollResult is ErrorResult<void>) {
-      isLoading.value = false;
-      _logger.error('saveRollNumber failed', error: rollResult.failure.message);
-      errorMessage.value = AppStrings.somethingWentWrong;
-      return;
-    }
-
     final eligibilityResult =
         await _validateEligibilityUseCase(authSession.sessionId);
 
@@ -263,12 +368,49 @@ class LoginController extends GetxController {
               data.message ?? AppStrings.notEligible;
           return;
         }
+        final saveRollResult = await _saveRollNumber(_storedCandidateId);
+        if (saveRollResult is ErrorResult<void>) {
+          isLoading.value = false;
+          _logger.error(
+            'saveRollNumber failed',
+            error: saveRollResult.failure.message,
+          );
+          errorMessage.value = AppStrings.somethingWentWrong;
+          return;
+        }
         final recovered = await _tryRecoverCachedSubmission();
         isLoading.value = false;
         if (recovered) return;
         isLoading.value = true;
-        await _enterExam(authSession.sessionId);
-        isLoading.value = false;
+        _stopSecurityPolling();
+        _isEnteringExam = true;
+        try {
+          final enterResult = await _enterExamAfterCredentials(
+            authSessionId: authSession.sessionId,
+          );
+          isLoading.value = false;
+          if (enterResult is ErrorResult<void>) {
+            _isEnteringExam = false;
+            _logger.error(
+              'enterExam failed',
+              error: enterResult.failure.message,
+            );
+            errorMessage.value = enterResult.failure.message;
+            if (!_examRunContext.isOnboardingDemo) {
+              _startSecurityPolling();
+            }
+          }
+        } catch (e, st) {
+          _isEnteringExam = false;
+          isLoading.value = false;
+          if (kDebugMode) {
+            _logger.error('enterExam failed', error: e, stackTrace: st);
+          }
+          errorMessage.value = AppStrings.somethingWentWrong;
+          if (!_examRunContext.isOnboardingDemo) {
+            _startSecurityPolling();
+          }
+        }
       case ErrorResult(:final failure):
         isLoading.value = false;
         errorMessage.value = failure.message;
@@ -277,13 +419,34 @@ class LoginController extends GetxController {
 
   Future<bool> _tryRecoverCachedSubmission() async {
     try {
-      final hasCacheResult = await _hasCachedExamAnswersUseCase();
+      final storedRollResult = await _getRollNumber();
+      if (storedRollResult is Success<String?> &&
+          storedRollResult.data != null &&
+          storedRollResult.data!.isNotEmpty &&
+          storedRollResult.data != _storedCandidateId) {
+        if (kDebugMode) {
+          _logger.info(
+            'login cache recovery skipped: roll number mismatch '
+            '(stored=${storedRollResult.data}, current=$_storedCandidateId)',
+          );
+        }
+        await _clearExamLocalDataUseCase();
+      }
+
+      final hasCacheResult = await _hasCachedExamAnswersUseCase(
+        rollNumber: _storedCandidateId,
+      );
       if (hasCacheResult is ErrorResult<bool>) {
         _logger.error(
           'hasCachedExamAnswers failed',
           error: hasCacheResult.failure.message,
         );
         return false;
+      }
+      if (kDebugMode) {
+        _logger.info(
+          'login cache recovery check: hasCache=${hasCacheResult.dataOrNull}',
+        );
       }
       if (hasCacheResult.dataOrNull != true) return false;
 
@@ -293,6 +456,10 @@ class LoginController extends GetxController {
 
       switch (recoveryResult) {
         case Success(:final data):
+          if (kDebugMode) {
+            _logger.info('login cache recovery succeeded; routing to finish');
+          }
+          _stopSecurityPolling();
           Get.offAllNamed(
             AppRoutes.finishExam,
             arguments: <String, dynamic>{
@@ -325,60 +492,4 @@ class LoginController extends GetxController {
       return true;
     }
   }
-
-  Future<void> _enterExam(String authSessionId) async {
-    final cameraGranted = await _cameraPermissionService.ensureGranted();
-    if (!cameraGranted) {
-      errorMessage.value = AppStrings.cameraPermissionRequiredBeforeExam;
-      return;
-    }
-
-    await _sessionController.startSession(authSessionId);
-    if (_sessionController.errorMessage.value != null) {
-      errorMessage.value = _sessionController.errorMessage.value;
-      return;
-    }
-    final examSession = _sessionController.examSession.value;
-    if (examSession == null) return;
-    if (_sessionController.currentExam.value == null) {
-      errorMessage.value = AppStrings.somethingWentWrong;
-      return;
-    }
-
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    final sessionId = examSession.sessionId;
-
-    if (_sessionController.isWaitingForExamStart) {
-      await _startWatchdog(
-        policy: const SecurityPolicy(
-          requireAirplaneMode: true,
-          monitoredPhases: [],
-        ),
-        phase: ExamPhase.mcq,
-        sessionId: sessionId,
-      );
-      Get.offAllNamed(AppRoutes.examWaiting, arguments: sessionId);
-      return;
-    }
-
-    await _startWatchdog(
-      policy: const SecurityPolicy(
-        requireAirplaneMode: true,
-        monitoredPhases: [
-          ExamPhase.mcq,
-          ExamPhase.fillBlank,
-          ExamPhase.written,
-        ],
-      ),
-      phase: ExamPhase.mcq,
-      sessionId: sessionId,
-    );
-    Get.offAllNamed(
-      _sessionController.initialExamRoute,
-      arguments: sessionId,
-    );
-  }
-
-  String? validateDistrict(String? value) => Validators.requiredField(value);
 }

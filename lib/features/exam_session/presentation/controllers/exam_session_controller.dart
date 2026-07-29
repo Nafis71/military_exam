@@ -6,6 +6,7 @@ import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/services/exam_lock_service.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
@@ -34,6 +35,7 @@ class ExamSessionController extends GetxController {
     required FinishExamUseCase finishExamUseCase,
     required LockExamSessionUseCase lockExamSessionUseCase,
     required ReportSecurityViolationUseCase reportSecurityViolationUseCase,
+    required ExamRunContext examRunContext,
   })  : _startExamSessionUseCase = startExamSessionUseCase,
         _getCurrentExamUseCase = getCurrentExamUseCase,
         _getExamTimerUseCase = getExamTimerUseCase,
@@ -43,7 +45,8 @@ class ExamSessionController extends GetxController {
         _clearExamLocalDataUseCase = clearExamLocalDataUseCase,
         _finishExamUseCase = finishExamUseCase,
         _lockExamSessionUseCase = lockExamSessionUseCase,
-        _reportSecurityViolationUseCase = reportSecurityViolationUseCase;
+        _reportSecurityViolationUseCase = reportSecurityViolationUseCase,
+        _examRunContext = examRunContext;
 
   final StartExamSessionUseCase _startExamSessionUseCase;
   final GetCurrentExamUseCase _getCurrentExamUseCase;
@@ -55,6 +58,7 @@ class ExamSessionController extends GetxController {
   final FinishExamUseCase _finishExamUseCase;
   final LockExamSessionUseCase _lockExamSessionUseCase;
   final ReportSecurityViolationUseCase _reportSecurityViolationUseCase;
+  final ExamRunContext _examRunContext;
 
   final examSession = Rxn<ExamSession>();
   final currentExam = Rxn<CurrentExam>();
@@ -122,7 +126,7 @@ class ExamSessionController extends GetxController {
       case Success(:final data):
         examSession.value = data;
         currentPhase.value = ExamPhase.mcq;
-        await loadCurrentExam();
+        await loadCurrentExam(refresh: !_examRunContext.isOnboardingDemo);
         if (errorMessage.value != null) return;
         if (!isWaitingForExamStart) {
           await _refreshTimer();
@@ -334,15 +338,17 @@ class ExamSessionController extends GetxController {
           fillBlankCount: fillBlankQuestions.length,
           descriptiveCount: descriptiveQuestions.length,
         ) ??
-        AppRoutes.finishExam;
+        AppRoutes.examSubmitReview;
   }
 
-  String get initialExamRoute {
+  String? get initialExamRouteOrNull {
     if (mcqQuestions.isNotEmpty) return AppRoutes.mcqExam;
     if (fillBlankQuestions.isNotEmpty) return AppRoutes.fillBlankExam;
     if (descriptiveQuestions.isNotEmpty) return AppRoutes.writtenExam;
-    return AppRoutes.finishExam;
+    return null;
   }
+
+  String get initialExamRoute => initialExamRouteOrNull ?? AppRoutes.mcqExam;
 
   Future<bool> finalizeExamAndClearLocal() async {
     isLoading.value = true;

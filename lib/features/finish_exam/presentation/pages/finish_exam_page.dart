@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../controllers/finish_exam_controller.dart';
@@ -56,8 +55,8 @@ class FinishExamPage extends GetView<FinishExamController> {
                 ),
                 SizedBox(height: 40.h),
                 AppPrimaryButton(
-                  label: AppStrings.exitApp,
-                  onPressed: controller.exitApp,
+                  label: controller.primaryButtonLabel,
+                  onPressed: controller.onPrimaryAction,
                 ),
               ],
             ),

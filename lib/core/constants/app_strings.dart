@@ -9,7 +9,7 @@ abstract final class AppStrings {
   static const appSubtitle = 'Bangladesh Armed Forces Examination System';
   static const signInSubtitle = 'পরীক্ষার্থীর তথ্য দিয়ে সাইন ইন করুন';
   static const loginDescription =
-      'পরীক্ষায় প্রবেশ করতে আপনার পরীক্ষার্থী আইডি এবং জেলা প্রদান করুন';
+      'পরীক্ষায় প্রবেশ করতে পরিদর্শকের প্রদত্ত ব্যাচ পাসওয়ার্ড লিখুন';
   static const examineeId = 'পরীক্ষার্থী আইডি';
   static const examineeIdHint = 'আপনার আইডি লিখুন';
   static const district = 'জেলা';
@@ -17,6 +17,9 @@ abstract final class AppStrings {
   static const loadingDistricts = 'জেলা তালিকা লোড হচ্ছে...';
   static const password = 'পাসওয়ার্ড';
   static const signIn = 'সাইন ইন';
+  static const goBack = 'ফিরে যান';
+  static const candidateIdNotFound =
+      'প্রার্থী আইডি পাওয়া যায়নি। অনুগ্রহ করে আবার লগইন করুন।';
   static const notEligible =
       'আপনি এই পরীক্ষার জন্য যোগ্য নন।';
 
@@ -152,6 +155,25 @@ abstract final class AppStrings {
       'নিরাপত্তা লঙ্ঘন ঘটেছে। আপনার পরীক্ষা লক করা হয়েছে।';
   static const airplaneModeDisabledDuringExam =
       'পরীক্ষার সময় এয়ারপ্লেন মোড বন্ধ করা হয়েছিল।';
+  static const vpnDisconnectedDuringExam =
+      'পরীক্ষার সময় নেটওয়ার্ক লকডাউন বন্ধ করা হয়েছিল।';
+  static const networkLockdownActive = 'নেটওয়ার্ক লকডাউন সক্রিয়';
+  static const networkLockdownRequired = 'নেটওয়ার্ক লকডাউন প্রয়োজন';
+  static const checkingNetworkLockdownStatus =
+      'নেটওয়ার্ক লকডাউনের অবস্থা যাচাই হচ্ছে...';
+  static const networkLockdownEnabled = 'নেটওয়ার্ক লকডাউন সক্রিয়';
+  static const networkLockdownEnabledContinue =
+      'নেটওয়ার্ক লকডাউন সক্রিয়। আপনি পরীক্ষায় যেতে পারেন।';
+  static const networkLockdownMustBeEnabled =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ করতে নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const enableNetworkLockdown = 'নেটওয়ার্ক লকডাউন চালু করুন';
+  static const networkLockdownInstruction =
+      'VPN অনুমতি দিন এবং নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const unableToVerifyNetworkLockdown =
+      'নেটওয়ার্ক লকডাউন যাচাই করা যায়নি। আবার চেষ্টা করুন।';
+  static const vpnLockdownNotificationTitle = 'পরীক্ষা নেটওয়ার্ক লকডাউন';
+  static const vpnLockdownNotificationBody =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ রাখতে লকডাউন সক্রিয়।';
   static const wifiDisabledDuringExam =
       'পরীক্ষার সময় ওয়াইফাই বা ইন্টারনেট সংযোগ বন্ধ করা হয়েছিল।';
   static const appBackgrounded =
@@ -398,4 +420,248 @@ abstract final class AppStrings {
   static const mcq5OptionB = 'দায়িত্বরত চিকিৎসক';
   static const mcq5OptionC = 'নতুন নিয়োগপ্রাপ্ত';
   static const mcq5OptionD = 'সরবরাহ কর্মকর্তা';
+
+  // Onboarding — Get Started
+  static const getStartedTitle = 'স্বাগতম';
+  static const getStartedSubtitle =
+      'বাংলাদেশ সশস্ত্র বাহিনীর পরীক্ষায় আপনাকে স্বাগতম';
+  static const getStartedDescription =
+      'পরীক্ষায় অংশগ্রহণের জন্য শুরু করুন এবং আপনার তথ্য যাচাই করুন';
+  static const getStarted = 'শুরু করুন';
+
+  // Onboarding — Candidate Login
+  static const candidateId = 'প্রার্থী আইডি';
+  static const candidateIdHint = 'প্রার্থী আইডি লিখুন';
+  static const candidateIdDescription =
+      'প্রার্থী আইডি টেলিটক নিবন্ধনের সময় প্রদান করা হয়েছে';
+  static const deviceId = 'ডিভাইস আইডি';
+  static const continueLabel = 'এগিয়ে যান';
+
+  // Mock candidate & exam data
+  static const mockCandidateNamePrefix = 'প্রার্থী';
+  static const mockCandidatePhone = '০১৭০০-০০০০০০';
+  static const mockCandidateEmail = 'candidate@example.com';
+  static const mockExamTitle = 'সশস্ত্র বাহিনী নিয়োগ পরীক্ষা ২০২৬';
+  static const mockExamDate = '১৫ আগস্ট ২০২৬';
+  static const mockExamVenue = 'ঢাকা সেনানিবাস পরীক্ষা কেন্দ্র';
+  static const mockExamStatus = 'আসন্ন';
+
+  // Candidate Dashboard
+  static const candidateDashboardTitle = 'প্রার্থী ড্যাশবোর্ড';
+  static const notificationsAccessibilityLabel = 'বিজ্ঞপ্তি';
+  static const notificationsTitle = 'বিজ্ঞপ্তি';
+  static const notificationsEmpty = 'কোনো বিজ্ঞপ্তি নেই';
+  static const mockNotificationExamReminderTitle = 'পরীক্ষার তারিখ স্মরণ';
+  static const mockNotificationExamReminderBody =
+      'আপনার পরীক্ষা ১৫ আগস্ট ২০২৬ তারিখে অনুষ্ঠিত হবে। সময়মতো পরীক্ষা কেন্দ্রে উপস্থিত হন।';
+  static const mockNotificationExamReminderTimestamp = '২ ঘণ্টা আগে';
+  static const mockNotificationDeviceBoundTitle = 'ডিভাইস সফলভাবে বাইন্ড হয়েছে';
+  static const mockNotificationDeviceBoundBody =
+      'এই ডিভাইসটি আপনার অ্যাকাউন্টের সাথে সংযুক্ত হয়েছে। পরীক্ষা দিতে এই ডিভাইস ব্যবহার করুন।';
+  static const mockNotificationDeviceBoundTimestamp = '১ দিন আগে';
+  static const mockNotificationDemoCompletedTitle = 'ডেমো পরীক্ষা সম্পন্ন';
+  static const mockNotificationDemoCompletedBody =
+      'অভিনন্দন! আপনি ডেমো পরীক্ষা সফলভাবে সম্পন্ন করেছেন। এখন মূল পরীক্ষার জন্য প্রস্তুত হন।';
+  static const mockNotificationDemoCompletedTimestamp = '২ দিন আগে';
+  static const mockNotificationSecurityTipTitle = 'নিরাপত্তা সেটিংস পরীক্ষা করুন';
+  static const mockNotificationSecurityTipBody =
+      'পরীক্ষার আগে VPN, এয়ারপ্লেন মোড ও ক্যামেরার অনুমতি সেটিংস যাচাই করুন।';
+  static const mockNotificationSecurityTipTimestamp = '৩ দিন আগে';
+  static const dashboardTutorialSkip = 'এড়িয়ে যান';
+  static const dashboardTutorialDeviceInfoTitle = 'ডিভাইস তথ্য';
+  static const dashboardTutorialDeviceInfoDescription =
+      'এখানে আপনার বাইন্ড করা ডিভাইসের বিস্তারিত দেখতে পারবেন এবং প্রয়োজনে আনবাইন্ড করতে পারবেন।';
+  static const dashboardTutorialExamInfoTitle = 'পরীক্ষার তথ্য';
+  static const dashboardTutorialExamInfoDescription =
+      'পরীক্ষার তারিখ, ভেন্যু ও অবস্থা এখানে দেখুন এবং প্রস্তুত হলে পরীক্ষা শুরু করুন।';
+  static const dashboardTutorialExamRulesTitle = 'পরীক্ষা পদ্ধতি';
+  static const dashboardTutorialExamRulesDescription =
+      'পরীক্ষার নিয়ম, নিরাপত্তা ও শাস্তিমূলক বিধি এখান থেকে দেখুন।';
+  static const dashboardTutorialSettingsTitle = 'নিরাপত্তা সেটিংস';
+  static const dashboardTutorialSettingsDescription =
+      'VPN, এয়ারপ্লেন মোড, ওয়াই-ফাই ও ক্যামেরার অনুমতি এখান থেকে পরিচালনা করুন।';
+  static const dashboardTutorialNotificationsTitle = 'বিজ্ঞপ্তি';
+  static const dashboardTutorialNotificationsDescription =
+      'গুরুত্বপূর্ণ আপডেট ও পরীক্ষা সম্পর্কিত বিজ্ঞপ্তি এখানে দেখুন।';
+  static const securitySettingsAccessibilityLabel = 'নিরাপত্তা সেটিংস';
+  static const securitySettingsTitle = 'নিরাপত্তা সেটিংস';
+  static const securityVpnTitle = 'লকডাউন VPN';
+  static const securityVpnDescription =
+      'অন্যান্য অ্যাপের ইন্টারনেট বন্ধ করতে VPN অনুমতি দিন এবং নেটওয়ার্ক লকডাউন চালু করুন।';
+  static const securityAirplaneTitle = 'এয়ারপ্লেন মোড';
+  static const securityAirplaneDescription =
+      'পরীক্ষার সময় কল গ্রহণ রোধ করতে এয়ারপ্লেন মোড চালু করুন। সুইচ ট্যাপ করলে সেটিংস খুলবে।';
+  static const securityWifiTitle = 'ওয়াই-ফাই মোড';
+  static const securityWifiDescription =
+      'এয়ারপ্লেন মোড চালু থাকলে পরীক্ষা চালিয়ে যেতে ওয়াই-ফাই চালু করুন। সুইচ ট্যাপ করলে সেটিংস খুলবে।';
+  static const securityCameraTitle = 'ক্যামেরার অনুমতি';
+  static const securityCameraDescription =
+      'লিখিত পরীক্ষার উত্তর ক্যাপচার করতে ক্যামেরার অনুমতি প্রয়োজন।';
+  static const securitySettingCheckFailed =
+      'অবস্থা যাচাই করা যায়নি। আবার চেষ্টা করুন।';
+  static const securityVpnCannotDisableDuringExam =
+      'পরীক্ষা চলাকালীন নেটওয়ার্ক লকডাউন বন্ধ করা যাবে না।';
+  static const deviceBoundAccessibilityLabel = 'ডিভাইস সার্ভারের সাথে সংযুক্ত';
+  static const deviceBindingNote =
+      'পরীক্ষা দিতে অবশ্যই এই ডিভাইসটি নিয়ে আসতে হবে।';
+  static const deviceBindingResetNote =
+      'ডিভাইস রিসেট করলে পরীক্ষার আগে আবার এই ডিভাইসটি বাইন্ড করতে হতে পারে।';
+  static const deviceBindingResetNoteIos =
+      'অ্যাপ আনইনস্টল করলে পরীক্ষার আগে আবার এই ডিভাইসটি বাইন্ড করতে হতে পারে।';
+  static const deviceInfoTitle = 'ডিভাইস তথ্য';
+  static const deviceBrandName = 'ব্র্যান্ড';
+  static const deviceModelNumber = 'মডেল নম্বর';
+  static const deviceOsVersion = 'অপারেটিং সিস্টেম সংস্করণ';
+  static const deviceInfoUnavailable =
+      'ডিভাইস তথ্য লোড করা যায়নি। পরে আবার চেষ্টা করুন।';
+  static const deviceBindingShowDetails = 'ডিভাইস বিস্তারিত দেখুন';
+  static const deviceBindingHideDetails = 'ডিভাইস বিস্তারিত লুকান';
+  static const unbindDevice = 'আনবাইন্ড করুন';
+  static const unbindDeviceDialogTitle = 'ডিভাইস আনবাইন্ড করবেন?';
+  static const unbindDeviceDialogMessage =
+      'আপনি যেকোনো সময় আপনার ডিভাইস আনবাইন্ড করতে পারবেন। তবে ডিভাইস হারিয়ে গেলে, চুরি হলে, রিসেট হলে বা অন্য কোনো কারণে অ্যাক্সেস করা না গেলে, নতুন ডিভাইস পুনরায় বাইন্ড করতে প্রশাসকের অনুমোদন প্রয়োজন হবে। এই ক্ষেত্রে সহায়তার জন্য সাপোর্ট টিমের সাথে যোগাযোগ করুন।';
+  static const unbindDeviceConfirm = 'হ্যাঁ, আনবাইন্ড করুন';
+  static const cancelAction = 'বাতিল';
+  static const examinationInfo = 'পরীক্ষার তথ্য';
+  static const examDate = 'তারিখ';
+  static const examVenue = 'ভেন্যু';
+  static const examStatus = 'অবস্থা';
+  static const startExamination = 'পরীক্ষা শুরু করুন';
+  static const startDemo = 'ডেমো পরীক্ষা শুরু করুন';
+  static const viewExaminationProcedure = 'পরীক্ষা পদ্ধতি দেখুন';
+  static const phoneNumber = 'ফোন নম্বর';
+  static const emailAddress = 'ইমেইল';
+
+  // Demo dialogs
+  static const demoQuizTitle = 'স্বাগতম!';
+  static const demoQuizMessage =
+      'আপনি কি একটি ডেমো পরীক্ষা দিতে চান?';
+  static const skip = 'এড়িয়ে যান';
+  static const startDemoButton = 'ডেমো শুরু করুন';
+  static const congratulationsTitle = 'অভিনন্দন!';
+  static const congratulationsMessage =
+      'আপনি সফলভাবে ডেমো পরীক্ষা সম্পন্ন করেছেন। প্রকৃত পরীক্ষায় অংশগ্রহণের আগে পরীক্ষা পদ্ধতি ও নিরাপত্তা নিয়মাবলী সাবধানে পড়ুন।';
+
+  // Batch password
+  static const batchPassword = 'ব্যাচ পাসওয়ার্ড';
+  static const batchPasswordHint = 'ব্যাচ পাসওয়ার্ড লিখুন';
+  static const batchPasswordNote =
+      'পরীক্ষা শুরু করার আগে পরিদর্শকের কাছ থেকে ব্যাচ পাসওয়ার্ড সংগ্রহ করুন।';
+
+  // Instructions (real exam flow)
+  static const continueToLogin = 'লগইনে যান';
+  static const continueToDemoExam = 'ডেমো পরীক্ষা শুরু করুন';
+
+  // Onboarding demo exam
+  static const onboardingDemoExamName = 'ডেমো পরীক্ষা';
+  static const onboardingDemoSubmitted = 'ডেমো পরীক্ষা জমা হয়েছে';
+  static const finishExamination = 'পরীক্ষা শেষ করুন';
+  static const onboardingDemoFillBlank1 =
+      'বাংলাদেশের রাজধানীর নাম _____।';
+  static const onboardingDemoFillBlank2 =
+      'আমাদের জাতীয় ফুল _____।';
+  static const onboardingDemoWritten1 =
+      'আপনার দেশ সম্পর্কে ৩টি বাক্য লিখুন।';
+  static const onboardingDemoWritten2 =
+      'সামরিক শৃঙ্খলার গুরুত্ব ব্যাখ্যা করুন।';
+
+  static const onboardingDemoMcq1 =
+      'বাংলাদেশের জাতীয় ক্রীড়া কোনটি?';
+  static const onboardingDemoMcq1A = 'কাবাডি';
+  static const onboardingDemoMcq1B = 'ফুটবল';
+  static const onboardingDemoMcq1C = 'ক্রিকেট';
+  static const onboardingDemoMcq1D = 'হকি';
+
+  static const onboardingDemoMcq2 =
+      'বাংলাদেশের স্বাধীনতা দিবস কবে?';
+  static const onboardingDemoMcq2A = '২৬ মার্চ';
+  static const onboardingDemoMcq2B = '২১ ফেব্রুয়ারি';
+  static const onboardingDemoMcq2C = '১৬ ডিসেম্বর';
+  static const onboardingDemoMcq2D = '১৪ এপ্রিল';
+
+  static const onboardingDemoMcq3 =
+      'বাংলাদেশের জাতীয় পাখির নাম কী?';
+  static const onboardingDemoMcq3A = 'দোয়েল';
+  static const onboardingDemoMcq3B = 'ময়ূর';
+  static const onboardingDemoMcq3C = 'কাক';
+  static const onboardingDemoMcq3D = 'টিয়া';
+
+  static const onboardingDemoMcq4 =
+      'বাংলাদেশের জাতীয় ফুল কোনটি?';
+  static const onboardingDemoMcq4A = 'গোলাপ';
+  static const onboardingDemoMcq4B = 'শাপলা';
+  static const onboardingDemoMcq4C = 'গাঁদা';
+  static const onboardingDemoMcq4D = 'বেলি';
+
+  static const onboardingDemoMcq5 =
+      'বাংলাদেশের জাতীয় সঙ্গীতের রচয়িতা কে?';
+  static const onboardingDemoMcq5A = 'কাজী নজরুল ইসলাম';
+  static const onboardingDemoMcq5B = 'রবীন্দ্রনাথ ঠাকুর';
+  static const onboardingDemoMcq5C = 'জীবনানন্দ দাশ';
+  static const onboardingDemoMcq5D = 'মাইকেল মধুসূদন দত্ত';
+
+  static const onboardingDemoMcq6 =
+      'বাংলাদেশের মুদ্রার নাম কী?';
+  static const onboardingDemoMcq6A = 'রুপি';
+  static const onboardingDemoMcq6B = 'টাকা';
+  static const onboardingDemoMcq6C = 'পয়সা';
+  static const onboardingDemoMcq6D = 'ডলার';
+
+  // Examination procedure timeline
+  static const examProcedureTitle = 'পরীক্ষা পদ্ধতি ও নিরাপত্তা';
+  static const securityPenaltiesTitle = 'নিরাপত্তা লঙ্ঘনের পরিণতি';
+  static const securityPenaltiesDescription =
+      'নিচের নিয়ম লঙ্ঘন করলে পরীক্ষা বাতিল বা অযোগ্য ঘোষণা হতে পারে।';
+
+  static const procedureStep1Title = 'পরীক্ষা কক্ষে প্রবেশ';
+  static const procedureStep1Description =
+      'পরীক্ষার্থী নির্ধারিত সময়ের আগে নির্ধারিত পরীক্ষা হলে প্রবেশ করবেন।';
+
+  static const procedureStep2Title = 'কিউআর স্ব-যাচাই';
+  static const procedureStep2Description =
+      'পরীক্ষা হলে প্রদর্শিত সরকারি কিউআর কোড স্ক্যান করে নিবন্ধিত ডিভাইস যাচাই করুন। সফল স্ক্যান নিশ্চিত করে আপনি সঠিক কেন্দ্রে উপস্থিত আছেন।';
+
+  static const scanQrCode = 'কিউআর কোড স্ক্যান করুন';
+  static const identityVerifiedTitle = 'পরিচয় যাচাই সম্পন্ন';
+  static const identityVerifiedMessage =
+      'আপনি পরীক্ষার জন্য যোগ্য। নির্দেশনা পৃষ্ঠায় এগিয়ে যান।';
+  static const continueToInstructions = 'নির্দেশনায় যান';
+  static const identityVerificationFailed =
+      'কিউআর যাচাই ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+  static const qrScannerError = 'এই ডিভাইসে কোনো ক্যামেরা নেই।';
+
+  static const procedureStep3Title = 'ডিভাইস নিরাপত্তা নির্দেশনা';
+  static const procedureStep3Description =
+      'পরীক্ষা চলাকালীন অ্যাপ খোলা রাখুন, নিরাপদ ভিপিএন সংযোগ বন্ধ করবেন না, নেটওয়ার্ক বিচ্ছিন্ন করবেন না এবং নিরাপত্তা যাচাই এড়িয়ে যাবেন না।';
+
+  static const procedureStep4Title = 'ব্যাচ পাসওয়ার্ড গ্রহণ';
+  static const procedureStep4Description =
+      'পরিদর্শক পরীক্ষার ব্যাচের জন্য নির্ধারিত ব্যাচ পাসওয়ার্ড প্রদান করবেন।';
+
+  static const procedureStep5Title = 'ব্যাচ পাসওয়ার্ড প্রবেশ';
+  static const procedureStep5Description =
+      'প্রাপ্ত ব্যাচ পাসওয়ার্ড অ্যাপে প্রবেশ করান।';
+
+  static const procedureStep6Title = 'নিরাপত্তা যাচাই';
+  static const procedureStep6Description =
+      'পরীক্ষা শুরুর আগে ডিভাইস যাচাই, ভিপিএন যাচাই, স্ক্রিন নিরাপত্তা, অ্যাপ অখণ্ডতা ও নেটওয়ার্ক যাচাই সম্পন্ন হবে।';
+
+  static const procedureStep7Title = 'পরীক্ষা শুরু';
+  static const procedureStep7Description =
+      'সকল নিরাপত্তা যাচাই সফল হলে প্রকৃত পরীক্ষা শুরু করুন।';
+
+  static const procedureStep8Title = 'পরীক্ষা জমা';
+  static const procedureStep8Description =
+      'সকল প্রশ্নের উত্তর দিয়ে পরীক্ষা জমা দিন এবং প্রক্রিয়া সম্পন্ন করুন।';
+
+  static const penaltyLeaveApp =
+      'পরীক্ষার অ্যাপ ছেড়ে গেলে পরীক্ষা তাৎক্ষণিক বাতিল হতে পারে।';
+  static const penaltyDisableVpn =
+      'নিরাপদ ভিপিএন সংযোগ বন্ধ করলে আর প্রবেশাধিকার পাওয়া যাবে না।';
+  static const penaltyUnregisteredDevice =
+      'অনিবন্ধিত ডিভাইস ব্যবহার করলে পরীক্ষায় প্রবেশ বন্ধ হতে পারে।';
+  static const penaltyFailedVerification =
+      'বাধ্যতামূলক নিরাপত্তা যাচাই ব্যর্থ হলে অযোগ্য ঘোষণা হতে পারে।';
+  static const penaltyBypassSecurity =
+      'নিরাপত্তা ব্যবস্থা এড়িয়ে যাওয়ার চেষ্টা করলে পরীক্ষা বাতিল হতে পারে।';
 }

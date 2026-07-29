@@ -29,6 +29,7 @@ class AppLifecycleService extends GetxService with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(SystemUiService.applyFullscreenMode());
+      unawaited(SystemUiService.applyPortraitLock());
     }
   }
 

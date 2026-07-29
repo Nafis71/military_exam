@@ -5,16 +5,10 @@ import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/models/camera_permission_gate_status.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/camera_permission_service.dart';
 import '../../domain/usecases/complete_security_pre_exam_usecase.dart';
-
-enum CameraPermissionGateStatus {
-  checking,
-  granted,
-  denied,
-  permanentlyDenied,
-}
 
 class CameraPermissionController extends GetxController {
   CameraPermissionController(

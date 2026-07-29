@@ -14,6 +14,7 @@ class LoginTextField extends StatefulWidget {
     this.validator,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.readOnly = false,
   });
 
   final String label;
@@ -24,6 +25,7 @@ class LoginTextField extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
+  final bool readOnly;
 
   @override
   State<LoginTextField> createState() => _LoginTextFieldState();
@@ -107,6 +109,8 @@ class _LoginTextFieldState extends State<LoginTextField> {
         TextFormField(
           focusNode: _focusNode,
           controller: widget.controller,
+          readOnly: widget.readOnly,
+          enabled: !widget.readOnly,
           obscureText: widget.showVisibilityToggle ? _isObscured : widget.obscureText,
           validator: widget.validator,
           textInputAction: widget.textInputAction,

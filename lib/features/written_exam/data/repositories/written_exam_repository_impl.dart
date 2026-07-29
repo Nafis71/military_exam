@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,21 +11,32 @@ import '../../../../core/config/api_endpoints.dart';
 import '../../../../core/config/deployment.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
+import '../../../exam_session/data/datasources/demo_exam_memory_store.dart';
 import '../../domain/constants/written_exam_demo_questions.dart';
 import '../../domain/repositories/written_exam_repository.dart';
 
 class WrittenExamRepositoryImpl implements WrittenExamRepository {
-  WrittenExamRepositoryImpl(this._apiClient, this._storage);
+  WrittenExamRepositoryImpl(
+    this._apiClient,
+    this._metaBox,
+    this._examRunContext,
+    this._demoMemoryStore,
+  );
 
   final ApiClient _apiClient;
-  final FlutterSecureStorage _storage;
+  final Box<dynamic> _metaBox;
+  final ExamRunContext _examRunContext;
+  final DemoExamMemoryStore _demoMemoryStore;
   final _uuid = const Uuid();
 
   static const _imagesKey = 'written_exam_images';
   static const _imagesDirName = 'written_exam_images';
+
+  bool get _isOnboardingDemo => _examRunContext.isOnboardingDemo;
 
   @override
   Future<Result<WrittenAnswerImage>> addImage(
@@ -47,6 +58,16 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     }
 
     final localId = _uuid.v4();
+    if (_isOnboardingDemo) {
+      final image = WrittenAnswerImage(
+        localId: localId,
+        localPath: localPath,
+        questionId: questionId,
+      );
+      _demoMemoryStore.addImage(image);
+      return Success(image);
+    }
+
     final persistResult = await _persistImageFile(
       sourcePath: localPath,
       localId: localId,
@@ -80,6 +101,23 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     final index = images.indexWhere((img) => img.localId == localId);
     if (index < 0) {
       return const ErrorResult(ValidationFailure(AppStrings.imageNotFound));
+    }
+
+    if (_isOnboardingDemo) {
+      final updated = WrittenAnswerImage(
+        localId: localId,
+        localPath: newLocalPath,
+        questionId: images[index].questionId,
+        remoteId: null,
+        uploadStatus: ImageUploadStatus.localOnly,
+        uploadProgress: 0,
+      );
+      _demoMemoryStore.replaceImages(
+        images
+            .map((img) => img.localId == localId ? updated : img)
+            .toList(growable: false),
+      );
+      return Success(updated);
     }
 
     final oldPath = images[index].localPath;
@@ -116,10 +154,14 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
     final images = imagesResult.dataOrNull ?? [];
     final index = images.indexWhere((img) => img.localId == localId);
     if (index >= 0) {
-      await _deleteFileIfExists(images[index].localPath);
-      images.removeAt(index);
+      if (_isOnboardingDemo) {
+        _demoMemoryStore.removeImage(localId);
+      } else {
+        await _deleteFileIfExists(images[index].localPath);
+        images.removeAt(index);
+        await _persistImages(images);
+      }
     }
-    await _persistImages(images);
     return const Success(null);
   }
 
@@ -139,17 +181,30 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       return const ErrorResult(ValidationFailure(AppStrings.imageNotFound));
     }
 
-    images[index] = images[index].copyWith(
+    final updated = images[index].copyWith(
       remoteId: remoteId,
       uploadStatus: ImageUploadStatus.uploaded,
       uploadProgress: 1,
     );
-    await _persistImages(images);
+    final nextImages = [
+      for (var i = 0; i < images.length; i++)
+        if (i == index) updated else images[i],
+    ];
+    if (_isOnboardingDemo) {
+      _demoMemoryStore.replaceImages(nextImages);
+    } else {
+      await _persistImages(nextImages);
+    }
     return const Success(null);
   }
 
   @override
   Future<Result<void>> clearStoredImages() async {
+    if (_isOnboardingDemo) {
+      _demoMemoryStore.replaceImages(const []);
+      return const Success(null);
+    }
+
     try {
       final imagesResult = await getImages();
       if (imagesResult is Success<List<WrittenAnswerImage>>) {
@@ -167,7 +222,7 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
         }
       }
 
-      await _storage.delete(key: _imagesKey);
+      await _metaBox.delete(_imagesKey);
       return const Success(null);
     } catch (error) {
       return ErrorResult(
@@ -183,14 +238,14 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       return ErrorResult(imagesResult.failure);
     }
 
-    final images = imagesResult.dataOrNull ?? [];
+    final images = List<WrittenAnswerImage>.from(imagesResult.dataOrNull ?? []);
     final index = images.indexWhere((img) => img.localId == localId);
     if (index < 0) {
       return const ErrorResult(ValidationFailure(AppStrings.imageNotFound));
     }
 
     final image = images[index];
-    if (!File(image.localPath).existsSync()) {
+    if (!_isOnboardingDemo && !File(image.localPath).existsSync()) {
       return const ErrorResult(UploadFailure(AppStrings.imageFileNotFound));
     }
 
@@ -198,15 +253,23 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       uploadStatus: ImageUploadStatus.uploading,
       uploadProgress: 0,
     );
-    await _persistImages(images);
+    if (_isOnboardingDemo) {
+      _demoMemoryStore.replaceImages(images);
+    } else {
+      await _persistImages(images);
+    }
 
-    if (Deployment.instance.isDemo) {
+    if (Deployment.instance.isDemo || _isOnboardingDemo) {
       images[index] = images[index].copyWith(
         remoteId: 'demo-local-$localId',
         uploadStatus: ImageUploadStatus.uploaded,
         uploadProgress: 1,
       );
-      await _persistImages(images);
+      if (_isOnboardingDemo) {
+        _demoMemoryStore.replaceImages(images);
+      } else {
+        await _persistImages(images);
+      }
       return Success(
         UploadProgress(
           imageId: localId,
@@ -234,7 +297,11 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
         uploadStatus: ImageUploadStatus.uploaded,
         uploadProgress: 1,
       );
-      await _persistImages(images);
+      if (_isOnboardingDemo) {
+        _demoMemoryStore.replaceImages(images);
+      } else {
+        await _persistImages(images);
+      }
       return Success(
         UploadProgress(
           imageId: localId,
@@ -249,7 +316,11 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
       uploadProgress: 1,
       remoteId: 'demo-remote-$localId',
     );
-    await _persistImages(images);
+    if (_isOnboardingDemo) {
+      _demoMemoryStore.replaceImages(images);
+    } else {
+      await _persistImages(images);
+    }
     return Success(
       UploadProgress(
         imageId: localId,
@@ -308,8 +379,12 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
 
   @override
   Future<Result<List<WrittenAnswerImage>>> getImages() async {
+    if (_isOnboardingDemo) {
+      return Success(_demoMemoryStore.images);
+    }
+
     try {
-      final raw = await _storage.read(key: _imagesKey);
+      final raw = _metaBox.get(_imagesKey) as String?;
       if (raw == null) return const Success([]);
       final list = jsonDecode(raw) as List<dynamic>;
       return Success(
@@ -389,6 +464,6 @@ class WrittenExamRepositoryImpl implements WrittenExamRepository {
           )
           .toList(),
     );
-    await _storage.write(key: _imagesKey, value: encoded);
+    await _metaBox.put(_imagesKey, encoded);
   }
 }

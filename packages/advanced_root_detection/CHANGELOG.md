@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- iOS jailbreak false positive: removed `/private/preboot/` from modern path checks (exists on all stock APFS devices); added jailbreak-specific paths `/private/preboot/jb`, `/cores/binpack`, and `/cores/binpack/Applications/palera1nLoader.app` instead.
+
 ## [0.0.4+1] - local fork (military_exam)
 
 ### Changed

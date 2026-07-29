@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/candidate_dashboard/presentation/pages/candidate_dashboard_page.dart';
+import '../../features/exam_procedure/presentation/pages/exam_procedure_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/identity_verification/presentation/pages/identity_verification_page.dart';
 import '../../features/exam_session/presentation/pages/exam_submit_review_page.dart';
 import '../../features/exam_session/presentation/pages/exam_waiting_page.dart';
 import '../../features/finish_exam/presentation/pages/finish_exam_page.dart';
@@ -12,14 +15,19 @@ import '../../features/fill_blank_exam/presentation/pages/fill_blank_exam_page.d
 import '../../features/mcq_exam/presentation/pages/mcq_exam_page.dart';
 import '../../features/security_gate/presentation/pages/airplane_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/camera_permission_required_page.dart';
+import '../../features/security_gate/presentation/pages/vpn_lockdown_required_page.dart';
 import '../../features/security_gate/presentation/pages/wifi_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/developer_mode_required_page.dart';
 import '../../features/security_gate/presentation/pages/security_error_page.dart';
 import '../../features/security_gate/presentation/pages/security_gate_page.dart';
+import '../../features/onboarding/presentation/pages/candidate_login_page.dart';
+import '../../features/onboarding/presentation/pages/get_started_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/violation/presentation/pages/violation_page.dart';
 import '../../features/written_exam/presentation/pages/written_exam_page.dart';
 import '../bindings/dependency_registry.dart';
+import '../../core/services/exam_run_context.dart';
+import '../../core/services/identity_verification_session.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -30,9 +38,39 @@ class AppPages {
       binding: SplashBinding(),
     ),
     GetPage(
+      name: AppRoutes.getStarted,
+      page: () => const GetStartedPage(),
+      binding: GetStartedBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.candidateLogin,
+      page: () => const CandidateLoginPage(),
+      binding: CandidateLoginBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.candidateDashboard,
+      page: () => const CandidateDashboardPage(),
+      binding: CandidateDashboardBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsPage(),
+      binding: NotificationsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.examProcedure,
+      page: () => const ExamProcedurePage(),
+    ),
+    GetPage(
+      name: AppRoutes.identityVerification,
+      page: () => const IdentityVerificationPage(),
+      binding: IdentityVerificationBinding(),
+    ),
+    GetPage(
       name: AppRoutes.instructions,
       page: () => const InstructionsPage(),
       binding: InstructionsBinding(),
+      middlewares: [IdentityVerificationRouteGuard()],
     ),
     GetPage(
       name: AppRoutes.securityGate,
@@ -52,6 +90,11 @@ class AppPages {
       name: AppRoutes.wifiModeRequired,
       page: () => const WifiModeRequiredPage(),
       binding: WifiModeBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.vpnLockdownRequired,
+      page: () => const VpnLockdownRequiredPage(),
+      binding: VpnLockdownBinding(),
     ),
     GetPage(
       name: AppRoutes.developerModeRequired,
@@ -117,6 +160,25 @@ class ExamRouteGuard extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
     // Route guards rely on exam session state managed by controllers.
+    return null;
+  }
+}
+
+class IdentityVerificationRouteGuard extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    if (!Get.isRegistered<ExamRunContext>() ||
+        !Get.isRegistered<IdentityVerificationSession>()) {
+      return null;
+    }
+
+    final examRun = Get.find<ExamRunContext>();
+    final session = Get.find<IdentityVerificationSession>();
+
+    if (!examRun.isOnboardingDemo && !session.isVerified) {
+      return const RouteSettings(name: AppRoutes.identityVerification);
+    }
+
     return null;
   }
 }

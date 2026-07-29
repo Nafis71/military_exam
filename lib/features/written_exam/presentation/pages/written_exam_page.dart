@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/camera_permission_service.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/services/document_edge_detection_service.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -44,9 +45,8 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
     controller = Get.find<WrittenExamController>();
     sessionController = Get.find<ExamSessionController>();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (sessionController.currentExam.value == null) {
-        await sessionController.loadCurrentExam();
-      }
+      final refreshFromApi = !Get.find<ExamRunContext>().isOnboardingDemo;
+      await sessionController.loadCurrentExam(refresh: refreshFromApi);
       if (!sessionController.canAccessQuestions.value) {
         final sessionId =
             sessionController.examSession.value?.sessionId ?? '';
@@ -120,7 +120,9 @@ class _WrittenExamPageState extends State<WrittenExamPage> {
         WrittenExamImageAddedToast.show();
       } else {
         await controller.saveDraftForQuestion(questionId);
-        controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
+        if (!isOnline) {
+          controller.infoMessage.value = AppStrings.writtenExamImageSavedOffline;
+        }
       }
     } finally {
       watchdog.setCameraCaptureActive(false);

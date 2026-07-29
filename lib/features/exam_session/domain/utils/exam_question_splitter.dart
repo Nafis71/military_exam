@@ -48,8 +48,6 @@ abstract final class ExamQuestionSplitter {
         case ExamQuestionType.fillInBlank:
         case ExamQuestionType.descriptive:
           count++;
-        default:
-          break;
       }
     }
     return count;
@@ -83,12 +81,12 @@ abstract final class ExamQuestionSplitter {
       case ExamPhase.mcq:
         if (fillBlankCount > 0) return AppRoutes.fillBlankExam;
         if (descriptiveCount > 0) return AppRoutes.writtenExam;
-        return AppRoutes.finishExam;
+        return AppRoutes.examSubmitReview;
       case ExamPhase.fillBlank:
         if (descriptiveCount > 0) return AppRoutes.writtenExam;
-        return AppRoutes.finishExam;
+        return AppRoutes.examSubmitReview;
       case ExamPhase.written:
-        return AppRoutes.finishExam;
+        return AppRoutes.examSubmitReview;
       default:
         return null;
     }

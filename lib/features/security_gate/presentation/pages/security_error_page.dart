@@ -8,7 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/violation_icon.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class SecurityErrorPage extends StatelessWidget {
   const SecurityErrorPage({super.key});

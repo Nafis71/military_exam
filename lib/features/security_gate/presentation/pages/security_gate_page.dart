@@ -9,7 +9,7 @@ import '../../../../core/widgets/shield_lock_icon.dart';
 import '../../../../core/widgets/verified_user_icon.dart';
 import '../controllers/security_gate_controller.dart';
 import '../widgets/security_checklist.dart';
-import '../widgets/security_status_body.dart';
+import '../../../../core/widgets/security_status_body.dart';
 
 class SecurityGatePage extends GetView<SecurityGateController> {
   const SecurityGatePage({super.key});
@@ -17,34 +17,42 @@ class SecurityGatePage extends GetView<SecurityGateController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg.w),
-          child: Obx(() {
-            final gateStatus = controller.status.value;
-            final isChecking = gateStatus == SecurityGateStatus.checking;
-            final showChecklist = gateStatus == SecurityGateStatus.passed ||
-                gateStatus == SecurityGateStatus.deviceCompromised;
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: AppColors.brandHeaderGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Obx(() {
+              final gateStatus = controller.status.value;
+              final isChecking = gateStatus == SecurityGateStatus.checking;
+              final showChecklist = gateStatus == SecurityGateStatus.passed ||
+                  gateStatus == SecurityGateStatus.deviceCompromised;
 
-            return SecurityStatusBody(
-              contentKey: gateStatus,
-              title: _titleFor(gateStatus),
-              message: _messageFor(gateStatus),
-              typewriterMessage: isChecking,
-              isLoading: isChecking,
-              actionLabel: _actionLabelFor(gateStatus),
-              onAction: _onActionFor(gateStatus),
-              icon: isChecking ? null : _iconFor(gateStatus),
-              iconColor: _primaryButtonColorFor(gateStatus),
-              footer: isChecking
-                  ? _loadingIndicator()
-                  : showChecklist
-                      ? SecurityChecklist(items: controller.checklistItems)
-                      : null,
-              wrapIconInCard: true,
-            );
-          }),
+              return SecurityStatusBody(
+                contentKey: gateStatus,
+                useLightText: true,
+                title: _titleFor(gateStatus),
+                message: _messageFor(gateStatus),
+                typewriterMessage: isChecking,
+                isLoading: isChecking,
+                actionLabel: _actionLabelFor(gateStatus),
+                onAction: _onActionFor(gateStatus),
+                icon: isChecking ? null : _iconFor(gateStatus),
+                iconColor: _primaryButtonColorFor(gateStatus),
+                footer: isChecking
+                    ? _loadingIndicator()
+                    : showChecklist
+                        ? SecurityChecklist(
+                            items: controller.checklistItems,
+                            useLightText: true,
+                          )
+                        : null,
+                wrapIconInCard: true,
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -98,7 +106,7 @@ class SecurityGatePage extends GetView<SecurityGateController> {
         width: 48.w,
         height: 48.w,
         child: const CircularProgressIndicator(
-          color: AppColors.primary,
+          color: AppColors.cFFFFFF,
           strokeWidth: 3,
         ),
       ),

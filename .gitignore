@@ -47,5 +47,6 @@ app.*.map.json
 # FVM Version Cache
 .fvm/
 /graphify-out/
+test_hive_*/
 .vscode/
 .vscode/settings.json

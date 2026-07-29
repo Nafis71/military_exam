@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,11 +9,16 @@ import 'package:military_exam/features/exam_session/data/models/exam_answer_draf
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
 
 void main() {
+  late Directory hiveTestDir;
   late Box<dynamic> box;
   late ExamAnswersHiveDataSourceImpl dataSource;
 
   setUp(() async {
-    Hive.init('test_hive_${DateTime.now().microsecondsSinceEpoch}');
+    hiveTestDir = Directory(
+      '${Directory.systemTemp.path}/military_exam_hive_test_${DateTime.now().microsecondsSinceEpoch}',
+    );
+    await hiveTestDir.create(recursive: true);
+    Hive.init(hiveTestDir.path);
     box = await Hive.openBox<dynamic>('exam_answers_test');
     dataSource = ExamAnswersHiveDataSourceImpl(box);
   });
@@ -20,6 +26,9 @@ void main() {
   tearDown(() async {
     await box.close();
     await Hive.close();
+    if (hiveTestDir.existsSync()) {
+      await hiveTestDir.delete(recursive: true);
+    }
   });
 
   test('ExamAnswersHiveDataSource saves roll number and drafts', () async {
@@ -70,7 +79,7 @@ void main() {
     expect(draftsResult.dataOrNull?['mcq-legacy']?.optionKey, 'c');
   });
 
-  test('ExamAnswersHiveDataSource clearAll wipes stored data', () async {
+  test('ExamAnswersHiveDataSource clearAll wipes drafts but preserves roll number', () async {
     await dataSource.saveRollNumber('999');
     await dataSource.upsertDraft(
       const ExamAnswerDraftModel(
@@ -84,7 +93,7 @@ void main() {
     expect(clearResult, isA<Success<void>>());
 
     final rollResult = await dataSource.readRollNumber();
-    expect(rollResult.dataOrNull, isNull);
+    expect(rollResult.dataOrNull, '999');
 
     final draftsResult = await dataSource.readAllDrafts();
     expect(draftsResult.dataOrNull, isEmpty);

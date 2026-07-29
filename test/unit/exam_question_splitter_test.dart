@@ -77,7 +77,7 @@ void main() {
         fillBlankCount: 3,
         descriptiveCount: 0,
       ),
-      AppRoutes.finishExam,
+      AppRoutes.examSubmitReview,
     );
   });
 }

@@ -4,31 +4,31 @@ import 'package:military_exam/features/auth/domain/entities/login_credentials.da
 
 void main() {
   group('LoginRequestModel', () {
-    test('toJson emits district and roll_number', () {
+    test('toJson emits roll_number and batch_password', () {
       const model = LoginRequestModel(
-        district: 'Dhaka',
         rollNumber: '8',
+        batchPassword: 'secret',
       );
 
       expect(model.toJson(), {
-        'district': 'Dhaka',
         'roll_number': '8',
+        'batch_password': 'secret',
       });
     });
 
     test('fromCredentials copies entity fields', () {
       const credentials = LoginCredentials(
-        district: 'DHAKA',
         rollNumber: '1',
+        batchPassword: 'pass',
       );
 
       final model = LoginRequestModel.fromCredentials(credentials);
 
-      expect(model.district, 'DHAKA');
       expect(model.rollNumber, '1');
+      expect(model.batchPassword, 'pass');
       expect(model.toJson(), {
-        'district': 'DHAKA',
         'roll_number': '1',
+        'batch_password': 'pass',
       });
     });
   });

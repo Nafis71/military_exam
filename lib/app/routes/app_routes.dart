@@ -1,10 +1,17 @@
 abstract final class AppRoutes {
   static const splash = '/';
+  static const getStarted = '/get-started';
+  static const candidateLogin = '/candidate-login';
+  static const candidateDashboard = '/candidate-dashboard';
+  static const notifications = '/notifications';
+  static const examProcedure = '/exam-procedure';
+  static const identityVerification = '/identity-verification';
   static const instructions = '/instructions';
   static const securityGate = '/security/gate';
   static const securityError = '/security/error';
   static const airplaneModeRequired = '/security/airplane-mode';
   static const wifiModeRequired = '/security/wifi-mode';
+  static const vpnLockdownRequired = '/security/vpn-lockdown';
   static const developerModeRequired = '/security/developer-mode';
   static const cameraPermissionRequired = '/security/camera-permission';
   static const login = '/login';

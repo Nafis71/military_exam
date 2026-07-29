@@ -55,6 +55,8 @@
 	<string>Main</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is required to capture handwritten examination answers.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Network lockdown is used to block other apps during the exam.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access is required to crop captured examination answers.</string>
 	<key>UISupportedInterfaceOrientations</key>

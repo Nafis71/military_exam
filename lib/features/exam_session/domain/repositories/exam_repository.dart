@@ -10,7 +10,9 @@ abstract class ExamRepository {
 
   Future<Result<CurrentExam>> refreshCurrentExam();
 
-  Future<Result<bool>> hasCachedExamAnswers();
+  Future<Result<bool>> hasCachedExamAnswers({
+    Set<String> questionIdsWithImages = const {},
+  });
 
   Future<Result<ExamTimer>> getTimer(String sessionId);
 
@@ -36,7 +38,10 @@ abstract class ExamRepository {
 
   Future<Result<Map<String, ExamAnswerDraft>>> getAnswerDrafts();
 
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam);
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? currentExam, {
+    Set<String> questionIdsWithImages = const {},
+  });
 
   Future<Result<WrittenImageUploadResult>> uploadDescriptiveAnswerImage({
     required String questionId,

@@ -1,31 +1,45 @@
+import 'dart:async';
+
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/bengali_digits.dart';
 import '../../../auth/domain/usecases/clear_session_usecase.dart';
 import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../../exam_session/presentation/controllers/exam_session_controller.dart';
+import '../../../onboarding/domain/usecases/set_onboarding_flag_usecase.dart';
 import '../../domain/finish_submission_type.dart';
+import '../../../security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import '../../../security_gate/domain/usecases/stop_security_watchdog_usecase.dart';
 
 class FinishExamController extends GetxController {
   FinishExamController(
     this._stopWatchdog,
+    this._stopVpnLockdown,
     this._clearSession,
     this._clearExamLocalData,
+    this._examRunContext,
+    this._setOnboardingFlag,
     this._logger,
   );
 
   final StopSecurityWatchdogUseCase _stopWatchdog;
+  final StopExamVpnLockdownUseCase _stopVpnLockdown;
   final ClearSessionUseCase _clearSession;
   final ClearExamLocalDataUseCase _clearExamLocalData;
+  final ExamRunContext _examRunContext;
+  final SetOnboardingFlagUseCase _setOnboardingFlag;
   final AppLogger _logger;
 
   late final String examName;
   late final String submittedAtLabel;
   late final FinishSubmissionType submissionType;
+  late final bool isOnboardingDemo;
 
   String get title => submissionType == FinishSubmissionType.timeExpired
       ? AppStrings.timeExpiredTitle
@@ -35,11 +49,19 @@ class FinishExamController extends GetxController {
       ? AppStrings.timeExpiredMessage
       : AppStrings.submissionSuccessfulMessage;
 
+  String get primaryButtonLabel =>
+      isOnboardingDemo ? AppStrings.finishExamination : AppStrings.exitApp;
+
   @override
   void onInit() {
     super.onInit();
+    isOnboardingDemo = _examRunContext.isOnboardingDemo;
     _resolveDisplayData();
-    _cleanup();
+    if (isOnboardingDemo) {
+      unawaited(_cleanupOnboardingDemo());
+    } else {
+      unawaited(_cleanupRealExam());
+    }
   }
 
   void _resolveDisplayData() {
@@ -92,9 +114,10 @@ class FinishExamController extends GetxController {
     return toBengaliDigitString(time);
   }
 
-  Future<void> _cleanup() async {
+  Future<void> _cleanupRealExam() async {
     try {
       await _stopWatchdog();
+      await _stopVpnLockdown();
       await _clearExamLocalData();
       await _clearSession();
     } catch (e, st) {
@@ -102,7 +125,34 @@ class FinishExamController extends GetxController {
     }
   }
 
-  void exitApp() {
+  Future<void> _cleanupOnboardingDemo() async {
+    try {
+      await _stopWatchdog();
+      await _stopVpnLockdown();
+      await _clearExamLocalData();
+      await _setOnboardingFlag.setHasCompletedDemo(true);
+      _examRunContext.reset();
+    } catch (e, st) {
+      _logger.error('onboarding demo cleanup failed', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> onPrimaryAction() async {
+    if (isOnboardingDemo) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed(AppRoutes.candidateDashboard, arguments: true);
+      });
+      return;
+    }
+    await exitApp();
+  }
+
+  Future<void> exitApp() async {
+    try {
+      await _stopVpnLockdown();
+    } catch (e, st) {
+      _logger.error('exitApp vpn stop failed', error: e, stackTrace: st);
+    }
     SystemNavigator.pop();
   }
 }

@@ -6,8 +6,8 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../controllers/login_controller.dart';
-import 'login_district_dropdown.dart';
-import 'login_text_field.dart';
+import 'login_batch_password_field.dart';
+import 'login_go_back_button.dart';
 
 class LoginForm extends StatelessWidget {
   const LoginForm({super.key, required this.controller});
@@ -21,14 +21,7 @@ class LoginForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          LoginTextField(
-            label: AppStrings.examineeId,
-            hint: AppStrings.examineeIdHint,
-            controller: controller.examineeIdController,
-            textInputAction: TextInputAction.next,
-          ),
-          SizedBox(height: 20.h),
-          LoginDistrictDropdown(controller: controller),
+          LoginBatchPasswordField(controller: controller),
           Obx(() {
             final error = controller.errorMessage.value;
             if (error == null) return const SizedBox.shrink();
@@ -42,9 +35,10 @@ class LoginForm extends StatelessWidget {
               ),
             );
           }),
-          // gap from field group bottom to button = 34px (Figma: 329 - 212 - 83)
           SizedBox(height: 34.h),
           _SignInButton(onPressed: controller.login),
+          SizedBox(height: 8.h),
+          LoginGoBackButton(controller: controller),
         ],
       ),
     );

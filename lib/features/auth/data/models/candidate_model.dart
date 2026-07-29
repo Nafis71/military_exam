@@ -15,7 +15,7 @@ class CandidateModel extends Candidate {
     return CandidateModel(
       id: data['id'] as String,
       fullName: data['full_name'] as String,
-      district: data['district'] as String,
+      district: data['district'] as String? ?? '',
       rollNumber: data['roll_number'] as String,
       status: data['status'] as String,
     );

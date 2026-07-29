@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:military_exam/core/errors/failure.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
 import 'package:military_exam/features/exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
@@ -10,7 +9,8 @@ import 'package:military_exam/features/exam_session/domain/usecases/submit_exam_
 import 'package:military_exam/features/exam_session/domain/usecases/upload_pending_written_images_usecase.dart';
 import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
-import 'package:military_exam/shared/domain/enums/exam_enums.dart';
+
+import '../helpers/demo_exam_test_support.dart';
 
 void main() {
   test('SubmitExamWithPendingUploadsUseCase returns error when image file missing',
@@ -28,12 +28,13 @@ void main() {
     final uploadUseCase = UploadPendingWrittenImagesUseCase(
       examRepo,
       writtenRepo,
+      createExamRunContext(),
     );
 
     final useCase = SubmitExamWithPendingUploadsUseCase(
       examRepo,
       uploadUseCase,
-      FinalizeExamUseCase(examRepo),
+      FinalizeExamUseCase(examRepo, writtenRepo),
       ClearExamLocalDataUseCase(examRepo, writtenRepo),
     );
 
@@ -65,12 +66,13 @@ void main() {
     final uploadUseCase = UploadPendingWrittenImagesUseCase(
       examRepo,
       writtenRepo,
+      createExamRunContext(),
     );
 
     final useCase = SubmitExamWithPendingUploadsUseCase(
       examRepo,
       uploadUseCase,
-      FinalizeExamUseCase(examRepo),
+      FinalizeExamUseCase(examRepo, writtenRepo),
       ClearExamLocalDataUseCase(examRepo, writtenRepo),
     );
 
@@ -95,12 +97,13 @@ void main() {
     final uploadUseCase = UploadPendingWrittenImagesUseCase(
       examRepo,
       writtenRepo,
+      createExamRunContext(),
     );
 
     final useCase = SubmitExamWithPendingUploadsUseCase(
       examRepo,
       uploadUseCase,
-      FinalizeExamUseCase(examRepo),
+      FinalizeExamUseCase(examRepo, writtenRepo),
       ClearExamLocalDataUseCase(examRepo, writtenRepo),
     );
 
@@ -150,7 +153,10 @@ class _FakeExamRepository implements ExamRepository {
   }
 
   @override
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? currentExam, {
+    Set<String> questionIdsWithImages = const {},
+  }) async {
     finalizeCalls++;
     return Success(
       SubmissionReceipt(

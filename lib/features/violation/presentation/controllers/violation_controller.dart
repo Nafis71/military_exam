@@ -14,6 +14,7 @@ import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../exam_session/domain/usecases/submit_exam_with_pending_uploads_usecase.dart';
 import '../../../security_gate/domain/usecases/check_connectivity_usecase.dart';
 import '../../../security_gate/domain/usecases/observe_connectivity_usecase.dart';
+import '../../../security_gate/domain/usecases/stop_exam_vpn_lockdown_usecase.dart';
 import '../models/violation_screen_args.dart';
 
 class ViolationController extends GetxController {
@@ -21,6 +22,7 @@ class ViolationController extends GetxController {
     this._submitExamWithPendingUploadsUseCase,
     this._checkConnectivityUseCase,
     this._observeConnectivityUseCase,
+    this._stopVpnLockdown,
     this._lifecycleService,
     this._logger, {
     ViolationScreenArgs? initialArgs,
@@ -29,6 +31,7 @@ class ViolationController extends GetxController {
   final SubmitExamWithPendingUploadsUseCase _submitExamWithPendingUploadsUseCase;
   final CheckConnectivityUseCase _checkConnectivityUseCase;
   final ObserveConnectivityUseCase _observeConnectivityUseCase;
+  final StopExamVpnLockdownUseCase _stopVpnLockdown;
   final AppLifecycleService _lifecycleService;
   final AppLogger _logger;
   final ViolationScreenArgs? _initialArgs;
@@ -120,6 +123,7 @@ class ViolationController extends GetxController {
           answersSubmitted.value = true;
           submissionPending.value = false;
           _stopListeners();
+          await _stopVpnLockdown();
         case ErrorResult(:final failure):
           _handleSubmitFailure(failure);
       }
@@ -134,6 +138,7 @@ class ViolationController extends GetxController {
       errorMessage.value = AppStrings.somethingWentWrong;
       stopAutoRetry.value = true;
       _stopListeners();
+      unawaited(_stopVpnLockdown());
     } finally {
       _isSubmitting = false;
       isSubmitting.value = false;
@@ -152,6 +157,7 @@ class ViolationController extends GetxController {
       stopAutoRetry.value = true;
       submissionPending.value = false;
       _stopListeners();
+      unawaited(_stopVpnLockdown());
       return;
     }
 
@@ -164,6 +170,7 @@ class ViolationController extends GetxController {
     stopAutoRetry.value = true;
     submissionPending.value = false;
     _stopListeners();
+    unawaited(_stopVpnLockdown());
   }
 
   void _startConnectivityListener() {

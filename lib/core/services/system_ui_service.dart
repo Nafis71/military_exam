@@ -5,4 +5,10 @@ class SystemUiService {
   static Future<void> applyFullscreenMode() {
     return SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
+
+  static Future<void> applyPortraitLock() {
+    return SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+  }
 }

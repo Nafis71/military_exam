@@ -24,10 +24,12 @@ class SecurityChecklist extends StatelessWidget {
     super.key,
     required this.items,
     this.maxHeight,
+    this.useLightText = false,
   });
 
   final List<SecurityChecklistItemData> items;
   final double? maxHeight;
+  final bool useLightText;
 
   static List<SecurityChecklistItemData> initialCheckingItems() => [
         const SecurityChecklistItemData(
@@ -51,6 +53,10 @@ class SecurityChecklist extends StatelessWidget {
           label: AppStrings.wifiConnected,
           state: SecurityChecklistState.pending,
         ),
+        const SecurityChecklistItemData(
+          label: AppStrings.networkLockdownActive,
+          state: SecurityChecklistState.pending,
+        ),
       ];
 
   static List<SecurityChecklistItemData> fromIntegrity({
@@ -58,6 +64,7 @@ class SecurityChecklist extends StatelessWidget {
     required bool blockEmulator,
     bool? airplaneEnabled,
     bool? wifiOnline,
+    bool? vpnLockdownActive,
     SecurityChecklistState pendingTailState = SecurityChecklistState.pending,
   }) {
     SecurityChecklistState stateFor(bool passed) =>
@@ -87,6 +94,12 @@ class SecurityChecklist extends StatelessWidget {
         label: AppStrings.wifiConnected,
         state: wifiOnline == null ? pendingTailState : stateFor(wifiOnline),
       ),
+      SecurityChecklistItemData(
+        label: AppStrings.networkLockdownActive,
+        state: vpnLockdownActive == null
+            ? pendingTailState
+            : stateFor(vpnLockdownActive),
+      ),
     ];
   }
 
@@ -100,7 +113,11 @@ class SecurityChecklist extends StatelessWidget {
         separatorBuilder: (context, index) => SizedBox(height: 12.h),
         itemBuilder: (context, index) {
           final item = items[index];
-          return _ChecklistRow(label: item.label, state: item.state);
+          return _ChecklistRow(
+            label: item.label,
+            state: item.state,
+            useLightText: useLightText,
+          );
         },
       ),
     );
@@ -108,10 +125,15 @@ class SecurityChecklist extends StatelessWidget {
 }
 
 class _ChecklistRow extends StatelessWidget {
-  const _ChecklistRow({required this.label, required this.state});
+  const _ChecklistRow({
+    required this.label,
+    required this.state,
+    required this.useLightText,
+  });
 
   final String label;
   final SecurityChecklistState state;
+  final bool useLightText;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +146,7 @@ class _ChecklistRow extends StatelessWidget {
             padding: EdgeInsets.all(4.w),
             child: CircularProgressIndicator(
               strokeWidth: 2.w,
-              color: AppColors.primary,
+              color: useLightText ? AppColors.cFFFFFF : AppColors.primary,
             ),
           ),
         ),
@@ -138,19 +160,26 @@ class _ChecklistRow extends StatelessWidget {
         ),
     };
 
-    final labelColor = switch (state) {
-      SecurityChecklistState.pending => AppColors.c474E5A,
-      SecurityChecklistState.checking => AppColors.c0F3D2E,
-      SecurityChecklistState.passed => AppColors.c0F3D2E,
-      SecurityChecklistState.failed => AppColors.error,
-    };
+    final labelColor = useLightText
+        ? AppColors.cFFFFFF
+        : switch (state) {
+            SecurityChecklistState.pending => AppColors.c474E5A,
+            SecurityChecklistState.checking => AppColors.c0F3D2E,
+            SecurityChecklistState.passed => AppColors.c0F3D2E,
+            SecurityChecklistState.failed => AppColors.error,
+          };
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: AppColors.cEAF4EF,
+        color: useLightText
+            ? AppColors.cFFFFFF.withValues(alpha: 0.15)
+            : AppColors.cEAF4EF,
         borderRadius: BorderRadius.circular(5.r),
+        border: useLightText
+            ? Border.all(color: AppColors.cFFFFFF.withValues(alpha: 0.35))
+            : null,
       ),
       child: Row(
         children: [

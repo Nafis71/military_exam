@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -39,9 +40,8 @@ class _McqExamPageState extends State<McqExamPage> {
       if (sessionController.examSession.value == null && sessionId.isNotEmpty) {
         await sessionController.startSession(sessionId);
       }
-      if (sessionController.currentExam.value == null) {
-        await sessionController.loadCurrentExam();
-      }
+      final refreshFromApi = !Get.find<ExamRunContext>().isOnboardingDemo;
+      await sessionController.loadCurrentExam(refresh: refreshFromApi);
       if (!sessionController.canAccessQuestions.value) {
         Get.offNamed(AppRoutes.examWaiting, arguments: sessionId);
         return;
@@ -169,8 +169,9 @@ class _McqExamPageState extends State<McqExamPage> {
         sessionController.completePhaseAndGetNextRoute(ExamPhase.mcq);
     final watchdog = Get.find<StartSecurityWatchdogUseCase>();
     await watchdog(
-      policy: SecurityPolicy(
+      policy: const SecurityPolicy(
         requireAirplaneMode: true,
+        requireVpnLockdown: true,
         monitoredPhases: [
           ExamPhase.mcq,
           ExamPhase.fillBlank,
@@ -180,20 +181,8 @@ class _McqExamPageState extends State<McqExamPage> {
       phase: sessionController.currentPhase.value,
       sessionId: sessionController.examSession.value?.sessionId,
     );
-    if (nextRoute == AppRoutes.finishExam) {
-      final examName = sessionController.currentExam.value?.examName ??
-          AppStrings.finishExamDefaultName;
-      final success = await sessionController.finalizeExamAndClearLocal();
-      if (!success) return;
-      Get.offAllNamed(
-        AppRoutes.finishExam,
-        arguments: <String, dynamic>{
-          'examName': examName,
-          'submittedAt':
-              sessionController.submissionReceipt.value?.submittedAt ??
-                  DateTime.now(),
-        },
-      );
+    if (nextRoute == AppRoutes.examSubmitReview) {
+      await Get.offNamed(AppRoutes.examSubmitReview);
       return;
     }
     Get.offNamed(nextRoute);

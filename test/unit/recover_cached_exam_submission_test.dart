@@ -11,6 +11,8 @@ import 'package:military_exam/features/exam_session/domain/repositories/exam_rep
 import 'package:military_exam/features/written_exam/domain/repositories/written_exam_repository.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 
+import '../helpers/demo_exam_test_support.dart';
+
 void main() {
   test('HasCachedExamAnswersUseCase returns true when exam repository has cache',
       () async {
@@ -18,13 +20,14 @@ void main() {
     final writtenRepo = _FakeWrittenExamRepository(images: const []);
     final useCase = HasCachedExamAnswersUseCase(examRepo, writtenRepo);
 
-    final result = await useCase();
+    final result = await useCase(rollNumber: '123');
 
     expect(result, isA<Success<bool>>());
     expect((result as Success<bool>).data, isTrue);
   });
 
-  test('HasCachedExamAnswersUseCase returns true when written images exist',
+  test(
+      'HasCachedExamAnswersUseCase returns false when only written images exist',
       () async {
     final examRepo = _FakeExamRepository(hasCache: false);
     final writtenRepo = _FakeWrittenExamRepository(
@@ -38,9 +41,9 @@ void main() {
     );
     final useCase = HasCachedExamAnswersUseCase(examRepo, writtenRepo);
 
-    final result = await useCase();
+    final result = await useCase(rollNumber: '123');
 
-    expect((result as Success<bool>).data, isTrue);
+    expect((result as Success<bool>).data, isFalse);
   });
 
   test('RecoverCachedExamSubmissionUseCase returns NetworkFailure unchanged',
@@ -52,8 +55,12 @@ void main() {
     final useCase = RecoverCachedExamSubmissionUseCase(
       SubmitExamWithPendingUploadsUseCase(
         examRepo,
-        UploadPendingWrittenImagesUseCase(examRepo, writtenRepo),
-        FinalizeExamUseCase(examRepo),
+        UploadPendingWrittenImagesUseCase(
+          examRepo,
+          writtenRepo,
+          createExamRunContext(),
+        ),
+        FinalizeExamUseCase(examRepo, writtenRepo),
         ClearExamLocalDataUseCase(examRepo, writtenRepo),
       ),
     );
@@ -75,7 +82,10 @@ class _FakeExamRepository implements ExamRepository {
   final Result<CurrentExam>? refreshResult;
 
   @override
-  Future<Result<bool>> hasCachedExamAnswers() async => Success(hasCache);
+  Future<Result<bool>> hasCachedExamAnswers({
+    Set<String> questionIdsWithImages = const {},
+  }) async =>
+      Success(hasCache);
 
   @override
   Future<Result<CurrentExam>> refreshCurrentExam() async {
@@ -105,7 +115,10 @@ class _FakeExamRepository implements ExamRepository {
   }
 
   @override
-  Future<Result<SubmissionReceipt>> finalizeExam(CurrentExam? currentExam) async {
+  Future<Result<SubmissionReceipt>> finalizeExam(
+    CurrentExam? currentExam, {
+    Set<String> questionIdsWithImages = const {},
+  }) async {
     return Success(
       SubmissionReceipt(
         submissionId: 'sub-1',

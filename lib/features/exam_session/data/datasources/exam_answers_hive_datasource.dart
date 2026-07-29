@@ -105,7 +105,11 @@ class ExamAnswersHiveDataSourceImpl implements ExamAnswersHiveDataSource {
   @override
   Future<Result<void>> clearAll() async {
     try {
+      final preservedRollNumber = _box.get(rollNumberKey) as String?;
       await _box.clear();
+      if (preservedRollNumber != null && preservedRollNumber.isNotEmpty) {
+        await _box.put(rollNumberKey, preservedRollNumber);
+      }
       return const Success(null);
     } catch (error) {
       return ErrorResult(
