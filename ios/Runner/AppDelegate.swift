@@ -30,7 +30,7 @@ import UIKit
       case "stopVpn":
         VpnBridge.shared.stop { ok in result(ok) }
       case "isActive":
-        result(VpnBridge.shared.isActive())
+        VpnBridge.shared.isActive { active in result(active) }
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -42,6 +42,7 @@ import UIKit
     )
     vpnEvents.setStreamHandler(VpnEventStreamHandler { [weak self] sink in
       self?.vpnEventSink = sink
+      VpnBridge.shared.configureEventSink(sink)
     })
   }
 }

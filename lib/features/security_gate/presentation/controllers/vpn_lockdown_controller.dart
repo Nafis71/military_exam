@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
+import '../../../../core/widgets/app_error_toast.dart';
 import '../../../../core/services/app_lifecycle_service.dart';
 import '../../../../core/services/exam_vpn_lockdown_service.dart';
 import '../routes/security_routes.dart';
@@ -70,16 +71,21 @@ class VpnLockdownController extends GetxController {
     try {
       final prepared = await _vpnLockdownService.prepare();
       if (!prepared) {
-        status.value = VpnLockdownGateStatus.disabled;
+        status.value = VpnLockdownGateStatus.error;
+        AppErrorToast.show(AppStrings.unableToVerifyNetworkLockdown);
         return;
       }
       final started = await _vpnLockdownService.startLockdown();
-      status.value = started
-          ? VpnLockdownGateStatus.enabled
-          : VpnLockdownGateStatus.disabled;
+      if (!started) {
+        status.value = VpnLockdownGateStatus.error;
+        AppErrorToast.show(AppStrings.unableToVerifyNetworkLockdown);
+        return;
+      }
+      status.value = VpnLockdownGateStatus.enabled;
     } catch (error) {
       status.value = VpnLockdownGateStatus.error;
       _logger.error('activateLockdown failed', error: error);
+      AppErrorToast.show(AppStrings.unableToVerifyNetworkLockdown);
     } finally {
       isActivating.value = false;
     }

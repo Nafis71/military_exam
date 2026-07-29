@@ -1,15 +1,31 @@
+import Flutter
 import Foundation
 import NetworkExtension
 
 final class VpnBridge: NSObject {
     static let shared = VpnBridge()
 
-    private let providerBundleId = "com.example.military_exam.PacketTunnel"
+    private let providerBundleId = "com.example.militaryExam.PacketTunnel"
     private var manager: NETunnelProviderManager?
+    private var statusObserver: NSObjectProtocol?
+    private var eventSink: FlutterEventSink?
+
+    func configureEventSink(_ sink: FlutterEventSink?) {
+        eventSink = sink
+        if sink != nil {
+            startObservingStatus()
+            loadManager { [weak self] _, _ in
+                self?.emitStatusIfDisconnected()
+            }
+        } else {
+            stopObservingStatus()
+        }
+    }
 
     func prepare(completion: @escaping (Bool) -> Void) {
         loadManager { manager, error in
-            if error != nil {
+            if let error {
+                self.logError("prepare loadManager failed", error: error)
                 completion(false)
                 return
             }
@@ -20,6 +36,9 @@ final class VpnBridge: NSObject {
     func start(completion: @escaping (Bool) -> Void) {
         loadManager { [weak self] manager, error in
             guard let self, let manager, error == nil else {
+                if let error {
+                    self?.logError("start loadManager failed", error: error)
+                }
                 completion(false)
                 return
             }
@@ -32,19 +51,23 @@ final class VpnBridge: NSObject {
             manager.isEnabled = true
 
             manager.saveToPreferences { saveError in
-                if saveError != nil {
+                if let saveError {
+                    self.logError("saveToPreferences failed", error: saveError)
                     completion(false)
                     return
                 }
                 manager.loadFromPreferences { loadError in
-                    if loadError != nil {
+                    if let loadError {
+                        self.logError("loadFromPreferences failed", error: loadError)
                         completion(false)
                         return
                     }
+                    self.manager = manager
                     do {
                         try manager.connection.startVPNTunnel()
                         completion(true)
                     } catch {
+                        self.logError("startVPNTunnel failed", error: error)
                         completion(false)
                     }
                 }
@@ -57,9 +80,21 @@ final class VpnBridge: NSObject {
         completion(true)
     }
 
-    func isActive() -> Bool {
-        guard let status = manager?.connection.status else { return false }
-        return status == .connected || status == .connecting || status == .reasserting
+    func isActive(completion: @escaping (Bool) -> Void) {
+        loadManager { [weak self] manager, error in
+            guard let self, let manager, error == nil else {
+                if let error {
+                    self?.logError("isActive loadManager failed", error: error)
+                }
+                completion(false)
+                return
+            }
+            completion(self.isConnectedStatus(manager.connection.status))
+        }
+    }
+
+    private func isConnectedStatus(_ status: NEVPNStatus) -> Bool {
+        status == .connected || status == .connecting || status == .reasserting
     }
 
     private func loadManager(completion: @escaping (NETunnelProviderManager?, Error?) -> Void) {
@@ -81,5 +116,38 @@ final class VpnBridge: NSObject {
             self.manager = manager
             completion(manager, nil)
         }
+    }
+
+    private func startObservingStatus() {
+        stopObservingStatus()
+        statusObserver = NotificationCenter.default.addObserver(
+            forName: .NEVPNStatusDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.emitStatusIfDisconnected()
+        }
+    }
+
+    private func stopObservingStatus() {
+        if let statusObserver {
+            NotificationCenter.default.removeObserver(statusObserver)
+            self.statusObserver = nil
+        }
+    }
+
+    private func emitStatusIfDisconnected() {
+        guard let manager else { return }
+        let status = manager.connection.status
+        if status == .disconnected || status == .invalid {
+            eventSink?("disconnected")
+        }
+    }
+
+    private func logError(_ message: String, error: Error) {
+        #if DEBUG
+        let nsError = error as NSError
+        print("[VpnBridge] \(message): \(nsError.domain) (\(nsError.code)) \(nsError.localizedDescription)")
+        #endif
     }
 }
