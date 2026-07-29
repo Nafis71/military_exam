@@ -28,13 +28,6 @@ class CandidateLoginForm extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => controller.continueLogin(),
           ),
-          SizedBox(height: 20.h),
-          LoginTextField(
-            label: AppStrings.deviceId,
-            hint: AppStrings.deviceId,
-            controller: controller.deviceIdController,
-            readOnly: true,
-          ),
           SizedBox(height: 34.h),
           Obx(() {
             final loading = controller.isLoading.value;

@@ -1,9 +1,8 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/storage_keys.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
@@ -32,23 +31,22 @@ abstract class ExamLocalDataSource {
 }
 
 class ExamLocalDataSourceImpl implements ExamLocalDataSource {
-  ExamLocalDataSourceImpl(this._storage);
+  ExamLocalDataSourceImpl(this._box);
 
-  final FlutterSecureStorage _storage;
+  final Box<dynamic> _box;
 
   static const _examSessionKey = 'exam_session';
   static const _mcqAnswersKey = 'mcq_answers';
   static const _fillBlankAnswersKey = 'fill_blank_answers';
+  static const _examLockedKey = 'exam_locked';
   static const _lockReasonKey = 'exam_lock_reason';
   static const _lockedAtKey = 'exam_locked_at';
+  static const _writtenExamImagesKey = 'written_exam_images';
 
   @override
   Future<Result<void>> saveExamSession(ExamSessionModel session) async {
     try {
-      await _storage.write(
-        key: _examSessionKey,
-        value: jsonEncode(session.toJson()),
-      );
+      await _box.put(_examSessionKey, jsonEncode(session.toJson()));
       return const Success(null);
     } catch (error) {
       return ErrorResult(
@@ -60,7 +58,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<ExamSessionModel?>> readExamSession() async {
     try {
-      final raw = await _storage.read(key: _examSessionKey);
+      final raw = _box.get(_examSessionKey) as String?;
       if (raw == null) return const Success(null);
       return Success(
         ExamSessionModel.fromJson(jsonDecode(raw) as Map<String, dynamic>),
@@ -78,7 +76,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
       final current = await readMcqAnswers();
       final answers = Map<String, String>.from(current.dataOrNull ?? {});
       answers[answer.questionId] = answer.selectedOptionId;
-      await _storage.write(key: _mcqAnswersKey, value: jsonEncode(answers));
+      await _box.put(_mcqAnswersKey, jsonEncode(answers));
       return const Success(null);
     } catch (error) {
       return ErrorResult(
@@ -90,7 +88,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<Map<String, String>>> readMcqAnswers() async {
     try {
-      final raw = await _storage.read(key: _mcqAnswersKey);
+      final raw = _box.get(_mcqAnswersKey) as String?;
       if (raw == null) return Success(<String, String>{});
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       return Success(
@@ -111,10 +109,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
       final current = await readFillBlankAnswers();
       final answers = Map<String, String>.from(current.dataOrNull ?? {});
       answers[answer.questionId] = answer.text;
-      await _storage.write(
-        key: _fillBlankAnswersKey,
-        value: jsonEncode(answers),
-      );
+      await _box.put(_fillBlankAnswersKey, jsonEncode(answers));
       return const Success(null);
     } catch (error) {
       return ErrorResult(
@@ -126,7 +121,7 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<Map<String, String>>> readFillBlankAnswers() async {
     try {
-      final raw = await _storage.read(key: _fillBlankAnswersKey);
+      final raw = _box.get(_fillBlankAnswersKey) as String?;
       if (raw == null) return Success(<String, String>{});
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       return Success(
@@ -144,18 +139,12 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<void>> setExamLocked(bool locked, {String? reason}) async {
     try {
-      await _storage.write(
-        key: StorageKeys.examLocked,
-        value: locked.toString(),
-      );
+      await _box.put(_examLockedKey, locked.toString());
       if (reason != null) {
-        await _storage.write(key: _lockReasonKey, value: reason);
+        await _box.put(_lockReasonKey, reason);
       }
       if (locked) {
-        await _storage.write(
-          key: _lockedAtKey,
-          value: DateTime.now().toIso8601String(),
-        );
+        await _box.put(_lockedAtKey, DateTime.now().toIso8601String());
       }
       return const Success(null);
     } catch (error) {
@@ -168,10 +157,10 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<void>> clearLegacyAnswerData() async {
     try {
-      await _storage.delete(key: _mcqAnswersKey);
-      await _storage.delete(key: _fillBlankAnswersKey);
-      await _storage.delete(key: 'written_exam_images');
-      await _storage.delete(key: _examSessionKey);
+      await _box.delete(_mcqAnswersKey);
+      await _box.delete(_fillBlankAnswersKey);
+      await _box.delete(_writtenExamImagesKey);
+      await _box.delete(_examSessionKey);
       return const Success(null);
     } catch (error) {
       return ErrorResult(
@@ -183,10 +172,10 @@ class ExamLocalDataSourceImpl implements ExamLocalDataSource {
   @override
   Future<Result<ExamLockState>> readLockState() async {
     try {
-      final lockedRaw = await _storage.read(key: StorageKeys.examLocked);
+      final lockedRaw = _box.get(_examLockedKey) as String?;
       final isLocked = lockedRaw == 'true';
-      final reason = await _storage.read(key: _lockReasonKey);
-      final lockedAtRaw = await _storage.read(key: _lockedAtKey);
+      final reason = _box.get(_lockReasonKey) as String?;
+      final lockedAtRaw = _box.get(_lockedAtKey) as String?;
       return Success(
         ExamLockState(
           isLocked: isLocked,

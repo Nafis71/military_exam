@@ -78,6 +78,12 @@ Text(e.toString());
 - Variables and functions: readable, descriptive, camelCase. No abbreviations unless universal (`id`, `url`).
 - Booleans: prefix with `is`, `has`, `can` (e.g. `isLoading`, `hasError`).
 
+## Code Quality
+
+- After completing code changes, always run `flutter analyze`.
+- Fix all analyzer issues in touched code before finishing: remove dead code, unused imports, and resolve warnings.
+- Do not leave new analyzer warnings or errors in modified files.
+
 ## General
 
 - Think before coding. Don't touch irrelevant files. Ask when intent is ambiguous.

@@ -175,6 +175,7 @@ class _SecurityDashboardState extends State<SecurityDashboard> {
       ));
       setState(() => _report = report);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Check failed: $e'), backgroundColor: Colors.red),
       );

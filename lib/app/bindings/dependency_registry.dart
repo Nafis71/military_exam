@@ -1,6 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+
+import '../../core/storage/hive_initializer.dart';
+import '../../core/storage/secure_storage_provider.dart';
+import '../../features/exam_session/data/datasources/demo_exam_memory_store.dart';
+import '../../features/exam_session/data/datasources/exam_answers_hive_datasource.dart';
 
 import '../../core/config/deployment.dart';
 import '../../core/errors/error_mapper.dart';
@@ -32,8 +36,6 @@ import '../../features/auth/domain/usecases/login_usecase.dart';
 import '../../features/auth/domain/usecases/validate_exam_eligibility_usecase.dart';
 import '../../features/auth/presentation/controllers/login_controller.dart';
 import '../../app/services/pending_exam_answers_flusher_impl.dart';
-import '../../core/storage/hive_initializer.dart';
-import '../../features/exam_session/data/datasources/exam_answers_hive_datasource.dart';
 import '../../features/exam_session/data/datasources/exam_local_datasource.dart';
 import '../../features/exam_session/data/datasources/exam_remote_datasource.dart';
 import '../../features/exam_session/data/repositories/exam_repository_impl.dart';
@@ -68,7 +70,9 @@ import '../../features/candidate_dashboard/domain/repositories/exam_info_reposit
 import '../../features/candidate_dashboard/presentation/controllers/candidate_dashboard_controller.dart';
 import '../../features/candidate_dashboard/presentation/controllers/dashboard_security_settings_controller.dart';
 import '../../features/exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
+import '../../features/onboarding/data/datasources/candidate_secure_datasource.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
+import '../../features/onboarding/data/datasources/onboarding_prefs_local_datasource.dart';
 import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
 import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
 import '../../features/onboarding/domain/usecases/candidate_login_usecase.dart';
@@ -137,25 +141,39 @@ class DependencyRegistry {
     final tokenHolder = AuthTokenHolder();
     Get.put<AuthTokenHolder>(tokenHolder, permanent: true);
 
-    const secureStorage = FlutterSecureStorage();
-    Get.put<ExamRunContext>(ExamRunContext(), permanent: true);
+    final secureStorage = SecureStorageProvider.instance;
+    await HiveInitializer.init();
+    final onboardingPrefsBox =
+        await HiveInitializer.openBox(AppHiveBoxes.onboardingPrefs);
+    final sessionBox = await HiveInitializer.openBox(AppHiveBoxes.session);
+    final examCacheBox = await HiveInitializer.openBox(AppHiveBoxes.examCache);
+    final writtenExamMetaBox =
+        await HiveInitializer.openBox(AppHiveBoxes.writtenExamMeta);
+
+    Get.put<DemoExamMemoryStore>(DemoExamMemoryStore(), permanent: true);
+    Get.put<ExamRunContext>(
+      ExamRunContext(Get.find<DemoExamMemoryStore>()),
+      permanent: true,
+    );
     Get.put<IdentityVerificationSession>(
       IdentityVerificationSession(),
       permanent: true,
     );
     Get.put<DeviceIdService>(DeviceIdService(), permanent: true);
 
-    final onboardingLocal = OnboardingLocalDataSourceImpl(secureStorage);
+    final onboardingLocal = OnboardingLocalDataSourceImpl(
+      CandidateSecureDataSourceImpl(secureStorage),
+      OnboardingPrefsHiveDataSourceImpl(onboardingPrefsBox),
+    );
     final onboardingRepo = OnboardingRepositoryImpl(onboardingLocal);
     Get.put<OnboardingRepository>(onboardingRepo, permanent: true);
 
-    final sessionLocal = SessionLocalDataSourceImpl(secureStorage);
+    final sessionLocal = SessionLocalDataSourceImpl(sessionBox);
     final sessionRepo = SessionRepositoryImpl(sessionLocal);
     Get.put<SessionRepository>(sessionRepo, permanent: true);
 
     final dio = DioFactory(
       logger: logger,
-      idempotencyKeyProvider: const IdempotencyKeyProvider(),
       tokenProvider: () => tokenHolder.token,
     ).create();
     Get.put<Dio>(dio, permanent: true);
@@ -172,16 +190,28 @@ class DependencyRegistry {
       logger,
       Get.find<ExamRunContext>(),
     );
-    final examLocal = ExamLocalDataSourceImpl(secureStorage);
+    final examLocal = ExamLocalDataSourceImpl(examCacheBox);
     final examAnswersHive = await HiveInitializer.initExamAnswers();
     Get.put<ExamAnswersHiveDataSource>(examAnswersHive, permanent: true);
-    final examRepo = ExamRepositoryImpl(examRemote, examLocal, examAnswersHive);
+    final examRepo = ExamRepositoryImpl(
+      examRemote,
+      examLocal,
+      examAnswersHive,
+      Get.find<ExamRunContext>(),
+      Get.find<DemoExamMemoryStore>(),
+      onboardingRepo,
+    );
     Get.put<ExamRepository>(examRepo, permanent: true);
 
     final penaltyRepo = PenaltyRepositoryImpl(examLocal);
     Get.put<PenaltyRepository>(penaltyRepo, permanent: true);
 
-    final writtenRepo = WrittenExamRepositoryImpl(apiClient, secureStorage);
+    final writtenRepo = WrittenExamRepositoryImpl(
+      apiClient,
+      writtenExamMetaBox,
+      Get.find<ExamRunContext>(),
+      Get.find<DemoExamMemoryStore>(),
+    );
     Get.put<WrittenExamRepository>(writtenRepo, permanent: true);
 
     final platformSettings = PlatformSettingsService();
@@ -221,10 +251,14 @@ class DependencyRegistry {
     Get.put(GetCurrentExamUseCase(examRepo), permanent: true);
     Get.put(GetExamTimerUseCase(examRepo), permanent: true);
     Get.put(FinishExamUseCase(examRepo), permanent: true);
-    Get.put(FinalizeExamUseCase(examRepo), permanent: true);
+    Get.put(FinalizeExamUseCase(examRepo, writtenRepo), permanent: true);
     Get.put(ClearExamLocalDataUseCase(examRepo, writtenRepo), permanent: true);
     Get.put(
-      UploadPendingWrittenImagesUseCase(examRepo, writtenRepo),
+      UploadPendingWrittenImagesUseCase(
+        examRepo,
+        writtenRepo,
+        Get.find<ExamRunContext>(),
+      ),
       permanent: true,
     );
     Get.put(GetExamSubmitSummaryUseCase(examRepo), permanent: true);
@@ -287,6 +321,7 @@ class DependencyRegistry {
         lockExamSessionUseCase: Get.find<LockExamSessionUseCase>(),
         reportSecurityViolationUseCase:
             Get.find<ReportSecurityViolationUseCase>(),
+        examRunContext: Get.find<ExamRunContext>(),
       ),
       permanent: true,
     );
@@ -391,6 +426,7 @@ class DependencyRegistry {
       StartOnboardingDemoExamUseCase(
         Get.find<ExamRunContext>(),
         Get.find<EnterExamAfterCredentialsUseCase>(),
+        Get.find<ClearExamLocalDataUseCase>(),
       ),
       permanent: true,
     );
@@ -438,7 +474,6 @@ class CandidateLoginBinding extends Bindings {
     Get.lazyPut(
       () => CandidateLoginController(
         Get.find<CandidateLoginUseCase>(),
-        Get.find<DeviceIdService>(),
         Get.find<AppLogger>(),
       ),
     );
@@ -603,6 +638,7 @@ class LoginBinding extends Bindings {
         Get.find<ClearExamLocalDataUseCase>(),
         Get.find<GetOnboardingStateUseCase>(),
         Get.find<GetRollNumberUseCase>(),
+        Get.find<SaveRollNumberUseCase>(),
         Get.find<EnterExamAfterCredentialsUseCase>(),
         Get.find<CheckAirplaneModeUseCase>(),
         Get.find<CheckConnectivityUseCase>(),
@@ -667,6 +703,7 @@ class McqExamBinding extends Bindings {
           finishExamUseCase: Get.find(),
           lockExamSessionUseCase: Get.find(),
           reportSecurityViolationUseCase: Get.find(),
+          examRunContext: Get.find<ExamRunContext>(),
         ),
         permanent: true,
       );
@@ -697,6 +734,7 @@ class FillBlankExamBinding extends Bindings {
           finishExamUseCase: Get.find(),
           lockExamSessionUseCase: Get.find(),
           reportSecurityViolationUseCase: Get.find(),
+          examRunContext: Get.find<ExamRunContext>(),
         ),
         permanent: true,
       );

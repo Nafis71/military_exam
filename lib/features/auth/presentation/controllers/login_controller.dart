@@ -23,6 +23,7 @@ import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../exam_session/domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../../exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
 import '../../../exam_session/domain/usecases/get_roll_number_usecase.dart';
+import '../../../exam_session/domain/usecases/save_roll_number_usecase.dart';
 import '../../../exam_session/domain/usecases/has_cached_exam_answers_usecase.dart';
 import '../../../exam_session/domain/usecases/recover_cached_exam_submission_usecase.dart';
 import '../../../onboarding/domain/usecases/get_onboarding_state_usecase.dart';
@@ -45,6 +46,7 @@ class LoginController extends GetxController {
     this._clearExamLocalDataUseCase,
     this._getOnboardingState,
     this._getRollNumber,
+    this._saveRollNumber,
     this._enterExamAfterCredentials,
     this._checkAirplaneMode,
     this._checkConnectivity,
@@ -66,6 +68,7 @@ class LoginController extends GetxController {
   final ClearExamLocalDataUseCase _clearExamLocalDataUseCase;
   final GetOnboardingStateUseCase _getOnboardingState;
   final GetRollNumberUseCase _getRollNumber;
+  final SaveRollNumberUseCase _saveRollNumber;
   final EnterExamAfterCredentialsUseCase _enterExamAfterCredentials;
   final CheckAirplaneModeUseCase _checkAirplaneMode;
   final CheckConnectivityUseCase _checkConnectivity;
@@ -326,10 +329,11 @@ class LoginController extends GetxController {
       return;
     }
 
-    // TODO(backend): send batchPasswordController.text in login payload when API is ready.
-
     isLoading.value = true;
-    final credentials = LoginCredentials(rollNumber: _storedCandidateId);
+    final credentials = LoginCredentials(
+      rollNumber: _storedCandidateId,
+      batchPassword: batchPasswordController.text.trim(),
+    );
 
     final result = await _loginUseCase(credentials);
     if (result is ErrorResult<AuthSession>) {
@@ -362,6 +366,16 @@ class LoginController extends GetxController {
           isLoading.value = false;
           errorMessage.value =
               data.message ?? AppStrings.notEligible;
+          return;
+        }
+        final saveRollResult = await _saveRollNumber(_storedCandidateId);
+        if (saveRollResult is ErrorResult<void>) {
+          isLoading.value = false;
+          _logger.error(
+            'saveRollNumber failed',
+            error: saveRollResult.failure.message,
+          );
+          errorMessage.value = AppStrings.somethingWentWrong;
           return;
         }
         final recovered = await _tryRecoverCachedSubmission();
@@ -405,13 +419,34 @@ class LoginController extends GetxController {
 
   Future<bool> _tryRecoverCachedSubmission() async {
     try {
-      final hasCacheResult = await _hasCachedExamAnswersUseCase();
+      final storedRollResult = await _getRollNumber();
+      if (storedRollResult is Success<String?> &&
+          storedRollResult.data != null &&
+          storedRollResult.data!.isNotEmpty &&
+          storedRollResult.data != _storedCandidateId) {
+        if (kDebugMode) {
+          _logger.info(
+            'login cache recovery skipped: roll number mismatch '
+            '(stored=${storedRollResult.data}, current=$_storedCandidateId)',
+          );
+        }
+        await _clearExamLocalDataUseCase();
+      }
+
+      final hasCacheResult = await _hasCachedExamAnswersUseCase(
+        rollNumber: _storedCandidateId,
+      );
       if (hasCacheResult is ErrorResult<bool>) {
         _logger.error(
           'hasCachedExamAnswers failed',
           error: hasCacheResult.failure.message,
         );
         return false;
+      }
+      if (kDebugMode) {
+        _logger.info(
+          'login cache recovery check: hasCache=${hasCacheResult.dataOrNull}',
+        );
       }
       if (hasCacheResult.dataOrNull != true) return false;
 
@@ -421,6 +456,9 @@ class LoginController extends GetxController {
 
       switch (recoveryResult) {
         case Success(:final data):
+          if (kDebugMode) {
+            _logger.info('login cache recovery succeeded; routing to finish');
+          }
           _stopSecurityPolling();
           Get.offAllNamed(
             AppRoutes.finishExam,

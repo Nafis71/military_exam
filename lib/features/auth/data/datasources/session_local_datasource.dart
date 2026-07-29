@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-import '../../../../core/constants/storage_keys.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
@@ -16,18 +15,25 @@ abstract class SessionLocalDataSource {
 }
 
 class SessionLocalDataSourceImpl implements SessionLocalDataSource {
-  SessionLocalDataSourceImpl(this._storage);
+  SessionLocalDataSourceImpl(this._box);
 
-  final FlutterSecureStorage _storage;
+  final Box<dynamic> _box;
+
+  static const _authTokenKey = 'auth_token';
+  static const _sessionIdKey = 'session_id';
+  static const _examineeIdKey = 'examinee_id';
+  static const _examineeNameKey = 'examinee_name';
+  static const _sessionExpiresAtKey = 'session_expires_at';
+  static const _sessionSnapshotKey = 'session_snapshot';
 
   @override
   Future<Result<AuthSession?>> readSession() async {
     try {
-      final token = await _storage.read(key: StorageKeys.authToken);
-      final sessionId = await _storage.read(key: StorageKeys.sessionId);
-      final examineeId = await _storage.read(key: StorageKeys.examineeId);
-      final examineeName = await _storage.read(key: 'examinee_name');
-      final expiresAtRaw = await _storage.read(key: 'session_expires_at');
+      final token = _box.get(_authTokenKey) as String?;
+      final sessionId = _box.get(_sessionIdKey) as String?;
+      final examineeId = _box.get(_examineeIdKey) as String?;
+      final examineeName = _box.get(_examineeNameKey) as String?;
+      final expiresAtRaw = _box.get(_sessionExpiresAtKey) as String?;
 
       if (token == null || sessionId == null || examineeId == null) {
         return const Success(null);
@@ -42,7 +48,8 @@ class SessionLocalDataSourceImpl implements SessionLocalDataSource {
             name: examineeName ?? examineeId,
           ),
           expiresAt: expiresAtRaw != null
-              ? DateTime.parse(expiresAtRaw)
+              ? DateTime.tryParse(expiresAtRaw) ??
+                  DateTime.now().add(const Duration(hours: 4))
               : DateTime.now().add(const Duration(hours: 4)),
         ),
       );
@@ -54,26 +61,17 @@ class SessionLocalDataSourceImpl implements SessionLocalDataSource {
   @override
   Future<Result<void>> writeSession(AuthSession session) async {
     try {
-      await _storage.write(key: StorageKeys.authToken, value: session.token);
-      await _storage.write(
-        key: StorageKeys.sessionId,
-        value: session.sessionId,
+      await _box.put(_authTokenKey, session.token);
+      await _box.put(_sessionIdKey, session.sessionId);
+      await _box.put(_examineeIdKey, session.examinee.id);
+      await _box.put(_examineeNameKey, session.examinee.name);
+      await _box.put(
+        _sessionExpiresAtKey,
+        session.expiresAt.toIso8601String(),
       );
-      await _storage.write(
-        key: StorageKeys.examineeId,
-        value: session.examinee.id,
-      );
-      await _storage.write(
-        key: 'examinee_name',
-        value: session.examinee.name,
-      );
-      await _storage.write(
-        key: 'session_expires_at',
-        value: session.expiresAt.toIso8601String(),
-      );
-      await _storage.write(
-        key: 'session_snapshot',
-        value: jsonEncode({
+      await _box.put(
+        _sessionSnapshotKey,
+        jsonEncode({
           'token': session.token,
           'session_id': session.sessionId,
           'examinee_id': session.examinee.id,
@@ -90,12 +88,12 @@ class SessionLocalDataSourceImpl implements SessionLocalDataSource {
   @override
   Future<Result<void>> deleteSession() async {
     try {
-      await _storage.delete(key: StorageKeys.authToken);
-      await _storage.delete(key: StorageKeys.sessionId);
-      await _storage.delete(key: StorageKeys.examineeId);
-      await _storage.delete(key: 'examinee_name');
-      await _storage.delete(key: 'session_expires_at');
-      await _storage.delete(key: 'session_snapshot');
+      await _box.delete(_authTokenKey);
+      await _box.delete(_sessionIdKey);
+      await _box.delete(_examineeIdKey);
+      await _box.delete(_examineeNameKey);
+      await _box.delete(_sessionExpiresAtKey);
+      await _box.delete(_sessionSnapshotKey);
       return const Success(null);
     } catch (error) {
       return ErrorResult(UnexpectedFailure('Failed to clear session: $error'));

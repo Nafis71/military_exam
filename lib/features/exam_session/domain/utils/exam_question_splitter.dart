@@ -48,8 +48,6 @@ abstract final class ExamQuestionSplitter {
         case ExamQuestionType.fillInBlank:
         case ExamQuestionType.descriptive:
           count++;
-        default:
-          break;
       }
     }
     return count;

@@ -12,6 +12,7 @@ import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
 import '../../../onboarding_demo/data/datasources/onboarding_demo_exam_datasource.dart';
 import '../../../security_gate/domain/usecases/start_security_watchdog_usecase.dart';
+import '../../domain/usecases/clear_exam_local_data_usecase.dart';
 import '../../presentation/controllers/exam_session_controller.dart';
 
 /// Orchestrates exam entry after credentials (real) or demo bootstrap.
@@ -61,10 +62,13 @@ class EnterExamAfterCredentialsUseCase {
       final sessionId = examSession.sessionId;
 
       if (skipSecurity) {
-        Get.offAllNamed(
-          _sessionController.initialExamRoute,
-          arguments: sessionId,
-        );
+        final route = _sessionController.initialExamRouteOrNull;
+        if (route == null) {
+          return const ErrorResult(
+            UnexpectedFailure(AppStrings.noQuestionsAvailable),
+          );
+        }
+        Get.offAllNamed(route, arguments: sessionId);
         return const Success(null);
       }
 
@@ -103,10 +107,13 @@ class EnterExamAfterCredentialsUseCase {
         phase: ExamPhase.mcq,
         sessionId: sessionId,
       );
-      Get.offAllNamed(
-        _sessionController.initialExamRoute,
-        arguments: sessionId,
-      );
+      final route = _sessionController.initialExamRouteOrNull;
+      if (route == null) {
+        return const ErrorResult(
+          UnexpectedFailure(AppStrings.noQuestionsAvailable),
+        );
+      }
+      Get.offAllNamed(route, arguments: sessionId);
       return const Success(null);
     } catch (error) {
       return ErrorResult(UnexpectedFailure(error.toString()));
@@ -118,13 +125,19 @@ class StartOnboardingDemoExamUseCase {
   StartOnboardingDemoExamUseCase(
     this._examRunContext,
     this._enterExam,
+    this._clearExamLocalData,
   );
 
   final ExamRunContext _examRunContext;
   final EnterExamAfterCredentialsUseCase _enterExam;
+  final ClearExamLocalDataUseCase _clearExamLocalData;
 
   Future<Result<void>> call() async {
     _examRunContext.setOnboardingDemo();
+    final clearResult = await _clearExamLocalData();
+    if (clearResult is ErrorResult<void>) {
+      return ErrorResult(clearResult.failure);
+    }
     return _enterExam(
       authSessionId: OnboardingDemoExamDataSource.authSessionId,
       skipSecurity: true,

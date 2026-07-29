@@ -10,8 +10,7 @@
 /// final report = await shield.performCheck(SecurityConfig());
 /// if (report.isPrivilegedAccess) { /* handle root/jailbreak */ }
 /// ```
-///
-library advanced_root_detection;
+library advanced_root_detection; // ignore: unnecessary_library_name
 
 export 'src/advance_root_detection_base.dart';
 export 'src/threat_report.dart';

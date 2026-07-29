@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:military_exam/core/constants/app_strings.dart';
-import 'package:military_exam/core/services/exam_run_context.dart';
 import 'package:military_exam/core/utils/result.dart';
 import 'package:military_exam/features/exam_session/domain/ports/pending_exam_answers_flusher.dart';
 import 'package:military_exam/features/exam_session/domain/repositories/exam_repository.dart';
@@ -24,6 +23,8 @@ import 'package:military_exam/features/written_exam/domain/usecases/get_written_
 import 'package:military_exam/features/written_exam/domain/usecases/mark_written_image_uploaded_usecase.dart';
 import 'package:military_exam/features/written_exam/domain/usecases/save_descriptive_draft_usecase.dart';
 import 'package:military_exam/features/written_exam/domain/usecases/upload_descriptive_answer_image_usecase.dart';
+
+import '../helpers/demo_exam_test_support.dart';
 import 'package:military_exam/features/written_exam/presentation/controllers/written_exam_controller.dart';
 import 'package:military_exam/shared/domain/entities/exam_entities.dart';
 import 'package:military_exam/shared/domain/enums/exam_enums.dart';
@@ -37,7 +38,11 @@ void main() {
     Get.testMode = true;
     final examRepo = _StubExamRepository();
     writtenRepo = _StubWrittenExamRepository();
-    final uploadUseCase = UploadPendingWrittenImagesUseCase(examRepo, writtenRepo);
+    final uploadUseCase = UploadPendingWrittenImagesUseCase(
+      examRepo,
+      writtenRepo,
+      createExamRunContext(),
+    );
     sessionController = ExamSessionController(
       startExamSessionUseCase: StartExamSessionUseCase(examRepo),
       getCurrentExamUseCase: GetCurrentExamUseCase(examRepo),
@@ -46,19 +51,20 @@ void main() {
         _StubPendingExamAnswersFlusher(),
         examRepo,
         uploadUseCase,
-        FinalizeExamUseCase(examRepo),
+        FinalizeExamUseCase(examRepo, writtenRepo),
         ClearExamLocalDataUseCase(examRepo, writtenRepo),
       ),
       uploadPendingWrittenImagesUseCase: uploadUseCase,
-      finalizeExamUseCase: FinalizeExamUseCase(examRepo),
+      finalizeExamUseCase: FinalizeExamUseCase(examRepo, writtenRepo),
       clearExamLocalDataUseCase: ClearExamLocalDataUseCase(examRepo, writtenRepo),
       finishExamUseCase: FinishExamUseCase(examRepo),
       lockExamSessionUseCase: LockExamSessionUseCase(examRepo),
       reportSecurityViolationUseCase: ReportSecurityViolationUseCase(
         examRepo,
         _StubPenaltyRepository(),
-        ExamRunContext(),
+        createLinkedDemoExamDependencies().examRunContext,
       ),
+      examRunContext: createExamRunContext(),
     );
     sessionController.descriptiveQuestions.assignAll([
       const WrittenQuestion(id: 'w1', index: 1, total: 2, text: 'Q1'),

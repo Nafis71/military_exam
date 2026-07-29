@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/errors/failure.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../shared/domain/entities/exam_entities.dart';
 import '../../../../shared/domain/enums/exam_enums.dart';
@@ -12,12 +13,18 @@ class UploadPendingWrittenImagesUseCase {
   UploadPendingWrittenImagesUseCase(
     this._examRepository,
     this._writtenExamRepository,
+    this._examRunContext,
   );
 
   final ExamRepository _examRepository;
   final WrittenExamRepository _writtenExamRepository;
+  final ExamRunContext _examRunContext;
 
   Future<Result<void>> call() async {
+    if (_examRunContext.isOnboardingDemo) {
+      return const Success(null);
+    }
+
     final imagesResult = await _writtenExamRepository.getImages();
     switch (imagesResult) {
       case ErrorResult(:final failure):

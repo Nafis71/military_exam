@@ -81,28 +81,19 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
     }
     if (Deployment.instance.isDemo) {
       _logger.info('Demo mode: exam session served from device (no API call)');
-      return Success(_demoSession(authSessionId));
+      return Success(_localSession(authSessionId));
     }
 
-    final result = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.sessionStart,
-      data: {'auth_session_id': authSessionId},
-    );
-
-    if (result is Success<Map<String, dynamic>>) {
-      return Success(ExamSessionModel.fromJson(result.data));
-    }
-
-    _logger.warning('Start session API failed, returning demo session');
-    return Success(_demoSession(authSessionId));
+    _logger.info('Building local exam session from auth credentials');
+    return Success(_localSession(authSessionId));
   }
 
-  ExamSessionModel _demoSession(String authSessionId) {
+  ExamSessionModel _localSession(String authSessionId) {
     return ExamSessionModel(
-      sessionId: 'exam-${DateTime.now().millisecondsSinceEpoch}',
+      sessionId: authSessionId,
       examineeId: authSessionId,
       startedAt: DateTime.now(),
-      durationMinutes: _demoDurationMinutes,
+      durationMinutes: 0,
       isLocked: false,
       currentPhase: ExamPhase.mcq.name,
     );
@@ -135,17 +126,18 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       return Success(_demoDurationMinutes * 60);
     }
 
-    final result = await _apiClient.get<Map<String, dynamic>>(
-      ApiEndpoints.sessionStatus,
-      queryParameters: {'session_id': sessionId},
-    );
-
-    if (result is Success<Map<String, dynamic>>) {
-      return Success(result.data['remaining_seconds'] as int? ?? 0);
+    final examResult = await fetchCurrentExam();
+    if (examResult is Success<CurrentExamModel>) {
+      final remainingMinutes = examResult.data.window.remainingExamMinutes;
+      if (remainingMinutes > 0) {
+        return Success(remainingMinutes * 60);
+      }
+      if (examResult.data.durationMinutes > 0) {
+        return Success(examResult.data.durationMinutes * 60);
+      }
     }
 
-    _logger.warning('Timer API failed, returning demo remaining time');
-    return Success(_demoDurationMinutes * 60);
+    return const Success(0);
   }
 
   @override
@@ -174,14 +166,23 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
             error: error,
             stackTrace: stackTrace,
           );
+          return const ErrorResult(
+            UnexpectedFailure(AppStrings.networkRequestFailed),
+          );
         }
-      } else {
-        _logger.warning('Current exam API returned invalid data shape');
       }
+      _logger.warning('Current exam API returned invalid data shape');
+      return const ErrorResult(
+        UnexpectedFailure(AppStrings.networkRequestFailed),
+      );
     }
 
-    _logger.warning('Current exam API failed, returning demo exam');
-    return Success(_demoCurrentExam);
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    _logger.warning('Current exam API failed');
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
   }
 
   @override
@@ -315,7 +316,11 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       ));
     }
 
-    return Success(_demoReceipt(AppStrings.examSubmittedSuccessfully));
+    if (result is ErrorResult<Map<String, dynamic>>) {
+      return ErrorResult(result.failure);
+    }
+
+    return const ErrorResult(UnexpectedFailure(AppStrings.networkRequestFailed));
   }
 
   @override

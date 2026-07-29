@@ -1,12 +1,9 @@
-import 'dart:convert';
-
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import '../../../../core/constants/storage_keys.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/result.dart';
+import '../../domain/entities/onboarding_candidate.dart';
 import '../../domain/entities/onboarding_state.dart';
-import '../models/onboarding_candidate_model.dart';
+import 'candidate_secure_datasource.dart';
+import 'onboarding_prefs_local_datasource.dart';
 
 abstract class OnboardingLocalDataSource {
   Future<Result<OnboardingState>> readState();
@@ -17,40 +14,54 @@ abstract class OnboardingLocalDataSource {
 }
 
 class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
-  OnboardingLocalDataSourceImpl(this._storage);
+  OnboardingLocalDataSourceImpl(this._candidateSecure, this._prefs);
 
-  final FlutterSecureStorage _storage;
+  final CandidateSecureDataSource _candidateSecure;
+  final OnboardingPrefsLocalDataSource _prefs;
 
   @override
   Future<Result<OnboardingState>> readState() async {
     try {
-      final isLoggedInRaw = await _storage.read(key: StorageKeys.isLoggedIn);
-      final candidateRaw = await _storage.read(key: StorageKeys.candidate);
-      final hasCompletedDemoRaw =
-          await _storage.read(key: StorageKeys.hasCompletedDemo);
-      final hasSeenDemoDialogRaw =
-          await _storage.read(key: StorageKeys.hasSeenDemoDialog);
-      final hasSeenCongratulationsRaw = await _storage.read(
-        key: StorageKeys.hasSeenCongratulationsDialog,
-      );
-      final isDeviceBoundRaw =
-          await _storage.read(key: StorageKeys.isDeviceBound);
+      final isLoggedInResult = await _prefs.readIsLoggedIn();
+      if (isLoggedInResult is ErrorResult<bool>) {
+        return ErrorResult(isLoggedInResult.failure);
+      }
 
-      OnboardingCandidateModel? candidate;
-      if (candidateRaw != null) {
-        candidate = OnboardingCandidateModel.fromJson(
-          jsonDecode(candidateRaw) as Map<String, dynamic>,
-        );
+      final candidateResult = await _candidateSecure.readCandidate();
+      if (candidateResult is ErrorResult<OnboardingCandidate?>) {
+        return ErrorResult(candidateResult.failure);
+      }
+
+      final hasCompletedDemoResult = await _prefs.readHasCompletedDemo();
+      if (hasCompletedDemoResult is ErrorResult<bool>) {
+        return ErrorResult(hasCompletedDemoResult.failure);
+      }
+
+      final hasSeenDemoDialogResult = await _prefs.readHasSeenDemoDialog();
+      if (hasSeenDemoDialogResult is ErrorResult<bool>) {
+        return ErrorResult(hasSeenDemoDialogResult.failure);
+      }
+
+      final hasSeenCongratulationsResult =
+          await _prefs.readHasSeenCongratulationsDialog();
+      if (hasSeenCongratulationsResult is ErrorResult<bool>) {
+        return ErrorResult(hasSeenCongratulationsResult.failure);
+      }
+
+      final isDeviceBoundResult = await _candidateSecure.readIsDeviceBound();
+      if (isDeviceBoundResult is ErrorResult<bool>) {
+        return ErrorResult(isDeviceBoundResult.failure);
       }
 
       return Success(
         OnboardingState(
-          isLoggedIn: isLoggedInRaw == 'true',
-          candidate: candidate,
-          hasCompletedDemo: hasCompletedDemoRaw == 'true',
-          hasSeenDemoDialog: hasSeenDemoDialogRaw == 'true',
-          hasSeenCongratulationsDialog: hasSeenCongratulationsRaw == 'true',
-          isDeviceBound: isDeviceBoundRaw == 'true',
+          isLoggedIn: isLoggedInResult.dataOrNull ?? false,
+          candidate: candidateResult.dataOrNull,
+          hasCompletedDemo: hasCompletedDemoResult.dataOrNull ?? false,
+          hasSeenDemoDialog: hasSeenDemoDialogResult.dataOrNull ?? false,
+          hasSeenCongratulationsDialog:
+              hasSeenCongratulationsResult.dataOrNull ?? false,
+          isDeviceBound: isDeviceBoundResult.dataOrNull ?? false,
         ),
       );
     } catch (error) {
@@ -61,36 +72,42 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
   @override
   Future<Result<void>> writeState(OnboardingState state) async {
     try {
-      await _storage.write(
-        key: StorageKeys.isLoggedIn,
-        value: state.isLoggedIn.toString(),
-      );
-      if (state.candidate != null) {
-        await _storage.write(
-          key: StorageKeys.candidate,
-          value: jsonEncode(
-            OnboardingCandidateModel.fromEntity(state.candidate!).toJson(),
-          ),
-        );
-      } else {
-        await _storage.delete(key: StorageKeys.candidate);
+      final isLoggedInResult =
+          await _prefs.writeIsLoggedIn(state.isLoggedIn);
+      if (isLoggedInResult is ErrorResult<void>) {
+        return ErrorResult(isLoggedInResult.failure);
       }
-      await _storage.write(
-        key: StorageKeys.hasCompletedDemo,
-        value: state.hasCompletedDemo.toString(),
-      );
-      await _storage.write(
-        key: StorageKeys.hasSeenDemoDialog,
-        value: state.hasSeenDemoDialog.toString(),
-      );
-      await _storage.write(
-        key: StorageKeys.hasSeenCongratulationsDialog,
-        value: state.hasSeenCongratulationsDialog.toString(),
-      );
-      await _storage.write(
-        key: StorageKeys.isDeviceBound,
-        value: state.isDeviceBound.toString(),
-      );
+
+      final candidateResult =
+          await _candidateSecure.writeCandidate(state.candidate);
+      if (candidateResult is ErrorResult<void>) {
+        return ErrorResult(candidateResult.failure);
+      }
+
+      final hasCompletedDemoResult =
+          await _prefs.writeHasCompletedDemo(state.hasCompletedDemo);
+      if (hasCompletedDemoResult is ErrorResult<void>) {
+        return ErrorResult(hasCompletedDemoResult.failure);
+      }
+
+      final hasSeenDemoDialogResult =
+          await _prefs.writeHasSeenDemoDialog(state.hasSeenDemoDialog);
+      if (hasSeenDemoDialogResult is ErrorResult<void>) {
+        return ErrorResult(hasSeenDemoDialogResult.failure);
+      }
+
+      final hasSeenCongratulationsResult = await _prefs
+          .writeHasSeenCongratulationsDialog(state.hasSeenCongratulationsDialog);
+      if (hasSeenCongratulationsResult is ErrorResult<void>) {
+        return ErrorResult(hasSeenCongratulationsResult.failure);
+      }
+
+      final isDeviceBoundResult =
+          await _candidateSecure.writeIsDeviceBound(state.isDeviceBound);
+      if (isDeviceBoundResult is ErrorResult<void>) {
+        return ErrorResult(isDeviceBoundResult.failure);
+      }
+
       return const Success(null);
     } catch (error) {
       return ErrorResult(UnexpectedFailure('Failed to write onboarding: $error'));
@@ -99,16 +116,10 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
 
   @override
   Future<Result<void>> clearAll() async {
-    try {
-      await _storage.delete(key: StorageKeys.isLoggedIn);
-      await _storage.delete(key: StorageKeys.candidate);
-      await _storage.delete(key: StorageKeys.hasCompletedDemo);
-      await _storage.delete(key: StorageKeys.hasSeenDemoDialog);
-      await _storage.delete(key: StorageKeys.hasSeenCongratulationsDialog);
-      await _storage.delete(key: StorageKeys.isDeviceBound);
-      return const Success(null);
-    } catch (error) {
-      return ErrorResult(UnexpectedFailure('Failed to clear onboarding: $error'));
+    final clearCandidateResult = await _candidateSecure.clearCandidateData();
+    if (clearCandidateResult is ErrorResult<void>) {
+      return ErrorResult(clearCandidateResult.failure);
     }
+    return _prefs.clearAll();
   }
 }

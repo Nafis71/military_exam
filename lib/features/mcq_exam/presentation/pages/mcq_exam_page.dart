@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/exam_run_context.dart';
 import '../../../../core/services/security_watchdog_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -39,9 +40,8 @@ class _McqExamPageState extends State<McqExamPage> {
       if (sessionController.examSession.value == null && sessionId.isNotEmpty) {
         await sessionController.startSession(sessionId);
       }
-      if (sessionController.currentExam.value == null) {
-        await sessionController.loadCurrentExam();
-      }
+      final refreshFromApi = !Get.find<ExamRunContext>().isOnboardingDemo;
+      await sessionController.loadCurrentExam(refresh: refreshFromApi);
       if (!sessionController.canAccessQuestions.value) {
         Get.offNamed(AppRoutes.examWaiting, arguments: sessionId);
         return;
