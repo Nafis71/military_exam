@@ -8,4 +8,6 @@ abstract final class StorageKeys {
   static const String hasSeenDemoDialog = 'onboarding_has_seen_demo_dialog';
   static const String hasSeenCongratulationsDialog =
       'onboarding_has_seen_congratulations_dialog';
+  static const String hasSeenDashboardTutorial =
+      'onboarding_has_seen_dashboard_tutorial';
 }

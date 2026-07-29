@@ -41,6 +41,10 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
       _updateFlag((s) => s.copyWith(hasSeenCongratulationsDialog: value));
 
   @override
+  Future<Result<void>> setHasSeenDashboardTutorial(bool value) =>
+      _updateFlag((s) => s.copyWith(hasSeenDashboardTutorial: value));
+
+  @override
   Future<Result<void>> setDeviceBound(bool value) =>
       _updateFlag((s) => s.copyWith(isDeviceBound: value));
 

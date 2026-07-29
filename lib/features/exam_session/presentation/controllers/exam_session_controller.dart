@@ -338,7 +338,7 @@ class ExamSessionController extends GetxController {
           fillBlankCount: fillBlankQuestions.length,
           descriptiveCount: descriptiveQuestions.length,
         ) ??
-        AppRoutes.finishExam;
+        AppRoutes.examSubmitReview;
   }
 
   String? get initialExamRouteOrNull {

@@ -12,16 +12,7 @@ class LoginBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment(-0.85, -1.0),
-          end: Alignment(0.85, 1.0),
-          colors: [
-            AppColors.c0F3D2E,
-            AppColors.c176B4D,
-            AppColors.c23966A,
-          ],
-          stops: [0.085, 0.583, 0.915],
-        ),
+        gradient: AppColors.brandHeaderGradient,
       ),
       child: Padding(
         padding: EdgeInsets.only(bottom: 24.h),

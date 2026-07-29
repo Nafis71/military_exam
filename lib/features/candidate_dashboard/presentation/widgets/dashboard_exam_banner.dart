@@ -24,7 +24,7 @@ class DashboardExamBanner extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg.w),
       decoration: BoxDecoration(
-        color: AppColors.c0A5943,
+        gradient: AppColors.brandHeaderGradient,
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(

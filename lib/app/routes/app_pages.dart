@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/candidate_dashboard/presentation/pages/candidate_dashboard_page.dart';
 import '../../features/exam_procedure/presentation/pages/exam_procedure_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/identity_verification/presentation/pages/identity_verification_page.dart';
 import '../../features/exam_session/presentation/pages/exam_submit_review_page.dart';
 import '../../features/exam_session/presentation/pages/exam_waiting_page.dart';
@@ -50,6 +51,11 @@ class AppPages {
       name: AppRoutes.candidateDashboard,
       page: () => const CandidateDashboardPage(),
       binding: CandidateDashboardBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsPage(),
+      binding: NotificationsBinding(),
     ),
     GetPage(
       name: AppRoutes.examProcedure,

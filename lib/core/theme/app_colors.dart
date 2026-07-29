@@ -45,6 +45,8 @@ abstract final class AppColors {
   static const Color cC43D4D = Color(0xFFC43D4D); // Delete button text / violation
   static const Color cCE5D6A = Color(0xFFCE5D6A); // Violation shield icon
   static const Color c9A9A9A = Color(0xFF9A9A9A); // Action bar border
+  static const Color c78350F = Color(0xFF78350F); // Dark amber gradient start
+  static const Color cFBBF24 = Color(0xFFFBBF24); // Light amber gradient end
 
   // Semantic aliases
   static const Color primary = c0A5943;
@@ -61,4 +63,18 @@ abstract final class AppColors {
   static const Color splashBackground = cFFFFFF;
   static const Color instructionDotActive = c176B4D;
   static const Color instructionDotInactive = cD9E5DE;
+
+  static const LinearGradient brandHeaderGradient = LinearGradient(
+    begin: Alignment(-0.85, -1.0),
+    end: Alignment(0.85, 1.0),
+    colors: [c0F3D2E, c176B4D, c23966A],
+    stops: [0.085, 0.583, 0.915],
+  );
+
+  static  LinearGradient deviceBindingGradient = LinearGradient(
+    begin: Alignment(-0.85, -1.0),
+    end: Alignment(0.85, 1.0),
+    colors: [cF59E0B, cFBBF24],
+    
+  );
 }

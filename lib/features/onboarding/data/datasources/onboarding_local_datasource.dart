@@ -48,6 +48,12 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
         return ErrorResult(hasSeenCongratulationsResult.failure);
       }
 
+      final hasSeenDashboardTutorialResult =
+          await _prefs.readHasSeenDashboardTutorial();
+      if (hasSeenDashboardTutorialResult is ErrorResult<bool>) {
+        return ErrorResult(hasSeenDashboardTutorialResult.failure);
+      }
+
       final isDeviceBoundResult = await _candidateSecure.readIsDeviceBound();
       if (isDeviceBoundResult is ErrorResult<bool>) {
         return ErrorResult(isDeviceBoundResult.failure);
@@ -61,6 +67,8 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
           hasSeenDemoDialog: hasSeenDemoDialogResult.dataOrNull ?? false,
           hasSeenCongratulationsDialog:
               hasSeenCongratulationsResult.dataOrNull ?? false,
+          hasSeenDashboardTutorial:
+              hasSeenDashboardTutorialResult.dataOrNull ?? false,
           isDeviceBound: isDeviceBoundResult.dataOrNull ?? false,
         ),
       );
@@ -100,6 +108,12 @@ class OnboardingLocalDataSourceImpl implements OnboardingLocalDataSource {
           .writeHasSeenCongratulationsDialog(state.hasSeenCongratulationsDialog);
       if (hasSeenCongratulationsResult is ErrorResult<void>) {
         return ErrorResult(hasSeenCongratulationsResult.failure);
+      }
+
+      final hasSeenDashboardTutorialResult = await _prefs
+          .writeHasSeenDashboardTutorial(state.hasSeenDashboardTutorial);
+      if (hasSeenDashboardTutorialResult is ErrorResult<void>) {
+        return ErrorResult(hasSeenDashboardTutorialResult.failure);
       }
 
       final isDeviceBoundResult =

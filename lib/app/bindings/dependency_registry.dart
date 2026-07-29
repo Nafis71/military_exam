@@ -69,6 +69,9 @@ import '../../features/candidate_dashboard/domain/repositories/candidate_profile
 import '../../features/candidate_dashboard/domain/repositories/exam_info_repository.dart';
 import '../../features/candidate_dashboard/presentation/controllers/candidate_dashboard_controller.dart';
 import '../../features/candidate_dashboard/presentation/controllers/dashboard_security_settings_controller.dart';
+import '../../features/notifications/data/repositories/mock_notification_repository.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/notifications/presentation/controllers/notifications_controller.dart';
 import '../../features/exam_session/domain/usecases/enter_exam_after_credentials_usecase.dart';
 import '../../features/onboarding/data/datasources/candidate_secure_datasource.dart';
 import '../../features/onboarding/data/datasources/onboarding_local_datasource.dart';
@@ -382,6 +385,10 @@ class DependencyRegistry {
       permanent: true,
     );
     Get.put<ExamInfoRepository>(MockExamInfoRepository(), permanent: true);
+    Get.put<NotificationRepository>(
+      MockNotificationRepository(),
+      permanent: true,
+    );
     Get.put<CandidateProfileRepository>(
       CandidateProfileRepositoryImpl(onboardingRepo),
       permanent: true,
@@ -494,6 +501,19 @@ class CandidateDashboardBinding extends Bindings {
         Get.find<StartOnboardingDemoExamUseCase>(),
         Get.find<UnbindDeviceUseCase>(),
         Get.find<DeviceIdService>(),
+        Get.find<NotificationRepository>(),
+        Get.find<AppLogger>(),
+      ),
+    );
+  }
+}
+
+class NotificationsBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(
+      () => NotificationsController(
+        Get.find<NotificationRepository>(),
         Get.find<AppLogger>(),
       ),
     );

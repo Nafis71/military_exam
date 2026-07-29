@@ -17,6 +17,9 @@ class DashboardProfileCard extends StatelessWidget {
     this.deviceModelNumber = '—',
     this.deviceOsVersion = '—',
     this.isDeviceInfoAvailable = false,
+    this.isDeviceBindingExpanded = false,
+    this.onDeviceBindingExpandedChanged,
+    this.deviceInfoShowcaseKey,
     this.onUnbind,
   });
 
@@ -27,6 +30,9 @@ class DashboardProfileCard extends StatelessWidget {
   final String deviceModelNumber;
   final String deviceOsVersion;
   final bool isDeviceInfoAvailable;
+  final bool isDeviceBindingExpanded;
+  final ValueChanged<bool>? onDeviceBindingExpandedChanged;
+  final GlobalKey? deviceInfoShowcaseKey;
   final VoidCallback? onUnbind;
 
   @override
@@ -120,6 +126,9 @@ class DashboardProfileCard extends StatelessWidget {
               osVersion: deviceOsVersion,
               isDeviceInfoAvailable: isDeviceInfoAvailable,
               isUnbinding: isUnbinding,
+              isExpanded: isDeviceBindingExpanded,
+              onExpandedChanged: onDeviceBindingExpandedChanged,
+              deviceInfoShowcaseKey: deviceInfoShowcaseKey,
               onUnbind: onUnbind,
             ),
           ],

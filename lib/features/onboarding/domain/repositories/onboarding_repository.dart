@@ -13,6 +13,8 @@ abstract class OnboardingRepository {
 
   Future<Result<void>> setHasSeenCongratulationsDialog(bool value);
 
+  Future<Result<void>> setHasSeenDashboardTutorial(bool value);
+
   Future<Result<void>> setDeviceBound(bool value);
 
   Future<Result<void>> clearAll();

@@ -9,6 +9,7 @@ class OnboardingState extends Equatable {
     this.hasCompletedDemo = false,
     this.hasSeenDemoDialog = false,
     this.hasSeenCongratulationsDialog = false,
+    this.hasSeenDashboardTutorial = false,
     this.isDeviceBound = false,
   });
 
@@ -17,6 +18,7 @@ class OnboardingState extends Equatable {
   final bool hasCompletedDemo;
   final bool hasSeenDemoDialog;
   final bool hasSeenCongratulationsDialog;
+  final bool hasSeenDashboardTutorial;
   final bool isDeviceBound;
 
   OnboardingState copyWith({
@@ -25,6 +27,7 @@ class OnboardingState extends Equatable {
     bool? hasCompletedDemo,
     bool? hasSeenDemoDialog,
     bool? hasSeenCongratulationsDialog,
+    bool? hasSeenDashboardTutorial,
     bool? isDeviceBound,
   }) {
     return OnboardingState(
@@ -34,6 +37,8 @@ class OnboardingState extends Equatable {
       hasSeenDemoDialog: hasSeenDemoDialog ?? this.hasSeenDemoDialog,
       hasSeenCongratulationsDialog:
           hasSeenCongratulationsDialog ?? this.hasSeenCongratulationsDialog,
+      hasSeenDashboardTutorial:
+          hasSeenDashboardTutorial ?? this.hasSeenDashboardTutorial,
       isDeviceBound: isDeviceBound ?? this.isDeviceBound,
     );
   }
@@ -45,6 +50,7 @@ class OnboardingState extends Equatable {
         hasCompletedDemo,
         hasSeenDemoDialog,
         hasSeenCongratulationsDialog,
+        hasSeenDashboardTutorial,
         isDeviceBound,
       ];
 }

@@ -449,6 +449,40 @@ abstract final class AppStrings {
   // Candidate Dashboard
   static const candidateDashboardTitle = 'প্রার্থী ড্যাশবোর্ড';
   static const notificationsAccessibilityLabel = 'বিজ্ঞপ্তি';
+  static const notificationsTitle = 'বিজ্ঞপ্তি';
+  static const notificationsEmpty = 'কোনো বিজ্ঞপ্তি নেই';
+  static const mockNotificationExamReminderTitle = 'পরীক্ষার তারিখ স্মরণ';
+  static const mockNotificationExamReminderBody =
+      'আপনার পরীক্ষা ১৫ আগস্ট ২০২৬ তারিখে অনুষ্ঠিত হবে। সময়মতো পরীক্ষা কেন্দ্রে উপস্থিত হন।';
+  static const mockNotificationExamReminderTimestamp = '২ ঘণ্টা আগে';
+  static const mockNotificationDeviceBoundTitle = 'ডিভাইস সফলভাবে বাইন্ড হয়েছে';
+  static const mockNotificationDeviceBoundBody =
+      'এই ডিভাইসটি আপনার অ্যাকাউন্টের সাথে সংযুক্ত হয়েছে। পরীক্ষা দিতে এই ডিভাইস ব্যবহার করুন।';
+  static const mockNotificationDeviceBoundTimestamp = '১ দিন আগে';
+  static const mockNotificationDemoCompletedTitle = 'ডেমো পরীক্ষা সম্পন্ন';
+  static const mockNotificationDemoCompletedBody =
+      'অভিনন্দন! আপনি ডেমো পরীক্ষা সফলভাবে সম্পন্ন করেছেন। এখন মূল পরীক্ষার জন্য প্রস্তুত হন।';
+  static const mockNotificationDemoCompletedTimestamp = '২ দিন আগে';
+  static const mockNotificationSecurityTipTitle = 'নিরাপত্তা সেটিংস পরীক্ষা করুন';
+  static const mockNotificationSecurityTipBody =
+      'পরীক্ষার আগে VPN, এয়ারপ্লেন মোড ও ক্যামেরার অনুমতি সেটিংস যাচাই করুন।';
+  static const mockNotificationSecurityTipTimestamp = '৩ দিন আগে';
+  static const dashboardTutorialSkip = 'এড়িয়ে যান';
+  static const dashboardTutorialDeviceInfoTitle = 'ডিভাইস তথ্য';
+  static const dashboardTutorialDeviceInfoDescription =
+      'এখানে আপনার বাইন্ড করা ডিভাইসের বিস্তারিত দেখতে পারবেন এবং প্রয়োজনে আনবাইন্ড করতে পারবেন।';
+  static const dashboardTutorialExamInfoTitle = 'পরীক্ষার তথ্য';
+  static const dashboardTutorialExamInfoDescription =
+      'পরীক্ষার তারিখ, ভেন্যু ও অবস্থা এখানে দেখুন এবং প্রস্তুত হলে পরীক্ষা শুরু করুন।';
+  static const dashboardTutorialExamRulesTitle = 'পরীক্ষা পদ্ধতি';
+  static const dashboardTutorialExamRulesDescription =
+      'পরীক্ষার নিয়ম, নিরাপত্তা ও শাস্তিমূলক বিধি এখান থেকে দেখুন।';
+  static const dashboardTutorialSettingsTitle = 'নিরাপত্তা সেটিংস';
+  static const dashboardTutorialSettingsDescription =
+      'VPN, এয়ারপ্লেন মোড, ওয়াই-ফাই ও ক্যামেরার অনুমতি এখান থেকে পরিচালনা করুন।';
+  static const dashboardTutorialNotificationsTitle = 'বিজ্ঞপ্তি';
+  static const dashboardTutorialNotificationsDescription =
+      'গুরুত্বপূর্ণ আপডেট ও পরীক্ষা সম্পর্কিত বিজ্ঞপ্তি এখানে দেখুন।';
   static const securitySettingsAccessibilityLabel = 'নিরাপত্তা সেটিংস';
   static const securitySettingsTitle = 'নিরাপত্তা সেটিংস';
   static const securityVpnTitle = 'লকডাউন VPN';
@@ -472,6 +506,8 @@ abstract final class AppStrings {
       'পরীক্ষা দিতে অবশ্যই এই ডিভাইসটি নিয়ে আসতে হবে।';
   static const deviceBindingResetNote =
       'ডিভাইস রিসেট করলে পরীক্ষার আগে আবার এই ডিভাইসটি বাইন্ড করতে হতে পারে।';
+  static const deviceBindingResetNoteIos =
+      'অ্যাপ আনইনস্টল করলে পরীক্ষার আগে আবার এই ডিভাইসটি বাইন্ড করতে হতে পারে।';
   static const deviceInfoTitle = 'ডিভাইস তথ্য';
   static const deviceBrandName = 'ব্র্যান্ড';
   static const deviceModelNumber = 'মডেল নম্বর';
@@ -483,7 +519,7 @@ abstract final class AppStrings {
   static const unbindDevice = 'আনবাইন্ড করুন';
   static const unbindDeviceDialogTitle = 'ডিভাইস আনবাইন্ড করবেন?';
   static const unbindDeviceDialogMessage =
-      'আপনি কি নিশ্চিত যে এই ডিভাইসটি আনবাইন্ড করতে চান? অন্য ডিভাইসে পরবর্তী লগইনের আগে প্রশাসকের অনুমতিতে পুনরায় বাইন্ড করতে হবে।';
+      'আপনি যেকোনো সময় আপনার ডিভাইস আনবাইন্ড করতে পারবেন। তবে ডিভাইস হারিয়ে গেলে, চুরি হলে, রিসেট হলে বা অন্য কোনো কারণে অ্যাক্সেস করা না গেলে, নতুন ডিভাইস পুনরায় বাইন্ড করতে প্রশাসকের অনুমোদন প্রয়োজন হবে। এই ক্ষেত্রে সহায়তার জন্য সাপোর্ট টিমের সাথে যোগাযোগ করুন।';
   static const unbindDeviceConfirm = 'হ্যাঁ, আনবাইন্ড করুন';
   static const cancelAction = 'বাতিল';
   static const examinationInfo = 'পরীক্ষার তথ্য';

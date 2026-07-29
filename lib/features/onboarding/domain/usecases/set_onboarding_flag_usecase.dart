@@ -14,4 +14,7 @@ class SetOnboardingFlagUseCase {
 
   Future<Result<void>> setHasSeenCongratulationsDialog(bool value) =>
       _repository.setHasSeenCongratulationsDialog(value);
+
+  Future<Result<void>> setHasSeenDashboardTutorial(bool value) =>
+      _repository.setHasSeenDashboardTutorial(value);
 }

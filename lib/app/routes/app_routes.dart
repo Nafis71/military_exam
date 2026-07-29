@@ -3,6 +3,7 @@ abstract final class AppRoutes {
   static const getStarted = '/get-started';
   static const candidateLogin = '/candidate-login';
   static const candidateDashboard = '/candidate-dashboard';
+  static const notifications = '/notifications';
   static const examProcedure = '/exam-procedure';
   static const identityVerification = '/identity-verification';
   static const instructions = '/instructions';

@@ -23,6 +23,7 @@ import '../../../onboarding/domain/entities/onboarding_candidate.dart';
 import '../../../onboarding/domain/usecases/get_onboarding_state_usecase.dart';
 import '../../../onboarding/domain/usecases/set_onboarding_flag_usecase.dart';
 import '../../../onboarding/domain/usecases/unbind_device_usecase.dart';
+import '../../../notifications/domain/repositories/notification_repository.dart';
 import '../widgets/congratulations_dialog.dart';
 import '../widgets/dashboard_security_settings_sheet.dart';
 import '../widgets/demo_quiz_dialog.dart';
@@ -40,6 +41,7 @@ class CandidateDashboardController extends GetxController {
     this._startOnboardingDemoExam,
     this._unbindDevice,
     this._deviceIdService,
+    this._notificationRepository,
     this._logger,
   );
 
@@ -52,6 +54,7 @@ class CandidateDashboardController extends GetxController {
   final StartOnboardingDemoExamUseCase _startOnboardingDemoExam;
   final UnbindDeviceUseCase _unbindDevice;
   final DeviceIdService _deviceIdService;
+  final NotificationRepository _notificationRepository;
   final AppLogger _logger;
 
   final candidate = Rxn<OnboardingCandidate>();
@@ -66,8 +69,35 @@ class CandidateDashboardController extends GetxController {
   final isDeviceInfoAvailable = false.obs;
   final hasCompletedDemo = false.obs;
   final showStartDemo = true.obs;
+  final unreadNotificationCount = 0.obs;
+  final isDeviceBindingExpanded = false.obs;
+
+  final scrollController = ScrollController();
+  final deviceInfoShowcaseKey = GlobalKey();
+  final examInfoShowcaseKey = GlobalKey();
+  final examRulesShowcaseKey = GlobalKey();
+  final settingsShowcaseKey = GlobalKey();
+  final notificationsShowcaseKey = GlobalKey();
+
+  bool hasSeenDashboardTutorial = true;
+  bool _isTutorialRunning = false;
+  VoidCallback? _showcaseStarter;
 
   bool _pendingCongratulations = false;
+
+  List<GlobalKey> get showcaseKeys => [
+        deviceInfoShowcaseKey,
+        examInfoShowcaseKey,
+        examRulesShowcaseKey,
+        settingsShowcaseKey,
+        notificationsShowcaseKey,
+      ];
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
 
   @override
   void onInit() {
@@ -85,6 +115,7 @@ class CandidateDashboardController extends GetxController {
           hasCompletedDemo.value = data.hasCompletedDemo;
           showStartDemo.value = !data.hasCompletedDemo;
           isDeviceBound.value = data.isDeviceBound;
+          hasSeenDashboardTutorial = data.hasSeenDashboardTutorial;
           _pendingCongratulations = Get.arguments == true &&
               data.hasCompletedDemo &&
               !data.hasSeenCongratulationsDialog;
@@ -109,6 +140,7 @@ class CandidateDashboardController extends GetxController {
       }
 
       await _loadDeviceInfo();
+      await _refreshUnreadCount();
     } catch (e, st) {
       if (kDebugMode) {
         _logger.error('dashboard load failed', error: e, stackTrace: st);
@@ -163,6 +195,8 @@ class CandidateDashboardController extends GetxController {
     await _setOnboardingFlag.setHasSeenDemoDialog(true);
     if (startDemo == true) {
       unawaited(onStartDemo());
+    } else {
+      await tryStartDashboardTutorial();
     }
   }
 
@@ -173,7 +207,58 @@ class CandidateDashboardController extends GetxController {
     );
     await _setOnboardingFlag.setHasSeenCongratulationsDialog(true);
     if (viewProcedure == true) {
-      onViewExamProcedure();
+      onViewExamProcedure(scheduleTutorialOnReturn: true);
+    }
+  }
+
+  void registerShowcaseStarter(VoidCallback starter) {
+    _showcaseStarter = starter;
+  }
+
+  void unregisterShowcaseStarter() {
+    _showcaseStarter = null;
+  }
+
+  Future<void> tryStartDashboardTutorial() async {
+    if (isClosed ||
+        isLoading.value ||
+        _isTutorialRunning ||
+        hasSeenDashboardTutorial) {
+      return;
+    }
+
+    if (Get.isDialogOpen == true || (Get.isBottomSheetOpen ?? false)) {
+      return;
+    }
+
+    final starter = _showcaseStarter;
+    if (starter == null) return;
+
+    _isTutorialRunning = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isClosed) return;
+      starter();
+    });
+  }
+
+  Future<void> markDashboardTutorialSeen() async {
+    if (hasSeenDashboardTutorial) {
+      _isTutorialRunning = false;
+      return;
+    }
+
+    hasSeenDashboardTutorial = true;
+    _isTutorialRunning = false;
+    try {
+      await _setOnboardingFlag.setHasSeenDashboardTutorial(true);
+    } catch (e, st) {
+      if (kDebugMode) {
+        _logger.error(
+          'mark dashboard tutorial seen failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
     }
   }
 
@@ -206,11 +291,42 @@ class CandidateDashboardController extends GetxController {
     }
   }
 
-  void onViewExamProcedure() {
-    Get.toNamed(AppRoutes.examProcedure);
+  void onViewExamProcedure({bool scheduleTutorialOnReturn = false}) {
+    unawaited(
+      Get.toNamed(AppRoutes.examProcedure)?.then((_) {
+        if (scheduleTutorialOnReturn) {
+          unawaited(tryStartDashboardTutorial());
+        }
+      }),
+    );
   }
 
-  void onOpenNotifications() {}
+  void onOpenNotifications() {
+    unawaited(
+      Get.toNamed(AppRoutes.notifications)?.then((_) => _refreshUnreadCount()),
+    );
+  }
+
+  Future<void> _refreshUnreadCount() async {
+    try {
+      final result = await _notificationRepository.getUnreadCount();
+      switch (result) {
+        case Success(:final data):
+          unreadNotificationCount.value = data;
+        case ErrorResult():
+          unreadNotificationCount.value = 0;
+      }
+    } catch (e, st) {
+      unreadNotificationCount.value = 0;
+      if (kDebugMode) {
+        _logger.error(
+          'unread notification count load failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+  }
 
   void onOpenSecuritySettings() {
     if (Get.isBottomSheetOpen ?? false) return;

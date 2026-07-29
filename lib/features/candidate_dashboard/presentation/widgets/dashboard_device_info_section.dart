@@ -30,7 +30,7 @@ class DashboardDeviceInfoSection extends StatelessWidget {
         Text(
           AppStrings.deviceInfoTitle,
           style: textTheme.labelLarge?.copyWith(
-            color: AppColors.c000000,
+            color: AppColors.cFFFFFF.withValues(alpha: 0.8),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -39,7 +39,7 @@ class DashboardDeviceInfoSection extends StatelessWidget {
           Text(
             AppStrings.deviceInfoUnavailable,
             style: textTheme.bodySmall?.copyWith(
-              color: AppColors.c000000,
+              color: AppColors.cFFFFFF.withValues(alpha: 0.8),
             ),
           )
         else ...[
@@ -86,7 +86,7 @@ class _DeviceInfoRow extends StatelessWidget {
           child: Text(
             label,
             style: textTheme.bodySmall?.copyWith(
-              color: AppColors.c000000,
+              color: AppColors.cFFFFFF.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -95,7 +95,7 @@ class _DeviceInfoRow extends StatelessWidget {
           child: Text(
             displayValue,
             style: textTheme.bodySmall?.copyWith(
-              color: AppColors.c000000,
+              color: AppColors.cFFFFFF,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.end,

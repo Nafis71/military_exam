@@ -21,6 +21,10 @@ abstract class OnboardingPrefsLocalDataSource {
 
   Future<Result<void>> writeHasSeenCongratulationsDialog(bool value);
 
+  Future<Result<bool>> readHasSeenDashboardTutorial();
+
+  Future<Result<void>> writeHasSeenDashboardTutorial(bool value);
+
   Future<Result<void>> clearAll();
 }
 
@@ -121,6 +125,29 @@ class OnboardingPrefsHiveDataSourceImpl implements OnboardingPrefsLocalDataSourc
         UnexpectedFailure(
           'Failed to write congratulations dialog state: $error',
         ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<bool>> readHasSeenDashboardTutorial() async {
+    try {
+      return Success(_box.get(StorageKeys.hasSeenDashboardTutorial) == true);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('Failed to read dashboard tutorial state: $error'),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> writeHasSeenDashboardTutorial(bool value) async {
+    try {
+      await _box.put(StorageKeys.hasSeenDashboardTutorial, value);
+      return const Success(null);
+    } catch (error) {
+      return ErrorResult(
+        UnexpectedFailure('Failed to write dashboard tutorial state: $error'),
       );
     }
   }

@@ -170,20 +170,8 @@ class _FillBlankExamPageState extends State<FillBlankExamPage> {
       phase: sessionController.currentPhase.value,
       sessionId: sessionController.examSession.value?.sessionId,
     );
-    if (nextRoute == AppRoutes.finishExam) {
-      final examName = sessionController.currentExam.value?.examName ??
-          AppStrings.finishExamDefaultName;
-      final success = await sessionController.finalizeExamAndClearLocal();
-      if (!success) return;
-      Get.offAllNamed(
-        AppRoutes.finishExam,
-        arguments: <String, dynamic>{
-          'examName': examName,
-          'submittedAt':
-              sessionController.submissionReceipt.value?.submittedAt ??
-                  DateTime.now(),
-        },
-      );
+    if (nextRoute == AppRoutes.examSubmitReview) {
+      await Get.offNamed(AppRoutes.examSubmitReview);
       return;
     }
     Get.offNamed(nextRoute);
