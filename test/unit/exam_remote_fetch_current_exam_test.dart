@@ -42,7 +42,7 @@ void main() {
         ),
       );
 
-      final result = await dataSource.fetchCurrentExam();
+      final result = await dataSource.fetchCurrentExam(rollNumber: '2');
 
       expect(result, isA<ErrorResult<CurrentExamModel>>());
       expect(
@@ -56,7 +56,7 @@ void main() {
         (_) async => const Success<Map<String, dynamic>>({'data': 'bad-shape'}),
       );
 
-      final result = await dataSource.fetchCurrentExam();
+      final result = await dataSource.fetchCurrentExam(rollNumber: '2');
 
       expect(result, isA<ErrorResult<CurrentExamModel>>());
       expect(
@@ -72,10 +72,42 @@ void main() {
         ),
       );
 
-      final result = await dataSource.fetchCurrentExam();
+      final result = await dataSource.fetchCurrentExam(rollNumber: '2');
 
       expect(result, isA<ErrorResult<CurrentExamModel>>());
       expect(result, isNot(isA<Success<CurrentExamModel>>()));
+    });
+    test('returns ValidationFailure when roll number is empty in real mode', () async {
+      final result = await dataSource.fetchCurrentExam(rollNumber: '');
+
+      expect(result, isA<ErrorResult<CurrentExamModel>>());
+      expect(
+        (result as ErrorResult<CurrentExamModel>).failure,
+        isA<ValidationFailure>(),
+      );
+      verifyNever(() => apiClient.get<Map<String, dynamic>>(any()));
+    });
+
+    test('sends roll_number query param to current-exam API', () async {
+      when(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+        ),
+      ).thenAnswer(
+        (_) async => const ErrorResult<Map<String, dynamic>>(
+          NetworkFailure('offline'),
+        ),
+      );
+
+      await dataSource.fetchCurrentExam(rollNumber: '2');
+
+      verify(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: {'roll_number': '2'},
+        ),
+      ).called(1);
     });
   });
 }

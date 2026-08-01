@@ -41,7 +41,15 @@ class ExamRepositoryImpl implements ExamRepository {
       return Success(_cachedCurrentExam!);
     }
 
-    final result = await _remoteDataSource.fetchCurrentExam();
+    final rollNumberResult = await _rollNumberForCurrentExamFetch();
+    if (rollNumberResult is ErrorResult<String>) {
+      return ErrorResult(rollNumberResult.failure);
+    }
+    final rollNumber = (rollNumberResult as Success<String>).data;
+
+    final result = await _remoteDataSource.fetchCurrentExam(
+      rollNumber: rollNumber,
+    );
     return switch (result) {
       Success(:final data) => () {
           _cachedCurrentExam = data;
@@ -183,7 +191,16 @@ class ExamRepositoryImpl implements ExamRepository {
       }
     }
 
-    final result = await _remoteDataSource.fetchRemainingSeconds(sessionId);
+    final rollNumberResult = await _rollNumberForCurrentExamFetch();
+    if (rollNumberResult is ErrorResult<String>) {
+      return ErrorResult(rollNumberResult.failure);
+    }
+    final rollNumber = (rollNumberResult as Success<String>).data;
+
+    final result = await _remoteDataSource.fetchRemainingSeconds(
+      sessionId,
+      rollNumber: rollNumber,
+    );
     return switch (result) {
       Success(:final data) => Success(ExamTimer(remainingSeconds: data)),
       ErrorResult(:final failure) => ErrorResult(failure),
@@ -438,6 +455,13 @@ class ExamRepositoryImpl implements ExamRepository {
   @override
   Future<Result<void>> reportViolation(SecurityViolation violation) =>
       _remoteDataSource.reportViolation(violation);
+
+  Future<Result<String>> _rollNumberForCurrentExamFetch() async {
+    if (_isOnboardingDemo || Deployment.instance.isDemo) {
+      return const Success('');
+    }
+    return _resolveRollNumber();
+  }
 
   Future<Result<String>> _resolveRollNumber() async {
     if (_isOnboardingDemo) {

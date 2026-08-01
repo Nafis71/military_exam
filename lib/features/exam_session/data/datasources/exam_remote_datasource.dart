@@ -29,9 +29,14 @@ abstract class ExamRemoteDataSource {
 
   Future<Result<ExamSessionModel?>> fetchCurrentSession();
 
-  Future<Result<int>> fetchRemainingSeconds(String sessionId);
+  Future<Result<int>> fetchRemainingSeconds(
+    String sessionId, {
+    required String rollNumber,
+  });
 
-  Future<Result<CurrentExamModel>> fetchCurrentExam();
+  Future<Result<CurrentExamModel>> fetchCurrentExam({
+    required String rollNumber,
+  });
 
   Future<Result<List<McqQuestionModel>>> fetchMcqQuestions(String sessionId);
 
@@ -118,7 +123,10 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
   }
 
   @override
-  Future<Result<int>> fetchRemainingSeconds(String sessionId) async {
+  Future<Result<int>> fetchRemainingSeconds(
+    String sessionId, {
+    required String rollNumber,
+  }) async {
     if (_isOnboardingDemo) {
       return Success(OnboardingDemoExamDataSource.durationMinutes * 60);
     }
@@ -126,7 +134,7 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       return Success(_demoDurationMinutes * 60);
     }
 
-    final examResult = await fetchCurrentExam();
+    final examResult = await fetchCurrentExam(rollNumber: rollNumber);
     if (examResult is Success<CurrentExamModel>) {
       final remainingMinutes = examResult.data.window.remainingExamMinutes;
       if (remainingMinutes > 0) {
@@ -141,7 +149,9 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
   }
 
   @override
-  Future<Result<CurrentExamModel>> fetchCurrentExam() async {
+  Future<Result<CurrentExamModel>> fetchCurrentExam({
+    required String rollNumber,
+  }) async {
     if (_isOnboardingDemo) {
       _logger.info('Onboarding demo: current exam served locally');
       return Success(OnboardingDemoExamDataSource.currentExam);
@@ -151,8 +161,13 @@ class ExamRemoteDataSourceImpl implements ExamRemoteDataSource {
       return Success(_demoCurrentExam);
     }
 
+    if (rollNumber.isEmpty) {
+      return const ErrorResult(ValidationFailure('Roll number missing'));
+    }
+
     final result = await _apiClient.get<Map<String, dynamic>>(
       ApiEndpoints.currentExam,
+      queryParameters: {'roll_number': rollNumber},
     );
 
     if (result is Success<Map<String, dynamic>>) {
