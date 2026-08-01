@@ -22,6 +22,7 @@ void main() {
     registerFallbackValue(const ErrorResult<Map<String, dynamic>>(
       UnexpectedFailure('fallback'),
     ));
+    registerFallbackValue(<String, dynamic>{});
   });
 
   setUp(() {
@@ -36,7 +37,12 @@ void main() {
 
   group('ExamRemoteDataSourceImpl.fetchCurrentExam', () {
     test('returns ErrorResult when API fails in real mode', () async {
-      when(() => apiClient.get<Map<String, dynamic>>(any())).thenAnswer(
+      when(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+        ),
+      ).thenAnswer(
         (_) async => const ErrorResult<Map<String, dynamic>>(
           NetworkFailure('offline'),
         ),
@@ -52,7 +58,12 @@ void main() {
     });
 
     test('returns ErrorResult when API payload shape is invalid', () async {
-      when(() => apiClient.get<Map<String, dynamic>>(any())).thenAnswer(
+      when(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+        ),
+      ).thenAnswer(
         (_) async => const Success<Map<String, dynamic>>({'data': 'bad-shape'}),
       );
 
@@ -66,7 +77,12 @@ void main() {
     });
 
     test('does not return demo exam when API fails in real mode', () async {
-      when(() => apiClient.get<Map<String, dynamic>>(any())).thenAnswer(
+      when(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+        ),
+      ).thenAnswer(
         (_) async => const ErrorResult<Map<String, dynamic>>(
           UnexpectedFailure('server error'),
         ),
@@ -85,7 +101,12 @@ void main() {
         (result as ErrorResult<CurrentExamModel>).failure,
         isA<ValidationFailure>(),
       );
-      verifyNever(() => apiClient.get<Map<String, dynamic>>(any()));
+      verifyNever(
+        () => apiClient.get<Map<String, dynamic>>(
+          any(),
+          queryParameters: any(named: 'queryParameters'),
+        ),
+      );
     });
 
     test('sends roll_number query param to current-exam API', () async {

@@ -100,6 +100,7 @@ void main() {
         final remote = _CountingExamRemoteDataSource();
         final repository = _buildRepository(
           remote,
+          hive: _FakeExamAnswersHiveDataSource(),
           onboarding: _FakeOnboardingRepository(candidateId: 'CAND-1'),
         );
 
@@ -112,7 +113,10 @@ void main() {
 
     test('returns ValidationFailure when roll and onboarding missing', () async {
       final remote = _CountingExamRemoteDataSource();
-      final repository = _buildRepository(remote);
+      final repository = _buildRepository(
+        remote,
+        hive: _FakeExamAnswersHiveDataSource(),
+      );
 
       final result = await repository.getCurrentExam();
 
