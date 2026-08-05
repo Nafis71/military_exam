@@ -48,5 +48,5 @@ app.*.map.json
 .fvm/
 /graphify-out/
 test_hive_*/
-.vscode/
-.vscode/settings.json
+config.bat
+node_modules
