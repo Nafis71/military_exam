@@ -49,7 +49,6 @@ class _CandidateDashboardShowcaseHostState
       enableAutoScroll: true,
       skipIfTargetNotPresent: true,
       overlayColor: AppColors.c000000,
-      onStart: _onShowcaseStart,
       onFinish: _onShowcaseFinish,
       onDismiss: _onShowcaseDismiss,
       globalFloatingActionWidget: _buildGlobalFloatingActions,
@@ -121,7 +120,6 @@ class _CandidateDashboardShowcaseHostState
       return;
     }
 
-    controller.isDeviceBindingExpanded.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isShowcaseRegistered) {
         controller.resetTutorialRunningState();
@@ -133,24 +131,6 @@ class _CandidateDashboardShowcaseHostState
         delay: const Duration(milliseconds: 400),
       );
     });
-  }
-
-  void _onShowcaseStart(int? index, GlobalKey key) {
-    if (!mounted || controller.isClosed) return;
-
-    if (key == controller.deviceInfoShowcaseKey) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || controller.isClosed) return;
-        if (!controller.scrollController.hasClients) return;
-        unawaited(
-          controller.scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          ),
-        );
-      });
-    }
   }
 
   void _onShowcaseFinish() {
@@ -265,19 +245,6 @@ class _CandidateDashboardShowcaseHostState
                       () => DashboardProfileCard(
                         candidate: controller.candidate.value,
                         isDeviceBound: controller.isDeviceBound.value,
-                        isUnbinding: controller.isUnbinding.value,
-                        deviceBrandName: controller.deviceBrandName.value,
-                        deviceModelNumber: controller.deviceModelNumber.value,
-                        deviceOsVersion: controller.deviceOsVersion.value,
-                        isDeviceInfoAvailable:
-                            controller.isDeviceInfoAvailable.value,
-                        isDeviceBindingExpanded:
-                            controller.isDeviceBindingExpanded.value,
-                        onDeviceBindingExpandedChanged: (isExpanded) {
-                          controller.isDeviceBindingExpanded.value = isExpanded;
-                        },
-                        deviceInfoShowcaseKey: controller.deviceInfoShowcaseKey,
-                        onUnbind: controller.onUnbind,
                       ),
                     ),
                     SizedBox(height: AppSpacing.lg.h),
@@ -309,30 +276,29 @@ class _CandidateDashboardShowcaseHostState
                 ),
               ),
             ),
-            if (controller.showStartDemo.value)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg.w,
-                  AppSpacing.sm.h,
-                  AppSpacing.lg.w,
-                  AppSpacing.lg.h + bottomInset,
-                ),
-                child: StaggeredEntrance(
-                  contentKey: contentKey,
-                  children: [
-                    Obx(
-                      () => AppPrimaryButton(
-                        label: AppStrings.startDemo,
-                        onPressed: controller.isStartingDemo.value
-                            ? null
-                            : controller.onStartDemo,
-                        isLoading: controller.isStartingDemo.value,
-                        backgroundColor: AppColors.c66736C,
-                      ),
-                    ),
-                  ],
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg.w,
+                AppSpacing.sm.h,
+                AppSpacing.lg.w,
+                AppSpacing.lg.h + bottomInset,
               ),
+              child: StaggeredEntrance(
+                contentKey: contentKey,
+                children: [
+                  Obx(
+                    () => AppPrimaryButton(
+                      label: AppStrings.startDemo,
+                      onPressed: controller.isOpeningTutorial.value
+                          ? null
+                          : controller.onOpenDemoTutorial,
+                      isLoading: controller.isOpeningTutorial.value,
+                      backgroundColor: AppColors.c66736C,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       }),

@@ -25,4 +25,9 @@ void main() {
     expect(Environment.forMode(BuildMode.production).enableMockExamData, isFalse);
     expect(Deployment.instance.isDemo, isFalse);
   });
+
+  test('preventScreenCapture can be disabled at init', () {
+    Deployment.init(preventScreenCapture: false);
+    expect(Deployment.instance.preventScreenCapture, isFalse);
+  });
 }

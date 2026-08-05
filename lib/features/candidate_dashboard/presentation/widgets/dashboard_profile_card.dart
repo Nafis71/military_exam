@@ -5,35 +5,17 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../onboarding/domain/entities/onboarding_candidate.dart';
-import 'dashboard_device_binding_section.dart';
+import 'dashboard_device_registration_note.dart';
 
 class DashboardProfileCard extends StatelessWidget {
   const DashboardProfileCard({
     super.key,
     this.candidate,
     this.isDeviceBound = false,
-    this.isUnbinding = false,
-    this.deviceBrandName = '—',
-    this.deviceModelNumber = '—',
-    this.deviceOsVersion = '—',
-    this.isDeviceInfoAvailable = false,
-    this.isDeviceBindingExpanded = false,
-    this.onDeviceBindingExpandedChanged,
-    this.deviceInfoShowcaseKey,
-    this.onUnbind,
   });
 
   final OnboardingCandidate? candidate;
   final bool isDeviceBound;
-  final bool isUnbinding;
-  final String deviceBrandName;
-  final String deviceModelNumber;
-  final String deviceOsVersion;
-  final bool isDeviceInfoAvailable;
-  final bool isDeviceBindingExpanded;
-  final ValueChanged<bool>? onDeviceBindingExpandedChanged;
-  final GlobalKey? deviceInfoShowcaseKey;
-  final VoidCallback? onUnbind;
 
   @override
   Widget build(BuildContext context) {
@@ -120,17 +102,7 @@ class DashboardProfileCard extends StatelessWidget {
             SizedBox(height: AppSpacing.md.h),
             Divider(color: AppColors.cE8EAED, height: 1.h),
             SizedBox(height: AppSpacing.md.h),
-            DashboardDeviceBindingSection(
-              brandName: deviceBrandName,
-              modelNumber: deviceModelNumber,
-              osVersion: deviceOsVersion,
-              isDeviceInfoAvailable: isDeviceInfoAvailable,
-              isUnbinding: isUnbinding,
-              isExpanded: isDeviceBindingExpanded,
-              onExpandedChanged: onDeviceBindingExpandedChanged,
-              deviceInfoShowcaseKey: deviceInfoShowcaseKey,
-              onUnbind: onUnbind,
-            ),
+            const DashboardDeviceRegistrationNote(),
           ],
         ],
       ),
