@@ -468,9 +468,6 @@ abstract final class AppStrings {
       'পরীক্ষার আগে VPN, এয়ারপ্লেন মোড ও ক্যামেরার অনুমতি সেটিংস যাচাই করুন।';
   static const mockNotificationSecurityTipTimestamp = '৩ দিন আগে';
   static const dashboardTutorialSkip = 'এড়িয়ে যান';
-  static const dashboardTutorialDeviceInfoTitle = 'ডিভাইস তথ্য';
-  static const dashboardTutorialDeviceInfoDescription =
-      'এখানে আপনার বাইন্ড করা ডিভাইসের বিস্তারিত দেখতে পারবেন এবং প্রয়োজনে আনবাইন্ড করতে পারবেন।';
   static const dashboardTutorialExamInfoTitle = 'পরীক্ষার তথ্য';
   static const dashboardTutorialExamInfoDescription =
       'পরীক্ষার তারিখ, ভেন্যু ও অবস্থা এখানে দেখুন এবং প্রস্তুত হলে পরীক্ষা শুরু করুন।';
@@ -502,6 +499,14 @@ abstract final class AppStrings {
   static const securityVpnCannotDisableDuringExam =
       'পরীক্ষা চলাকালীন নেটওয়ার্ক লকডাউন বন্ধ করা যাবে না।';
   static const deviceBoundAccessibilityLabel = 'ডিভাইস সার্ভারের সাথে সংযুক্ত';
+  static const deviceRegistrationRegisteredNote =
+      'এই ডিভাইসটি নিবন্ধিত হয়েছে।';
+  static const deviceRegistrationBringDeviceNote =
+      'পরীক্ষায় অংশ নিতে অবশ্যই এই ডিভাইসটি সাথে আনতে হবে।';
+  static const deviceRegistrationResetNoteAndroid =
+      'ফোন রিসেট বা অ্যাপ আনইনস্টল করবেন না। এমন করলে পরীক্ষার আগে আবার এই ডিভাইস নিবন্ধন করতে হতে পারে।';
+  static const deviceRegistrationResetNoteIos =
+      'ফোন রিসেট বা অ্যাপ আনইনস্টল করবেন না। এমন করলে পরীক্ষার আগে আবার এই ডিভাইস নিবন্ধন করতে হতে পারে।';
   static const deviceBindingNote =
       'পরীক্ষা দিতে অবশ্যই এই ডিভাইসটি নিয়ে আসতে হবে।';
   static const deviceBindingResetNote =
@@ -527,7 +532,7 @@ abstract final class AppStrings {
   static const examVenue = 'ভেন্যু';
   static const examStatus = 'অবস্থা';
   static const startExamination = 'পরীক্ষা শুরু করুন';
-  static const startDemo = 'ডেমো পরীক্ষা শুরু করুন';
+  static const startDemo = 'ডেমো পরীক্ষা টিউটোরিয়াল দেখুন';
   static const viewExaminationProcedure = 'পরীক্ষা পদ্ধতি দেখুন';
   static const phoneNumber = 'ফোন নম্বর';
   static const emailAddress = 'ইমেইল';
@@ -535,9 +540,9 @@ abstract final class AppStrings {
   // Demo dialogs
   static const demoQuizTitle = 'স্বাগতম!';
   static const demoQuizMessage =
-      'আপনি কি একটি ডেমো পরীক্ষা দিতে চান?';
+      'আপনি কি ডেমো পরীক্ষার টিউটোরিয়াল দেখতে চান?';
   static const skip = 'এড়িয়ে যান';
-  static const startDemoButton = 'ডেমো শুরু করুন';
+  static const startDemoButton = 'টিউটোরিয়াল দেখুন';
   static const congratulationsTitle = 'অভিনন্দন!';
   static const congratulationsMessage =
       'আপনি সফলভাবে ডেমো পরীক্ষা সম্পন্ন করেছেন। প্রকৃত পরীক্ষায় অংশগ্রহণের আগে পরীক্ষা পদ্ধতি ও নিরাপত্তা নিয়মাবলী সাবধানে পড়ুন।';

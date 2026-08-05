@@ -8,6 +8,7 @@ import '../../features/security_gate/domain/usecases/observe_connectivity_usecas
 import '../../features/security_gate/domain/repositories/security_repository.dart';
 import '../../shared/domain/entities/exam_entities.dart';
 import '../../shared/domain/enums/exam_enums.dart';
+import '../config/deployment.dart';
 import '../constants/app_constants.dart';
 import '../logging/app_logger.dart';
 import '../logging/log_event.dart';
@@ -109,6 +110,17 @@ class SecurityWatchdogService {
 
   bool get isRunning => _running;
 
+  bool _shouldPreventScreenCapture(SecurityPolicy policy) =>
+      Deployment.instance.preventScreenCapture && policy.preventScreenCapture;
+
+  Future<void> _syncScreenCapture(SecurityPolicy policy) async {
+    if (_shouldPreventScreenCapture(policy)) {
+      await _screenSecurityService.enable();
+      return;
+    }
+    await _screenSecurityService.applyDeploymentPolicy();
+  }
+
   /// Ignores lifecycle violations while in-app camera capture is in progress.
   void setCameraCaptureActive(bool active) {
     _cameraCaptureActive = active;
@@ -126,6 +138,7 @@ class SecurityWatchdogService {
       _policy = policy;
       _phase = phase;
       _sessionId = sessionId;
+      await _syncScreenCapture(policy);
       return;
     }
 
@@ -147,9 +160,7 @@ class SecurityWatchdogService {
       ),
     );
 
-    if (policy.preventScreenCapture) {
-      await _screenSecurityService.enable();
-    }
+    await _syncScreenCapture(policy);
 
     if (policy.requireAirplaneMode) {
       _listenAirplaneMode();

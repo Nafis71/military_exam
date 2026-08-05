@@ -140,7 +140,7 @@ class FinishExamController extends GetxController {
   Future<void> onPrimaryAction() async {
     if (isOnboardingDemo) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        Get.offAllNamed(AppRoutes.candidateDashboard, arguments: true);
+        Get.offAllNamed(AppRoutes.candidateDashboard);
       });
       return;
     }
