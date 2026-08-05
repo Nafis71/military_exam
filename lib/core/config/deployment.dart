@@ -2,10 +2,16 @@ import 'build_mode.dart';
 import 'environment.dart';
 
 class Deployment {
-  Deployment._internal(this.mode) : environment = Environment.forMode(mode);
+  Deployment._internal(
+    this.mode, {
+    required this.preventScreenCapture,
+  }) : environment = Environment.forMode(mode);
 
   final BuildMode mode;
   final Environment environment;
+
+  /// When true, screenshots and screen recording are blocked via [ScreenSecurityService].
+  final bool preventScreenCapture;
 
   static Deployment? _instance;
 
@@ -17,15 +23,24 @@ class Deployment {
     return _instance!;
   }
 
+  static bool get isInitialized => _instance != null;
+
   /// Initializes deployment configuration.
   ///
   /// Pass [demo: true] to run fully offline with on-device data only (no API calls).
   /// Alternatively pass [mode: BuildMode.demo] for the same behavior.
-  static void init({BuildMode? mode, bool demo = false}) {
+  static void init({
+    BuildMode? mode,
+    bool demo = false,
+    bool preventScreenCapture = true,
+  }) {
     final resolvedMode = demo
         ? BuildMode.demo
         : (mode ?? BuildModeResolver.resolve());
-    _instance = Deployment._internal(resolvedMode);
+    _instance = Deployment._internal(
+      resolvedMode,
+      preventScreenCapture: preventScreenCapture,
+    );
   }
 
   /// When true, the app makes no network API calls and loads data from device storage.

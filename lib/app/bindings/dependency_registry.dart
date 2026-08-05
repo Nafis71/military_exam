@@ -134,8 +134,11 @@ import '../../features/written_exam/presentation/controllers/written_exam_contro
 import '../routes/app_routes.dart';
 
 class DependencyRegistry {
-  static Future<void> init({bool demo = false}) async {
-    Deployment.init(demo: demo);
+  static Future<void> init() async {
+    assert(
+      Deployment.isInitialized,
+      'Call Deployment.init() before DependencyRegistry.init().',
+    );
 
     final logger = AppLogger();
     Get.put<AppLogger>(logger, permanent: true);
@@ -348,6 +351,7 @@ class DependencyRegistry {
     Get.put<HandleSecurityViolationUseCase>(handleViolation, permanent: true);
 
     final screenSecurityService = ScreenSecurityService(logger);
+    await screenSecurityService.applyDeploymentPolicy();
     Get.put<ScreenSecurityService>(screenSecurityService, permanent: true);
 
     final examConnectivityAlertService = ExamConnectivityAlertService();
@@ -498,9 +502,6 @@ class CandidateDashboardBinding extends Bindings {
         Get.find<SetOnboardingFlagUseCase>(),
         Get.find<ExamRunContext>(),
         Get.find<IdentityVerificationSession>(),
-        Get.find<StartOnboardingDemoExamUseCase>(),
-        Get.find<UnbindDeviceUseCase>(),
-        Get.find<DeviceIdService>(),
         Get.find<NotificationRepository>(),
         Get.find<AppLogger>(),
       ),

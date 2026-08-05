@@ -1,5 +1,6 @@
 import 'package:screen_security/screen_security.dart';
 
+import '../config/deployment.dart';
 import '../logging/app_logger.dart';
 import '../logging/log_event.dart';
 
@@ -15,8 +16,14 @@ class ScreenSecurityService {
 
   bool get isEnabled => _enabled;
 
+  /// Clears native secure flags when the kill switch is off (e.g. after hot restart).
+  Future<void> applyDeploymentPolicy() async {
+    if (Deployment.instance.preventScreenCapture) return;
+    await _releaseNativeCaptureBlock();
+  }
+
   Future<void> enable() async {
-    if (_enabled) return;
+    if (!Deployment.instance.preventScreenCapture || _enabled) return;
     await _screenSecurity.enable();
     _enabled = true;
     _logger.logEvent(
@@ -30,7 +37,12 @@ class ScreenSecurityService {
 
   Future<void> disable() async {
     if (!_enabled) return;
+    await _releaseNativeCaptureBlock();
+  }
+
+  Future<void> _releaseNativeCaptureBlock() async {
     await _screenSecurity.disable();
+    if (!_enabled) return;
     _enabled = false;
     _logger.logEvent(
       const LogEvent(
